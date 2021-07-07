@@ -1,4 +1,4 @@
-project(BULLET)
+add_compile_options("/std:c++17")
 
 add_library(Bullet STATIC
     BulletCollision/BroadphaseCollision/btAxisSweep3.cpp
@@ -144,4 +144,3 @@ add_library(Bullet STATIC
 )
 
 target_include_directories(Bullet PUBLIC ${CMAKE_CURRENT_SOURCE_DIR})
-set_property(TARGET "Bullet" PROPERTY FOLDER "ThirdParty")

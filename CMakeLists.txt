@@ -8,6 +8,7 @@ endif()
 
 add_subdirectory(DirectX12Lib)
 add_subdirectory(ThirdParty/DirectXTex)
+add_subdirectory(ThirdParty/BULLET)
 add_compile_options("/std:c++17")
 
 add_executable(Tutorial01 Tutorial01/tutorial1.cpp)
@@ -20,10 +21,7 @@ target_link_libraries(Tutorial02 LINK_PUBLIC DirectX12Lib)
 set_target_properties(Tutorial02 PROPERTIES
 	PROJECT_LABEL "Tutorial02 - Triangle")
 
-add_executable(Tutorial03 Tutorial03/tutorial3.cpp)
-target_link_libraries(Tutorial03 LINK_PUBLIC DirectX12Lib)
-set_target_properties(Tutorial03 PROPERTIES
-	PROJECT_LABEL "Tutorial03 - Cube")
+add_subdirectory(Tutorial03)
 
 add_executable(Tutorial04 Tutorial04/tutorial4.cpp)
 target_link_libraries(Tutorial04 LINK_PUBLIC DirectX12Lib)
