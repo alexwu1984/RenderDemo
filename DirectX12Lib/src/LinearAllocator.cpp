@@ -56,12 +56,12 @@ FAllocation LinearAllocator::Allocate(size_t SizeInBytes, size_t Alignment /*= D
 {
 	const size_t AlignmentMask = Alignment - 1;
 	Assert((AlignmentMask & Alignment) == 0);
-	const size_t AlignedSize = AlignUpWithMask(SizeInBytes, AlignmentMask);
+	const size_t AlignedSize = MathLib::AlignUpWithMask(SizeInBytes, AlignmentMask);
 
 	if (AlignedSize > m_PageSize)
 		return AllocateLargePage(AlignedSize);
 
-	m_CurrentOffset = AlignUp(m_CurrentOffset, Alignment);
+	m_CurrentOffset = MathLib::AlignUp(m_CurrentOffset, Alignment);
 	if (m_CurrentOffset + AlignedSize > m_PageSize)
 	{
 		Assert(m_CurrentPage != nullptr);

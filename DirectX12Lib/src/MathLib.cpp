@@ -61,6 +61,17 @@ FMatrix& FMatrix::operator*=(const FMatrix& rhs)
 	return *this;
 }
 
+FMatrix FMatrix::operator * (float rhs) const
+{
+	return FMatrix(r0 * rhs, r1 * rhs, r2 * rhs, r3 * rhs);
+}
+
+FMatrix& FMatrix::operator*=(float rhs)
+{
+	*this = (*this) * rhs;
+	return *this;
+}
+
 Vector3f FMatrix::TranslateVector(const Vector3f& vector)
 {
 	Vector4f Res = Vector4f(vector, 0.f) * (*this);
@@ -73,7 +84,7 @@ Vector3f FMatrix::TransformPosition(const Vector3f& position)
 	return Vector3f(Res.x, Res.y, Res.z);
 }
 
-FMatrix FMatrix::Transpose()
+FMatrix FMatrix::Transpose() const
 {
 	return FMatrix(
 		r0.x, r1.x, r2.x, r3.x,
@@ -83,101 +94,39 @@ FMatrix FMatrix::Transpose()
 	);
 }
 
-FMatrix FMatrix::Inverse()
+FMatrix FMatrix::Inverse() const
 {
-	FMatrix mTrans;
-	FMatrix tmp;
-	float    fTemp[12], fDet;
+	// https://semath.info/src/inverse-cofactor-ex4.html
+	float det = r0.x * r1.y * r2.z * r3.w + r0.x * r1.z * r2.w * r3.y + r0.x * r1.w * r2.y * r3.z
+		- r0.x * r1.w * r2.z * r3.y - r0.x * r1.z * r2.y * r3.w - r0.x * r1.y * r2.w * r3.z
+		- r0.y * r1.x * r2.z * r3.w - r0.z * r1.x * r2.w * r3.y - r0.w * r1.x * r2.y * r3.z
+		+ r0.w * r1.x * r2.z * r3.y + r0.z * r1.x * r2.y * r3.w + r0.y * r1.x * r2.w * r3.z
+		+ r0.y * r1.z * r2.x * r3.w + r0.z * r1.w * r2.x * r3.y + r0.w * r1.y * r2.x * r3.z
+		- r0.w * r1.z * r2.x * r3.y - r0.z * r1.y * r2.x * r3.w - r0.y * r1.w * r2.x * r3.z
+		- r0.y * r1.z * r2.w * r3.x - r0.z * r1.w * r2.y * r3.x - r0.w * r1.y * r2.z * r3.x
+		+ r0.w * r1.z * r2.y * r3.x + r0.z * r1.y * r2.w * r3.x + r0.y * r1.w * r2.z * r3.x;
 
-	mTrans = Transpose();
-	fTemp[0] = mTrans._22 * mTrans._33;
-	fTemp[1] = mTrans._23 * mTrans._32;
-	fTemp[2] = mTrans._21 * mTrans._33;
-	fTemp[3] = mTrans._23 * mTrans._31;
-	fTemp[4] = mTrans._21 * mTrans._32;
-	fTemp[5] = mTrans._22 * mTrans._31;
-	fTemp[6] = mTrans._20 * mTrans._33;
-	fTemp[7] = mTrans._23 * mTrans._30;
-	fTemp[8] = mTrans._20 * mTrans._32;
-	fTemp[9] = mTrans._22 * mTrans._30;
-	fTemp[10] = mTrans._20 * mTrans._31;
-	fTemp[11] = mTrans._21 * mTrans._30;
+	float A11 = r1.y * r2.z * r3.w + r1.z * r2.w * r3.y + r1.w * r2.y * r3.z - r1.w * r2.z * r3.y - r1.z * r2.y * r3.w - r1.y * r2.w * r3.z;
+	float A12 = -r0.y * r2.z * r3.w - r0.z * r2.w * r3.y - r0.w * r2.y * r3.z + r0.w * r2.z * r3.y + r0.z * r2.y * r3.w + r0.y * r2.w * r3.z;
+	float A13 = r0.y * r1.z * r3.w + r0.z * r1.w * r3.y + r0.w * r1.y * r3.z - r0.w * r1.z * r3.y - r0.z * r1.y * r3.w - r0.y * r1.w * r3.z;
+	float A14 = -r0.y * r1.z * r2.w - r0.z * r1.w * r2.y - r0.w * r1.y * r2.z + r0.w * r1.z * r2.y + r0.z * r1.y * r2.w + r0.y * r1.w * r2.z;
 
+	float A21 = -r1.x * r2.z * r3.w - r1.z * r2.w * r3.x - r1.w * r2.x * r3.z + r1.w * r2.z * r3.x + r1.z * r2.x * r3.w + r1.x * r2.w * r3.z;
+	float A22 = r0.x * r2.z * r3.w + r0.z * r2.w * r3.x + r0.w * r2.x * r3.z - r0.w * r2.z * r3.x - r0.z * r2.x * r3.w - r0.x * r2.w * r3.z;
+	float A23 = -r0.x * r1.z * r3.w - r0.z * r1.w * r3.x - r0.w * r1.x * r3.z + r0.w * r1.z * r3.x + r0.z * r1.x * r3.w + r0.x * r1.w * r3.z;
+	float A24 = r0.x * r1.z * r2.w + r0.z * r1.w * r2.x + r0.w * r1.x * r2.z - r0.w * r1.z * r2.x - r0.z * r1.x * r2.w - r0.x * r1.w * r2.z;
 
-	tmp._00 = fTemp[0] * mTrans._11 + fTemp[3] * mTrans._12 + fTemp[4] * mTrans._13;
-	tmp._00 -= fTemp[1] * mTrans._11 + fTemp[2] * mTrans._12 + fTemp[5] * mTrans._13;
-	tmp._01 = fTemp[1] * mTrans._10 + fTemp[6] * mTrans._12 + fTemp[9] * mTrans._13;
-	tmp._01 -= fTemp[0] * mTrans._10 + fTemp[7] * mTrans._12 + fTemp[8] * mTrans._13;
-	tmp._02 = fTemp[2] * mTrans._10 + fTemp[7] * mTrans._11 + fTemp[10] * mTrans._13;
-	tmp._02 -= fTemp[3] * mTrans._10 + fTemp[6] * mTrans._11 + fTemp[11] * mTrans._13;
-	tmp._03 = fTemp[5] * mTrans._10 + fTemp[8] * mTrans._11 + fTemp[11] * mTrans._12;
-	tmp._03 -= fTemp[4] * mTrans._10 + fTemp[9] * mTrans._11 + fTemp[10] * mTrans._12;
-	tmp._10 = fTemp[1] * mTrans._01 + fTemp[2] * mTrans._02 + fTemp[5] * mTrans._03;
-	tmp._10 -= fTemp[0] * mTrans._01 + fTemp[3] * mTrans._02 + fTemp[4] * mTrans._03;
-	tmp._11 = fTemp[0] * mTrans._00 + fTemp[7] * mTrans._02 + fTemp[8] * mTrans._03;
-	tmp._11 -= fTemp[1] * mTrans._00 + fTemp[6] * mTrans._02 + fTemp[9] * mTrans._03;
-	tmp._12 = fTemp[3] * mTrans._00 + fTemp[6] * mTrans._01 + fTemp[11] * mTrans._03;
-	tmp._12 -= fTemp[2] * mTrans._00 + fTemp[7] * mTrans._01 + fTemp[10] * mTrans._03;
-	tmp._13 = fTemp[4] * mTrans._00 + fTemp[9] * mTrans._01 + fTemp[10] * mTrans._02;
-	tmp._13 -= fTemp[5] * mTrans._00 + fTemp[8] * mTrans._01 + fTemp[11] * mTrans._02;
+	float A31 = r1.x * r2.y * r3.w + r1.y * r2.w * r3.x + r1.w * r2.x * r3.y - r1.w * r2.y * r3.x - r1.y * r2.x * r3.w - r1.x * r2.w * r3.y;
+	float A32 = -r0.x * r2.y * r3.w - r0.y * r2.w * r3.x - r0.w * r2.x * r3.y + r0.w * r2.y * r3.x + r0.y * r2.x * r3.w + r0.x * r2.w * r3.y;
+	float A33 = r0.x * r1.y * r3.w + r0.y * r1.w * r3.x + r0.w * r1.x * r3.y - r0.w * r1.y * r3.x - r0.y * r1.x * r3.w - r0.x * r1.w * r3.y;
+	float A34 = -r0.x * r1.y * r2.w - r0.y * r1.w * r2.x - r0.w * r1.x * r2.y + r0.w * r1.y * r2.x + r0.y * r1.x * r2.w + r0.x * r1.w * r2.y;
 
+	float A41 = -r1.x * r2.y * r3.z - r1.y * r2.z * r3.x - r1.z * r2.x * r3.y + r1.z * r2.y * r3.x + r1.y * r2.x * r3.z + r1.x * r2.z * r3.y;
+	float A42 = r0.x * r2.y * r3.z + r0.y * r2.z * r3.x + r0.z * r2.x * r3.y - r0.z * r2.y * r3.x - r0.y * r2.x * r3.z - r0.x * r2.z * r3.y;
+	float A43 = -r0.x * r1.y * r3.z - r0.y * r1.z * r3.x - r0.z * r1.x * r3.y + r0.z * r1.y * r3.x + r0.y * r1.x * r3.z + r0.x * r1.z * r3.y;
+	float A44 = r0.x * r1.y * r2.z + r0.y * r1.z * r2.x + r0.z * r1.x * r2.y - r0.z * r1.y * r2.x - r0.y * r1.x * r2.z - r0.x * r1.z * r2.y;
 
-	fTemp[0] = mTrans._02 * mTrans._13;
-	fTemp[1] = mTrans._03 * mTrans._12;
-	fTemp[2] = mTrans._01 * mTrans._13;
-	fTemp[3] = mTrans._03 * mTrans._11;
-	fTemp[4] = mTrans._01 * mTrans._12;
-	fTemp[5] = mTrans._02 * mTrans._11;
-	fTemp[6] = mTrans._00 * mTrans._13;
-	fTemp[7] = mTrans._03 * mTrans._10;
-	fTemp[8] = mTrans._00 * mTrans._12;
-	fTemp[9] = mTrans._02 * mTrans._10;
-	fTemp[10] = mTrans._00 * mTrans._11;
-	fTemp[11] = mTrans._01 * mTrans._10;
-
-
-	tmp._20 = fTemp[0] * mTrans._31 + fTemp[3] * mTrans._32 + fTemp[4] * mTrans._33;
-	tmp._20 -= fTemp[1] * mTrans._31 + fTemp[2] * mTrans._32 + fTemp[5] * mTrans._33;
-	tmp._21 = fTemp[1] * mTrans._30 + fTemp[6] * mTrans._32 + fTemp[9] * mTrans._33;
-	tmp._21 -= fTemp[0] * mTrans._30 + fTemp[7] * mTrans._32 + fTemp[8] * mTrans._33;
-	tmp._22 = fTemp[2] * mTrans._30 + fTemp[7] * mTrans._31 + fTemp[10] * mTrans._33;
-	tmp._22 -= fTemp[3] * mTrans._30 + fTemp[6] * mTrans._31 + fTemp[11] * mTrans._33;
-	tmp._23 = fTemp[5] * mTrans._30 + fTemp[8] * mTrans._31 + fTemp[11] * mTrans._32;
-	tmp._23 -= fTemp[4] * mTrans._30 + fTemp[9] * mTrans._31 + fTemp[10] * mTrans._32;
-	tmp._30 = fTemp[2] * mTrans._22 + fTemp[5] * mTrans._23 + fTemp[1] * mTrans._21;
-	tmp._30 -= fTemp[4] * mTrans._23 + fTemp[0] * mTrans._21 + fTemp[3] * mTrans._22;
-	tmp._31 = fTemp[8] * mTrans._23 + fTemp[0] * mTrans._20 + fTemp[7] * mTrans._22;
-	tmp._31 -= fTemp[6] * mTrans._22 + fTemp[9] * mTrans._23 + fTemp[1] * mTrans._20;
-	tmp._32 = fTemp[6] * mTrans._21 + fTemp[11] * mTrans._23 + fTemp[3] * mTrans._20;
-	tmp._32 -= fTemp[10] * mTrans._23 + fTemp[2] * mTrans._20 + fTemp[7] * mTrans._21;
-	tmp._33 = fTemp[10] * mTrans._22 + fTemp[4] * mTrans._20 + fTemp[9] * mTrans._21;
-	tmp._33 -= fTemp[8] * mTrans._21 + fTemp[11] * mTrans._22 + fTemp[5] * mTrans._20;
-
-	fDet = mTrans._00 * _00 + mTrans._01 * _01 + mTrans._02 * _02 + mTrans._03 * _03;
-
-	fDet = 1 / fDet;
-
-	tmp._00 *= fDet;
-	tmp._01 *= fDet;
-	tmp._02 *= fDet;
-	tmp._03 *= fDet;
-
-	tmp._10 *= fDet;
-	tmp._11 *= fDet;
-	tmp._12 *= fDet;
-	tmp._13 *= fDet;
-
-	tmp._20 *= fDet;
-	tmp._21 *= fDet;
-	tmp._22 *= fDet;
-	tmp._23 *= fDet;
-
-	tmp._30 *= fDet;
-	tmp._31 *= fDet;
-	tmp._32 *= fDet;
-	tmp._33 *= fDet;
-
-	return tmp;
+	return FMatrix(A11, A12, A13, A14, A21, A22, A23, A24, A31, A32, A33, A34, A41, A42, A43, A44) * (1.f / det);
 }
 
 FMatrix FMatrix::TranslateMatrix(const Vector3f& T)

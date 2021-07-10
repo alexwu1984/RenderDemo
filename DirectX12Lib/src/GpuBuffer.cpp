@@ -86,7 +86,7 @@ void FConstBuffer::CreateUpload(const std::wstring& Name, uint32_t Size)
 	Destroy();
 
 	//CB size is required to be 256 - byte aligned.
-	Size = AlignUp(Size, 256);
+	Size = MathLib::AlignUp(Size, 256);
 
 	m_ElementCount = 1;
 	m_ElementSize = Size;
@@ -118,7 +118,7 @@ D3D12_CPU_DESCRIPTOR_HANDLE FConstBuffer::CreateConstantBufferView(uint32_t Offs
 	Assert(Offset + Size <= m_BufferSize);
 
 	//CB size is required to be 256 - byte aligned.
-	Size = AlignUp(Size, 256);
+	Size = MathLib::AlignUp(Size, 256);
 
 	D3D12_CONSTANT_BUFFER_VIEW_DESC CBVDesc;
 	CBVDesc.BufferLocation = m_GpuAddress + (size_t)Offset;

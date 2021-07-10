@@ -168,6 +168,19 @@ struct Vector4
 	}
 };
 
+template<typename T, typename scalar>
+Vector4<T> operator * (const Vector4<T>& lhs, scalar s)
+{
+	return Vector4<T>(lhs.x * s, lhs.y * s, lhs.z * s, lhs.w * s);
+}
+
+template<typename T, typename scalar>
+Vector4<T> operator * (scalar s, const Vector4<T>& lhs)
+{
+	return Vector4<T>(lhs.x * s, lhs.y * s, lhs.z * s, lhs.w * s);
+}
+
+
 typedef Vector2<int> Vector2i;
 typedef Vector2<uint32_t> Vector2ui;
 typedef Vector3<int> Vector3i;
@@ -204,11 +217,13 @@ struct FMatrix
 
 	FMatrix operator * (const FMatrix& rhs) const;
 	FMatrix& operator *= (const FMatrix& rhs);
+	FMatrix operator * (float rhs) const;
+	FMatrix& operator *= (float rhs);
 
 	Vector3f TranslateVector(const Vector3f& vector);
 	Vector3f TransformPosition(const Vector3f& position);
-	FMatrix Transpose();
-	FMatrix Inverse();
+	FMatrix Transpose() const;
+	FMatrix Inverse() const;
 
 	static FMatrix TranslateMatrix(const Vector3f& T);
 	static FMatrix ScaleMatrix(float s);
@@ -249,29 +264,33 @@ struct BoundingBox
 
 inline Vector4f operator*(const Vector4f& vec, const FMatrix& mat);
 
-template <typename T>
-T AlignUpWithMask(T Value, size_t Mask)
+namespace MathLib
 {
-	return (T)(((size_t)Value + Mask) & (~Mask));
+	template <typename T>
+	T AlignUpWithMask(T Value, size_t Mask)
+	{
+		return (T)(((size_t)Value + Mask) & (~Mask));
+	}
+
+	template <typename T>
+	T AlignUp(T Value, size_t Alignment)
+	{
+		return AlignUpWithMask(Value, Alignment - 1);
+	}
+
+	template <typename T>
+	T AlignDownWithMask(T value, size_t mask)
+	{
+		return (T)((size_t)value & ~mask);
+	}
+
+	template <typename T>
+	T AlignDown(T value, size_t alignment)
+	{
+		return AlignDownWithMask(value, alignment - 1);
+	}
 }
 
-template <typename T>
-T AlignUp(T Value, size_t Alignment)
-{
-	return AlignUpWithMask(Value, Alignment - 1);
-}
-
-template <typename T>
-T AlignDownWithMask(T value, size_t mask)
-{
-	return (T)((size_t)value & ~mask);
-}
-
-template <typename T>
-T AlignDown(T value, size_t alignment)
-{
-	return AlignDownWithMask(value, alignment - 1);
-}
 
 
 #ifdef _M_X64
@@ -288,8 +307,8 @@ T AlignDown(T value, size_t alignment)
 inline size_t HashRange(const uint32_t* const Begin, const uint32_t* const End, size_t Hash)
 {
 #if ENABLE_SSE_CRC32
-	const uint64_t* Iter64 = (const uint64_t*)AlignUp(Begin, 8);
-	const uint64_t* const End64 = (const uint64_t* const)AlignDown(End, 8);
+	const uint64_t* Iter64 = (const uint64_t*)MathLib::AlignUp(Begin, 8);
+	const uint64_t* const End64 = (const uint64_t* const)MathLib::AlignDown(End, 8);
 
 	// If not 64-bit aligned, start with a single u32
 	if ((uint32_t*)Iter64 > Begin)
@@ -335,9 +354,21 @@ inline float Lerp(float a, float b, float f)
 {
 	return a + f * (b - a);
 }
-
-inline Vector3f Vector3Max(const Vector3f& a, const Vector3f& b) { return Vector3f( a.x > b.x ? a.x : b.x ,a.y > b.y ? a.y : b.y, a.z > b.z ? a.z : b.z ); }
-inline Vector3f Vector3Min(const Vector3f& a, const Vector3f& b) { return Vector3f(a.x < b.x ? a.x : b.x, a.y < b.y ? a.y : b.y, a.z < b.z ? a.z : b.z); }
+//
+//inline Vector3f Vector3Max(const Vector3f& a, const Vector3f& b) { return Vector3f( a.x > b.x ? a.x : b.x ,a.y > b.y ? a.y : b.y, a.z > b.z ? a.z : b.z ); }
+//inline Vector3f Vector3Min(const Vector3f& a, const Vector3f& b) { return Vector3f(a.x < b.x ? a.x : b.x, a.y < b.y ? a.y : b.y, a.z < b.z ? a.z : b.z); }
 
 inline  float ConvertToRadians(float fDegrees) { return fDegrees * (MATH_PI / 180.0f); }
 inline  float ConvertToDegrees(float fRadians) { return fRadians * (180.0f / MATH_PI); }
+
+template<typename T>
+Vector3<T> Vector3Min(const Vector3<T>& lhs, const Vector3<T>& rhs)
+{
+	return Vector3<T>(std::min(lhs.x, rhs.x), std::min(lhs.y, rhs.y), std::min(lhs.z, rhs.z));
+}
+
+template<typename T>
+Vector3<T> Vector3Max(const Vector3<T>& lhs, const Vector3<T>& rhs)
+{
+	return Vector3<T>(std::max(lhs.x, rhs.x), std::max(lhs.y, rhs.y), std::max(lhs.z, rhs.z));
+}

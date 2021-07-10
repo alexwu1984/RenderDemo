@@ -28,12 +28,9 @@ void FGeometry::CreateRectange()
 	SetVertex(vertexBufferData, indexBufferData);
 }
 
-void FGeometry::CreateCube()
+void FGeometry::CreateCube(float width,float height,float depth)
 {
 	std::vector<Vertex> v(24);
-	float width = 100;
-	float height = 100;
-	float depth = 100;
 
 	float w2 = 0.5f * width;
 	float h2 = 0.5f * height;
@@ -150,6 +147,36 @@ void FGeometry::SetVertex(const std::vector<Vertex> vertexBufferData, const std:
 {
 	m_VertexBuffer.Create(L"VertexBuffer", vertexBufferData.size(), sizeof(Vertex), vertexBufferData.data());
 	m_IndexBuffer.Create(L"IndexBuffer", indexBufferData.size(), sizeof(uint32_t), indexBufferData.data());
+
+	//XMVECTOR vMin, vMax;
+
+	//vMin = vMax = XMLoadFloat3(pPoints);
+
+	//for (size_t i = 1; i < Count; ++i)
+	//{
+	//	XMVECTOR Point = XMLoadFloat3(reinterpret_cast<const XMFLOAT3*>(reinterpret_cast<const uint8_t*>(pPoints) + i * Stride));
+
+	//	vMin = XMVectorMin(vMin, Point);
+	//	vMax = XMVectorMax(vMax, Point);
+	//}
+
+	//// Store center and extents.
+	//XMStoreFloat3(&Out.Center, XMVectorScale(XMVectorAdd(vMin, vMax), 0.5f));
+	//XMStoreFloat3(&Out.Extents, XMVectorScale(XMVectorSubtract(vMax, vMin), 0.5f));
+
+
+	Vector3f vMinf3(+FLT_MAX, +FLT_MAX, +FLT_MAX);
+	Vector3f vMaxf3(-FLT_MAX, -FLT_MAX, -FLT_MAX);
+
+	for (const auto& V : vertexBufferData)
+	{
+
+		vMinf3 = Vector3Min(vMinf3, Vector3f(V.position[0], V.position[1], V.position[2]));
+		vMaxf3 = Vector3Max(vMaxf3, Vector3f(V.position[0], V.position[1], V.position[2]));
+	}
+
+	m_boundingBox.Center = 0.5f * (vMinf3 + vMaxf3);
+	m_boundingBox.Extents = 0.5f * (vMaxf3 - vMinf3);
 }
 
 void FGeometry::GetMeshLayout(std::vector<D3D12_INPUT_ELEMENT_DESC>& MeshLayout)
@@ -174,6 +201,12 @@ void FGeometry::SetScale(float Scale)
 	UpdateModelMatrix();
 }
 
+
+float FGeometry::GetScale()
+{
+	return m_Scale;
+}
+
 void FGeometry::SetRotation(const FMatrix& Rotation)
 {
 	m_RotationMatrix = Rotation;
@@ -189,4 +222,12 @@ void FGeometry::SetPosition(const Vector3f& Position)
 void FGeometry::UpdateModelMatrix()
 {
 	m_ModelMatrix = FMatrix::ScaleMatrix(m_Scale) * m_RotationMatrix * FMatrix::TranslateMatrix(m_Position);
+}
+
+void FGeometry::UpdateBoundingBox(const Vector3f& pos, Vector3f& vMin, Vector3f& vMax)
+{
+	vMin = Vector3Min(vMin, pos);
+	vMax = Vector3Max(vMax, pos);
+	m_boundingBox.Center = 0.5f * (vMin + vMax);
+	m_boundingBox.Extents = 0.5f * (vMax - vMin);
 }

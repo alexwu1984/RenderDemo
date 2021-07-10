@@ -1,3 +1,4 @@
+#pragma once
 #include "Common.h"
 #include "CommandContext.h"
 #include "GpuBuffer.h"
@@ -17,7 +18,7 @@ public:
 	~FGeometry();
 
 	void CreateRectange();
-	void CreateCube();
+	void CreateCube(float width = 100, float height = 100, float depth = 100);
 	void CreateQuad(float x, float y, float w, float h, float depth);
 	
 	void SetVertex(const std::vector<Vertex> vertexBufferData, const std::vector<uint32_t> indexBufferData);
@@ -25,16 +26,17 @@ public:
 	void Draw(FCommandContext& CommandContext);
 
 	void SetScale(float Scale);
+	float GetScale();
 	void SetRotation(const FMatrix& Rotation);
 	void SetPosition(const Vector3f& Position);
 	const FMatrix GetModelMatrix() { return m_ModelMatrix; }
-
+	const BoundingBox& GetBoundBox() const { return m_boundingBox; }
 private:
 	void UpdateModelMatrix();
+	void UpdateBoundingBox(const Vector3f& pos, Vector3f& vMin, Vector3f& vMax);
+	
 
 private:
-	ComPtr<ID3DBlob> m_vertexShader;
-	ComPtr<ID3DBlob> m_pixelShader;
 
 	FGpuBuffer m_VertexBuffer;
 	FGpuBuffer m_IndexBuffer;
@@ -43,4 +45,6 @@ private:
 	FMatrix m_RotationMatrix;
 	Vector3f m_Position;
 	FMatrix m_ModelMatrix;
+
+	BoundingBox m_boundingBox;
 };

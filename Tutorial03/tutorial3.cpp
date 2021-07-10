@@ -17,29 +17,28 @@
 #include <dxgi1_4.h>
 #include <chrono>
 #include <iostream>
+#include <random>
 
-#include <btBulletDynamicsCommon.h>
+#include "BulletPhysics.h"
+#include "BulletRenderItem.h"
 
 extern FCommandListManager g_CommandListManager;
+
+extern void ConvertFMatrix(const FMatrix& in, DirectX::XMMATRIX& out);
 
 class Tutorial3 : public FGame
 {
 public:
-	Tutorial3(const GameDesc& Desc) : FGame(Desc) 
+	Tutorial3(const GameDesc& Desc) : FGame(Desc), m_Camera(Vector3f(0.f, 0.f, -5.f), Vector3f(0.f, 0.0f, 0.f), Vector3f(0.f, 1.f, 0.f))
 	{
 	}
 
 	void OnStartup()
 	{
 		SetupRootSignature();
-
 		SetupShaders();
-
-		InitBulletPhysics();
 		SetupMesh();
-		
 		SetupPipelineState();
-
 	}
 
 	void OnUpdate()
@@ -49,13 +48,12 @@ public:
 
 	virtual void OnShutdown()
 	{
-		ExitBulletPhysics();
+		m_BulletPhysic.UnInit();
 	}
 	
 	void OnRender()
 	{
-		FCommandContext& CommandContext = FCommandContext::Begin();
-
+		
 		// Frame limit set to 60 fps
 		tEnd = std::chrono::high_resolution_clock::now();
 		float time = std::chrono::duration<float, std::milli>(tEnd - tStart).count();
@@ -63,18 +61,17 @@ public:
 		{
 			return;
 		}
+
+		FCommandContext& CommandContext = FCommandContext::Begin();
+
 		tStart = std::chrono::high_resolution_clock::now();
 
 		// Update Uniforms
 		m_elapsedTime += 0.001f * time;
 		m_elapsedTime = fmodf(m_elapsedTime, 6.283185307179586f);
-		m_uboVS.modelMatrix = FMatrix::RotateY(m_elapsedTime);
+		UpdateStatus();
 
-		FCamera camera(Vector3f(0.f, 0.f, -5.f), Vector3f(0.f, 0.0f, 0.f), Vector3f(0.f, 1.f, 0.f));
-		m_uboVS.viewMatrix = camera.GetViewMatrix();
-
-		const float FovVertical = MATH_PI / 4.f;
-		m_uboVS.projectionMatrix = FMatrix::MatrixPerspectiveFovLH(FovVertical, (float)GetDesc().Width / GetDesc().Height, 0.1f, 100.f);
+		m_BulletPhysic.UpdateScene(0.001f * time);
 
 		FillCommandLists(CommandContext);
 		
@@ -87,78 +84,49 @@ private:
 	void SetupRootSignature()
 	{
 		m_RootSignature.Reset(1, 0);
-		m_RootSignature[0].InitAsConstants(0, sizeof(m_uboVS) / 4, D3D12_SHADER_VISIBILITY_VERTEX);
+		m_RootSignature[0].InitAsDescriptorRange(D3D12_DESCRIPTOR_RANGE_TYPE_CBV, 0, 1, D3D12_SHADER_VISIBILITY_ALL);
 		m_RootSignature.Finalize(L"Tutorial3", D3D12_ROOT_SIGNATURE_FLAG_ALLOW_INPUT_ASSEMBLER_INPUT_LAYOUT);
 	}
 
 	void SetupMesh()
 	{
-		struct Vertex
+		m_BulletPhysic.Init();
+		m_BulletPhysic.CreateGroundPlane();
+
+		const float FovVertical = MATH_PI / 4.f;
+
+		m_uboVS.viewMatrix = m_Camera.GetViewMatrix();
+		m_uboVS.projectionMatrix = FMatrix::MatrixPerspectiveFovLH(FovVertical, (float)GetDesc().Width / GetDesc().Height, 0.1f, 100.f);
+
+		for (int index  = 0; index < m_MaxBoxCount; ++index)
 		{
-			float position[3];
-			float color[3];
-		};
-		/*
-						  4--------5
-						 /| 	  /|
-						/ |	     / |
-						0-------1  |
-						| 7-----|--6
-						|/		| /
-						3-------2
-		*/
+			CreateBox();
+		}
 
-		Vertex vertexBufferData[] =
-		{
-			{ { -1.f,  1.f, -1.f }, { 1.f, 0.f, 0.f } }, // 0
-			{ {  1.f,  1.f, -1.f }, { 0.f, 1.f, 0.f } }, // 1
-			{ {  1.f, -1.f, -1.f }, { 0.f, 0.f, 1.f } }, // 2
-			{ { -1.f, -1.f, -1.f }, { 1.f, 1.f, 0.f } }, // 3
-			{ { -1.f,  1.f,  1.f }, { 1.f, 0.f, 1.f } }, // 4
-			{ {  1.f,  1.f,  1.f }, { 0.f, 1.f, 1.f } }, // 5
-			{ {  1.f, -1.f,  1.f }, { 1.f, 1.f, 1.f } }, // 6
-			{ { -1.f, -1.f,  1.f }, { 0.f, 0.f, 0.f } }  // 7
-		};
+		DirectX::XMMATRIX dxMat;
+		ConvertFMatrix(m_uboVS.projectionMatrix, dxMat);
+		DirectX::BoundingFrustum::CreateFromMatrix(m_Frustum, dxMat);
 
-		m_VertexBuffer.Create(L"VertexBuffer", _countof(vertexBufferData), sizeof(Vertex), vertexBufferData);
-		uint32_t indexBufferData[] = { 
-			0, 1, 2,
-			0, 2, 3,
-			2, 1, 5,
-			2, 5, 6,
-			4, 0, 3,
-			4, 3, 7,
-			3, 2, 6,
-			3, 6, 7,
-			0, 4, 5,
-			0, 5, 1,
-			5, 4, 7,
-			5, 7, 6
-		};
-
-		m_IndexBuffer.Create(L"IndexBuffer", _countof(indexBufferData), sizeof(uint32_t), indexBufferData);
 	}
 
 	void SetupShaders()
 	{
-		m_vertexShader = D3D12RHI::Get().CreateShader(L"../../Resources/Shaders/triangle.vert", "main", "vs_5_0");
-
-		m_pixelShader = D3D12RHI::Get().CreateShader(L"../../Resources/Shaders/triangle.frag", "main", "ps_5_0");
+		m_vertexShader = D3D12RHI::Get().CreateShader(L"../../Resources/Shaders/simplebox.hlsl", "vs_main", "vs_5_1");
+		m_pixelShader = D3D12RHI::Get().CreateShader(L"../../Resources/Shaders/simplebox.hlsl", "ps_main", "ps_5_1");
 	}
 
 	void SetupPipelineState()
 	{
-		D3D12_INPUT_ELEMENT_DESC inputElementDescs[] =
-		{
-		  { "POSITION", 0, DXGI_FORMAT_R32G32B32_FLOAT, 0, 0, D3D12_INPUT_CLASSIFICATION_PER_VERTEX_DATA, 0 },
-		  { "COLOR", 0, DXGI_FORMAT_R32G32B32_FLOAT, 0, 12, D3D12_INPUT_CLASSIFICATION_PER_VERTEX_DATA, 0 }
-		};
+		std::vector<D3D12_INPUT_ELEMENT_DESC> MeshLayout;
+		MeshLayout.push_back({ "POSITION", 0, DXGI_FORMAT_R32G32B32_FLOAT, 0, 0, D3D12_INPUT_CLASSIFICATION_PER_VERTEX_DATA, 0 });
+		MeshLayout.push_back({ "TEXCOORD", 0, DXGI_FORMAT_R32G32_FLOAT, 0, 12, D3D12_INPUT_CLASSIFICATION_PER_VERTEX_DATA, 0 });
+		MeshLayout.push_back({ "NORMAL", 0, DXGI_FORMAT_R32G32_FLOAT, 0, 24, D3D12_INPUT_CLASSIFICATION_PER_VERTEX_DATA, 0 });
 
 		m_PipelineState.SetRootSignature(m_RootSignature);
 		m_PipelineState.SetRasterizerState(FPipelineState::RasterizerDefault);
 		m_PipelineState.SetBlendState(FPipelineState::BlendDisable);
 		m_PipelineState.SetDepthStencilState(FPipelineState::DepthStateReadWrite);
-		m_PipelineState.SetInputLayout(_countof(inputElementDescs), inputElementDescs);
+		m_PipelineState.SetInputLayout(MeshLayout.size(), MeshLayout.data());
 		m_PipelineState.SetPrimitiveTopologyType(D3D12_PRIMITIVE_TOPOLOGY_TYPE_TRIANGLE);
 		m_PipelineState.SetRenderTargetFormats(1, &RenderWindow::Get().GetColorFormat(), RenderWindow::Get().GetDepthFormat());
 		m_PipelineState.SetVertexShader(CD3DX12_SHADER_BYTECODE(m_vertexShader.Get()));
@@ -173,8 +141,6 @@ private:
 		CommandContext.SetPipelineState(m_PipelineState);
 		CommandContext.SetViewportAndScissor(0, 0, m_GameDesc.Width, m_GameDesc.Height);
 
-		CommandContext.SetConstantArray(0, sizeof(m_uboVS) / 4, &m_uboVS);
-
 		RenderWindow& renderWindow = RenderWindow::Get();
 		FColorBuffer& BackBuffer = renderWindow.GetBackBuffer();
 		FDepthBuffer& DepthBuffer = renderWindow.GetDepthBuffer();
@@ -187,68 +153,84 @@ private:
 		CommandContext.ClearColor(BackBuffer);
 		CommandContext.ClearDepth(DepthBuffer);
 		CommandContext.SetPrimitiveTopology(D3D_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
-		CommandContext.SetVertexBuffer(0, m_VertexBuffer.VertexBufferView());
-		CommandContext.SetIndexBuffer(m_IndexBuffer.IndexBufferView());
 
-		CommandContext.DrawIndexed(m_IndexBuffer.GetElementCount());
+		for (auto& item : m_RenderList)
+		{
+			item->UpdateState(m_Frustum, m_Camera);
+
+			BulletRenderItem::BasePassInfoWrapper& wapper = item->PassInfo;
+
+			const FMatrix& fMat = item->Geo.GetModelMatrix();
+
+			wapper.BasePassInfo.modelMatrix = fMat;
+			memcpy(wapper.BasePassConstBuf.Map(), &wapper.BasePassInfo, sizeof(wapper.BasePassInfo));
+			CommandContext.SetDynamicDescriptor(item->CBVRootIndex, 0, wapper.BasePassCpuHandle);
+			item->Geo.Draw(CommandContext);
+		}
 
 		CommandContext.TransitionResource(BackBuffer, D3D12_RESOURCE_STATE_PRESENT, true);
 	}
 
-	void InitBulletPhysics()
+	void UpdateStatus()
 	{
-		m_collisionConfiguration = new btDefaultCollisionConfiguration(); //collision configuration contains default setup for memory, collision setup
-		m_dispatcher = new btCollisionDispatcher(m_collisionConfiguration); //use the default collision dispatcher 
-		m_broadphase = new btDbvtBroadphase();
-		m_solver = new btSequentialImpulseConstraintSolver; //the default constraint solver
-		m_dynamicsWorld = new btDiscreteDynamicsWorld(m_dispatcher, m_broadphase, m_solver, m_collisionConfiguration);
-		m_dynamicsWorld->setGravity(btVector3(0, -20, 0));
-
-		g_fPosX = 0.0f;
-		g_fPosY = -5.0f;
-		g_fPosZ = 0.0f;
-
-		//Objects Object;  //This Order Must Be Preserved
-		//Object.createGround(-3.0f);
-		//Object.createWallZ(5, 10, 2.0, 0.0f, 0.0f, 0.0f);
-		//Object.createStones(50.0f, 0.0f, 10.0f, 1);
-	}
-
-	void ExitBulletPhysics()
-	{
-		//cleanup in the reverse order of creation/initialization
-
-		for (int i = m_dynamicsWorld->getNumCollisionObjects() - 1; i >= 0; i--) //remove the rigidbodies from the dynamics world and delete them
+		//删除物理系统元素
+		m_BulletPhysic.RemoveItems();
+		for (auto itRemove = m_RenderList.begin(); itRemove != m_RenderList.end(); )
 		{
-			btCollisionObject* obj = m_dynamicsWorld->getCollisionObjectArray()[i];
-			btRigidBody* body = btRigidBody::upcast(obj);
-			if (body && body->getMotionState())
-				delete body->getMotionState();
-
-			m_dynamicsWorld->removeCollisionObject(obj);
-			delete obj;
+			if ((*itRemove)->IsDelete)
+			{
+				m_ReUseList.push_back(*itRemove);
+				itRemove = m_RenderList.erase(itRemove);
+				
+			}
+			else
+			{
+				++itRemove;
+			}
 		}
 
-
-		for (int j = 0; j < m_collisionShapes.size(); j++) //delete collision shapes
+		//重用DX元素，物理系统的元素不能重用，试过保留，但是没有效果，需要重新生成
+		while (!m_ReUseList.empty())
 		{
-			btCollisionShape* shape = m_collisionShapes[j];
-			delete shape;
+			auto item = m_ReUseList.front();
+			item->IsDelete = false;
+			item->RunState = BulletRenderItem::UnKnown;
+			m_BulletPhysic.CreateDynamicObject(item.get());
+			m_RenderList.push_back(item);
+			m_ReUseList.pop_front();
 		}
 
-		m_collisionShapes.clear();
-		delete m_dynamicsWorld;
-		delete m_solver;
-		delete m_broadphase;
-		delete m_dispatcher;
-		delete m_collisionConfiguration;
+		while (m_RenderList.size() < m_MaxBoxCount)
+		{
+			CreateBox();
+		}
 	}
+
+	void CreateBox()
+	{
+
+		std::shared_ptr<BulletRenderItem> box = std::make_shared<BulletRenderItem>();
+		box->Init();
+		box->Geo.CreateCube(0.5, 0.2, 0.5);
+		box->Geo.SetPosition(Vector3f(0, 0, 0));
+
+		const auto& BoundBox = box->Geo.GetBoundBox();
+
+		box->Box.Center = DirectX::XMFLOAT3(BoundBox.Center.x, BoundBox.Center.y, BoundBox.Center.z);
+		box->Box.Extents = DirectX::XMFLOAT3(BoundBox.Extents.x, BoundBox.Extents.y, BoundBox.Extents.z);
+
+
+		m_RenderList.push_back(box);
+		m_BulletPhysic.CreateDynamicObject(box.get());
+		box->PassInfo.BasePassInfo.viewMatrix = m_uboVS.viewMatrix;
+		box->PassInfo.BasePassInfo.projectionMatrix = m_uboVS.projectionMatrix;
+	}
+
 
 private:
 	struct
 	{
 		FMatrix projectionMatrix;
-		FMatrix modelMatrix;
 		FMatrix viewMatrix;
 	} m_uboVS;
 
@@ -258,23 +240,19 @@ private:
 	ComPtr<ID3DBlob> m_vertexShader;
 	ComPtr<ID3DBlob> m_pixelShader;
 
-	FGpuBuffer m_VertexBuffer;
-	FGpuBuffer m_IndexBuffer;
+	DirectX::BoundingFrustum m_Frustum;
 
 	float m_elapsedTime = 0;
 	std::chrono::high_resolution_clock::time_point tStart, tEnd;
 
-	//variables for to bullet physics API
-	btAlignedObjectArray<btCollisionShape*>	m_collisionShapes; //keep the collision shapes, for deletion/cleanup
-	btBroadphaseInterface* m_broadphase;
-	btCollisionDispatcher* m_dispatcher;
-	btConstraintSolver* m_solver;
-	btDefaultCollisionConfiguration* m_collisionConfiguration;
-	btDynamicsWorld* m_dynamicsWorld; //this is the most important class
+	BulletPhysic m_BulletPhysic;
 
-	float  g_fPosX;
-	float  g_fPosY;
-	float  g_fPosZ;
+	std::list<std::shared_ptr<BulletRenderItem>> m_RenderList;
+	std::list<std::shared_ptr<BulletRenderItem>> m_ReUseList;
+
+	int m_MaxBoxCount = 100;
+
+	FCamera m_Camera;
 };
 
 int main()
