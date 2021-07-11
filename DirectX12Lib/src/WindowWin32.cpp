@@ -149,6 +149,7 @@ LRESULT WindowWin32::WindowProc(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lPar
 	{
 		GameInput::SetKeyState(g_MouseMapping[uMsg], EKeyState::Up);
 		GameInput::MouseStop();
+		Game->OnMouseUp(wParam, GET_X_LPARAM(lParam), GET_Y_LPARAM(lParam));
 		ReleaseCapture();
 		break;
 	}
@@ -156,6 +157,7 @@ LRESULT WindowWin32::WindowProc(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lPar
 	case WM_MOUSEMOVE:
 	{
 		GameInput::MouseMove(GET_X_LPARAM(lParam), GET_Y_LPARAM(lParam));
+		Game->OnMouseMove(wParam, GET_X_LPARAM(lParam), GET_Y_LPARAM(lParam));
 		break;
 	}
 
