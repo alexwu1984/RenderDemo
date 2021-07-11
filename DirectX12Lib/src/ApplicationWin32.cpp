@@ -2,13 +2,17 @@
 #include "Game.h"
 #include "D3D12RHI.h"
 #include "Timer.h"
+#include "ImguiManager.h"
+#include "GameInput.h"
 #include <iostream>
 
 
 bool ApplicationWin32::Initialize(FGame* game)
 {
+	GameInput::Initialize();
 	WindowWin32::Get().Initialize(game);
 	D3D12RHI::Get().Initialize();
+	ImguiManager::Get().Initialize();
 	return true;
 }
 
@@ -16,6 +20,7 @@ void ApplicationWin32::Terminate()
 {
 	D3D12RHI::Get().Destroy();
 	WindowWin32::Get().Destroy();
+	ImguiManager::Get().Destroy();
 }
 
 ApplicationWin32& ApplicationWin32::ApplicationWin32::Get()
@@ -52,4 +57,14 @@ void ApplicationWin32::Run(FGame* game)
 	game->OnShutdown();
 
 	this->Terminate();
+}
+
+void ApplicationWin32::SetCurrentWorkPath(const std::wstring& WorkPath)
+{
+	m_WorkPath = WorkPath;
+}
+
+std::wstring ApplicationWin32::GetCurrentWorkPath() const
+{
+	return m_WorkPath;
 }

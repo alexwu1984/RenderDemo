@@ -21,10 +21,13 @@
 
 #include "BulletPhysics.h"
 #include "BulletRenderItem.h"
+#include "ImguiManager.h"
 
 extern FCommandListManager g_CommandListManager;
 
 extern void ConvertFMatrix(const FMatrix& in, DirectX::XMMATRIX& out);
+
+
 
 class Tutorial3 : public FGame
 {
@@ -44,6 +47,76 @@ public:
 	void OnUpdate()
 	{
 
+	}
+
+	void OnGUI(FCommandContext& CommandContext)
+	{
+
+		static bool ShowConfig = true;
+		if (!ShowConfig)
+			return;
+
+		ImguiManager::Get().NewFrame();
+
+		ImGui::SetNextWindowPos(ImVec2(1, 1));
+		ImGui::SetNextWindowCollapsed(true, ImGuiCond_Once);
+		if (ImGui::Begin("Config", &ShowConfig, ImGuiWindowFlags_AlwaysAutoResize))
+		{
+			//ImGui::ColorEdit3("Clear Color", &m_ClearColor.x);
+			//ImGui::SliderFloat("Exposure", &m_Exposure, 0.f, 10.f, "%.1f");
+
+			ImGui::Separator();
+
+			ImGui::SliderInt("Box Count", &m_MaxBoxCount, 5, 80);
+
+			//ImGui::BeginGroup();
+			//ImGui::Text("Show Mode");
+			//ImGui::Indent(20);
+			//ImGui::RadioButton("Long-Lat View", &m_ShowMode, SM_LongLat);
+			//ImGui::RadioButton("Cube Box", &m_ShowMode, SM_SkyBox);
+			//ImGui::RadioButton("Cube Cross", &m_ShowMode, SM_CubeMapCross);
+			//ImGui::RadioButton("Irradiance", &m_ShowMode, SM_Irradiance);
+			//ImGui::RadioButton("Prefiltered", &m_ShowMode, SM_Prefiltered);
+			//ImGui::RadioButton("SphericalHarmonics", &m_ShowMode, SM_SphericalHarmonics);
+			//ImGui::RadioButton("PreintegratedGF", &m_ShowMode, SM_PreintegratedGF);
+			//ImGui::RadioButton("PBR Mesh", &m_ShowMode, SM_PBR);
+			//ImGui::EndGroup();
+
+			//if (m_ShowMode == SM_CubeMapCross)
+			//{
+			//	ImGui::SliderInt("Mip Level", &m_MipLevel, 0, m_CubeBuffer.GetNumMips() - 1);
+			//}
+			//else if (m_ShowMode == SM_Prefiltered)
+			//{
+			//	ImGui::SliderInt("Mip Level", &m_MipLevel, 0, m_PrefilteredCube.GetNumMips() - 1);
+			//}
+			//else if (m_ShowMode == SM_SphericalHarmonics)
+			//{
+			//	ImGui::SliderInt("SH Degree", &m_SHDegree, 1, 4);
+			//}
+			//else if (m_ShowMode == SM_PBR)
+			//{
+			//	ImGui::Checkbox("StaticSceneTAA", &m_bStaticSceneTAA);
+
+			//	TemporalEffects::g_EnableTAA = m_bStaticSceneTAA;
+
+			//	ImGui::Checkbox("SHDiffuse", &m_bSHDiffuse);
+			//	ImGui::Checkbox("Rotate Mesh", &m_RotateMesh);
+			//	ImGui::SameLine();
+			//	ImGui::Text("%.3f", m_RotateY);
+			//}
+
+			ImGui::Separator();
+
+			//static bool ShowDemo = false;
+			//ImGui::Checkbox("Show Demo", &ShowDemo);
+			//if (ShowDemo)
+			//	ImGui::ShowDemoWindow(&ShowDemo);
+
+		}
+		ImGui::End();
+
+		ImguiManager::Get().Render(CommandContext, RenderWindow::Get());
 	}
 
 	virtual void OnShutdown()
@@ -150,6 +223,7 @@ private:
 		CommandContext.SetRenderTargets(1, &BackBuffer.GetRTV(), DepthBuffer.GetDSV());
 
 		// Record commands.
+		BackBuffer.SetClearColor(m_ClearColor);
 		CommandContext.ClearColor(BackBuffer);
 		CommandContext.ClearDepth(DepthBuffer);
 		CommandContext.SetPrimitiveTopology(D3D_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
@@ -167,6 +241,8 @@ private:
 			CommandContext.SetDynamicDescriptor(item->CBVRootIndex, 0, wapper.BasePassCpuHandle);
 			item->Geo.Draw(CommandContext);
 		}
+
+		OnGUI(CommandContext);
 
 		CommandContext.TransitionResource(BackBuffer, D3D12_RESOURCE_STATE_PRESENT, true);
 	}
@@ -193,10 +269,14 @@ private:
 		while (!m_ReUseList.empty())
 		{
 			auto item = m_ReUseList.front();
-			item->IsDelete = false;
-			item->RunState = BulletRenderItem::UnKnown;
-			m_BulletPhysic.CreateDynamicObject(item.get());
-			m_RenderList.push_back(item);
+			if (m_RenderList.size() < m_MaxBoxCount)
+			{
+				item->IsDelete = false;
+				item->RunState = BulletRenderItem::UnKnown;
+				m_BulletPhysic.CreateDynamicObject(item.get());
+				m_RenderList.push_back(item);
+			}
+
 			m_ReUseList.pop_front();
 		}
 
@@ -250,13 +330,15 @@ private:
 	std::list<std::shared_ptr<BulletRenderItem>> m_RenderList;
 	std::list<std::shared_ptr<BulletRenderItem>> m_ReUseList;
 
-	int m_MaxBoxCount = 100;
+	int m_MaxBoxCount = 60;
 
 	FCamera m_Camera;
+	Vector3f m_ClearColor = Vector3f(0.2);
 };
 
 int main()
 {
+	ApplicationWin32::Get().SetCurrentWorkPath(L"../../");
 	GameDesc Desc;
 	Desc.Caption = L"Tutorial 3 - Draw Cube";
 	Tutorial3 tutorial(Desc);

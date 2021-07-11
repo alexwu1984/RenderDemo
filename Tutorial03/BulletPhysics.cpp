@@ -105,6 +105,7 @@ void BulletPhysic::CreateDynamicObject(BulletRenderItem* item)
 	//设置摩擦系数
 	ballBody->setFriction(1.0f);
 	ballBody->setRestitution(Restitution);
+	ballBody->applyForce(btVector3(20, 20, 20), btVector3(0, 0, 0));
 
 	//将该刚体添加到物理世界里
 	m_dynamicsWorld->addRigidBody(ballBody);

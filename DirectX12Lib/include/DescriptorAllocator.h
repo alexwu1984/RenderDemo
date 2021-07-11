@@ -16,7 +16,7 @@ public:
 	static void DestroyAll();
 
 protected:
-	static const uint32_t sm_NumDescriptorsPerHeap = 256;
+	static const uint32_t sm_NumDescriptorsPerHeap = 1024;
 	static std::vector<ComPtr<ID3D12DescriptorHeap> > sm_DescriptorPool;
 	static ID3D12DescriptorHeap* RequestNewHeap(D3D12_DESCRIPTOR_HEAP_TYPE Type);
  

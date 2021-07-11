@@ -35,22 +35,22 @@ FDescriptorAllocator g_DescriptorAllocator[D3D12_DESCRIPTOR_HEAP_TYPE_NUM_TYPES]
 
 void D3D12RHI::EnableDebugLayer()
 {
-#ifdef _DEBUG
-	ComPtr<ID3D12Debug> debugInterface;
-	ComPtr<ID3D12Debug1> debugController1;
-	ThrowIfFailed(D3D12GetDebugInterface(IID_PPV_ARGS(&debugInterface)));
-	ThrowIfFailed(debugInterface.As(&debugController1));
-	debugController1->EnableDebugLayer();
-	debugController1->SetEnableGPUBasedValidation(true);
-#endif
+//#ifdef _DEBUG
+//	ComPtr<ID3D12Debug> debugInterface;
+//	ComPtr<ID3D12Debug1> debugController1;
+//	ThrowIfFailed(D3D12GetDebugInterface(IID_PPV_ARGS(&debugInterface)));
+//	ThrowIfFailed(debugInterface.As(&debugController1));
+//	debugController1->EnableDebugLayer();
+//	debugController1->SetEnableGPUBasedValidation(true);
+//#endif
 }
 
 ComPtr<IDXGIFactory4> D3D12RHI::CreateDXGIFactory()
 {
 	UINT dxgiFactoryFlags = 0;
-#ifdef _DEBUG
-	dxgiFactoryFlags |= DXGI_CREATE_FACTORY_DEBUG;
-#endif
+//#ifdef _DEBUG
+//	dxgiFactoryFlags |= DXGI_CREATE_FACTORY_DEBUG;
+//#endif
 
 	ComPtr<IDXGIFactory4> dxgiFactory;
 	ThrowIfFailed(CreateDXGIFactory2(dxgiFactoryFlags, IID_PPV_ARGS(&dxgiFactory)));
@@ -98,15 +98,15 @@ ComPtr<ID3D12Device> D3D12RHI::CreateDevice(ComPtr<IDXGIAdapter1> adapter)
 	ComPtr<ID3D12Device> device;
 	ThrowIfFailed(D3D12CreateDevice(adapter.Get(), D3D_FEATURE_LEVEL_12_0, IID_PPV_ARGS(&device)));
 	device->SetName(L"D3D12 RHI Device");
-#ifdef _DEBUG
-	ComPtr<ID3D12InfoQueue> InfoQueue;
-	if (SUCCEEDED(device.As(&InfoQueue)))
-	{
-		InfoQueue->SetBreakOnSeverity(D3D12_MESSAGE_SEVERITY_CORRUPTION, TRUE);
-		InfoQueue->SetBreakOnSeverity(D3D12_MESSAGE_SEVERITY_ERROR, TRUE);
-		InfoQueue->SetBreakOnSeverity(D3D12_MESSAGE_SEVERITY_WARNING, TRUE);
-	}
-#endif
+//#ifdef _DEBUG
+//	ComPtr<ID3D12InfoQueue> InfoQueue;
+//	if (SUCCEEDED(device.As(&InfoQueue)))
+//	{
+//		InfoQueue->SetBreakOnSeverity(D3D12_MESSAGE_SEVERITY_CORRUPTION, TRUE);
+//		InfoQueue->SetBreakOnSeverity(D3D12_MESSAGE_SEVERITY_ERROR, TRUE);
+//		InfoQueue->SetBreakOnSeverity(D3D12_MESSAGE_SEVERITY_WARNING, TRUE);
+//	}
+//#endif
 	return device;
 }
 
