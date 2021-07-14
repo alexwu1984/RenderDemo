@@ -66,4 +66,18 @@ target_link_libraries(Tutorial09 LINK_PUBLIC DirectX12Lib ../ThirdParty/Assimp/l
 set_target_properties(Tutorial09 PROPERTIES
 	PROJECT_LABEL "Tutorial09 - Approximating Dynamic Global Illumination in Image Space")
 	
+add_executable(Tutorial10 Tutorial10/tutorial10.cpp 
+						  Tutorial10/gbufferrenderpass.cpp
+						  Tutorial10/gbufferrenderpass.h
+						  Tutorial10/screenquadrenderpass.cpp
+						  Tutorial10/screenquadrenderpass.h
+						  Tutorial10/hbaopass.cpp
+						  Tutorial10/hbaopass.h
+						  Tutorial10/samplepostprocesspass.cpp
+						  Tutorial10/samplepostprocesspass.h
+)
+target_link_libraries(Tutorial10 LINK_PUBLIC DirectX12Lib ../ThirdParty/Assimp/lib/x64/assimp-vc140-mt)
+set_target_properties(Tutorial10 PROPERTIES
+	PROJECT_LABEL "Tutorial10 - Image Space Horizon Based Ambient Occlusion")
+	
 add_subdirectory(SHSampler)
