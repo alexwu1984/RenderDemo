@@ -9,6 +9,12 @@ struct ModelViewProjection
     int3 pad;
 };
 
+struct ProjectInfo
+{
+    float fNear;
+    float fFar;
+};
+
 struct VertexIN
 {
     float3 inPos : POSITION;
@@ -33,16 +39,15 @@ struct PixelOutput
 
 
 ConstantBuffer<ModelViewProjection> BasePass : register(b0);
+ConstantBuffer<ProjectInfo> Project : register(b1);
 Texture2D DiffuseTexture : register(t0);
 SamplerState LinearSampler : register(s0);
 
-#define g_Near  0.1
-#define g_Far 1000.0f
 
 float LinearizeDepth(float vDepth)
 {
     float z = vDepth * 2.0 - 1.0; 
-    return (-g_Near*g_Far) / (z * (g_Far - g_Near)-g_Far);    
+    return (-Project.fNear * Project.fFar) / (z * (Project.fFar - Project.fNear) - Project.fFar);
 }
 
 VertexOutput vs_main(VertexIN IN)
