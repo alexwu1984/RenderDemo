@@ -54,7 +54,7 @@ public:
 		DiffiusePassList.push_back(ActorItem);
 
 		m_GBufferRenderPass.Init(DiffiusePassList, L"../Resources/Shaders/Tutorial10/GBuffer.hlsl",m_GameDesc.Width, m_GameDesc.Height);
-		m_ScreenQuadRenderPass.Init(L"../Resources/Shaders/SCreenQuad.hlsl", m_GameDesc.Width, m_GameDesc.Height);
+		m_ScreenQuadRenderPass.Init(L"../Resources/Shaders/Tutorial10/SCreenQuad.hlsl", m_GameDesc.Width, m_GameDesc.Height);
 		m_HBAOPass.Init(m_GameDesc.Width, m_GameDesc.Height);
 		m_HBAOBlurPass.Init( L"../Resources/Shaders/Tutorial10/HBAOBlurPass.hlsl", m_GameDesc.Width, m_GameDesc.Height);
 	}
@@ -70,7 +70,7 @@ public:
 		m_GBufferRenderPass.Render(CommandContext);
 		
 		//º∆À„AO
-		m_HBAOPass.Render(CommandContext, m_GBufferRenderPass.GetPositionBuffer(), m_GBufferRenderPass.GetNormalBuffer());
+		m_HBAOPass.Render(CommandContext, m_GBufferRenderPass.GetDepthBuffer());
 		m_HBAOBlurPass.Render(CommandContext, [this](FCommandContext& CommandContext) {
 			CommandContext.TransitionResource(m_HBAOPass.GetAOBuffer(), D3D12_RESOURCE_STATE_PIXEL_SHADER_RESOURCE);
 			CommandContext.SetDynamicDescriptor(m_HBAOBlurPass.GetSRVRootIndex(), 0, m_HBAOPass.GetAOBuffer().GetSRV());
@@ -84,8 +84,10 @@ public:
 
 		m_ScreenQuadRenderPass.Render(CommandContext, [this](FCommandContext& CommandContext) {
 			CommandContext.TransitionResource(m_HBAOBlurPass.GetResult(), D3D12_RESOURCE_STATE_PIXEL_SHADER_RESOURCE);
+			CommandContext.TransitionResource(m_GBufferRenderPass.GetAlbedoBuffer(), D3D12_RESOURCE_STATE_PIXEL_SHADER_RESOURCE);
 
 			CommandContext.SetDynamicDescriptor(0, 0, m_HBAOBlurPass.GetResult().GetSRV());
+			CommandContext.SetDynamicDescriptor(1, 0, m_GBufferRenderPass.GetAlbedoBuffer().GetSRV());
 			},
 			[this](FCommandContext& CommandContext) {
 

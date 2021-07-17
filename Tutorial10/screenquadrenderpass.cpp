@@ -59,10 +59,9 @@ void ScreenQuadRenderPass::Render(FCommandContext& CommandContext, const std::fu
 void ScreenQuadRenderPass::SetupRootSignature()
 {
 	FSamplerDesc DefaultSamplerDesc;
-	m_ScreenQuadSignature.Reset(3, 1);
+	m_ScreenQuadSignature.Reset(2, 1);
 	m_ScreenQuadSignature[0].InitAsDescriptorRange(D3D12_DESCRIPTOR_RANGE_TYPE_SRV, 0, 1, D3D12_SHADER_VISIBILITY_PIXEL);
 	m_ScreenQuadSignature[1].InitAsDescriptorRange(D3D12_DESCRIPTOR_RANGE_TYPE_SRV, 1, 1, D3D12_SHADER_VISIBILITY_PIXEL);
-	m_ScreenQuadSignature[2].InitAsDescriptorRange(D3D12_DESCRIPTOR_RANGE_TYPE_SRV, 2, 1, D3D12_SHADER_VISIBILITY_PIXEL);
 	m_ScreenQuadSignature.InitStaticSampler(0, DefaultSamplerDesc, D3D12_SHADER_VISIBILITY_PIXEL);
 	m_ScreenQuadSignature.Finalize(L"ScreenQuadSignature", D3D12_ROOT_SIGNATURE_FLAG_ALLOW_INPUT_ASSEMBLER_INPUT_LAYOUT);
 }

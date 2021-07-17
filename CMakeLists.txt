@@ -6,9 +6,12 @@ if(WIN32)
 	add_compile_definitions(_UNICODE UNICODE)
 endif()
 
+include_directories(${PROJECT_SOURCE_DIR}/ThirdParty)
+
 add_subdirectory(DirectX12Lib)
 add_subdirectory(ThirdParty/DirectXTex)
 add_subdirectory(ThirdParty/BULLET)
+add_subdirectory(ThirdParty/glm)
 add_compile_options("/std:c++17")
 
 add_executable(Tutorial01 Tutorial01/tutorial1.cpp)
@@ -76,7 +79,9 @@ add_executable(Tutorial10 Tutorial10/tutorial10.cpp
 						  Tutorial10/samplepostprocesspass.cpp
 						  Tutorial10/samplepostprocesspass.h
 )
-target_link_libraries(Tutorial10 LINK_PUBLIC DirectX12Lib ../ThirdParty/Assimp/lib/x64/assimp-vc140-mt)
+target_link_libraries(Tutorial10 LINK_PUBLIC DirectX12Lib 
+                      glm_static
+                      ../ThirdParty/Assimp/lib/x64/assimp-vc140-mt)
 set_target_properties(Tutorial10 PROPERTIES
 	PROJECT_LABEL "Tutorial10 - Image Space Horizon Based Ambient Occlusion")
 	
