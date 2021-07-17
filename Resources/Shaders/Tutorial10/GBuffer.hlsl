@@ -43,17 +43,6 @@ ConstantBuffer<ProjectInfo> Project : register(b1);
 Texture2D DiffuseTexture : register(t0);
 SamplerState LinearSampler : register(s0);
 
-
-float LinearizeDepth(float vDepth)
-{
-    //float z = vDepth * 2.0 - 1.0; 
-    //return (-Project.fNear * Project.fFar) / (z * (Project.fFar - Project.fNear) - Project.fFar);
-    
-    float d = vDepth * 2.0 - 1.0;
-	 //视线坐标系看向的z轴负方向，因此要求视觉空间的z值应该要把线性深度变成负值
-    return (2.0 * Project.fNear * Project.fFar) / (Project.fFar + Project.fNear - d * (Project.fFar - Project.fNear));
-}
-
 VertexOutput vs_main(VertexIN IN)
 {
 	VertexOutput OUT;
