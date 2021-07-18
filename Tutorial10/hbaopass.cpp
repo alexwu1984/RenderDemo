@@ -102,15 +102,26 @@ void HBAOPass::SetupPipelineState()
 
 std::vector<Vector4f> HBAOPass::GenerateNoise()
 {
+	//std::vector<Vector4f> ssaoNoise;
+	//ssaoNoise.resize(16);
+	//for (unsigned int i = 0; i < 16; i++)
+	//{
+	//	glm::vec2 xy = glm::circularRand(1.0f);
+	//	float z = glm::linearRand(0.0f, 1.0f);
+	//	float w = glm::linearRand(0.0f, 1.0f);
+
+	//	Vector4f noise(xy[0], xy[1],z,w);
+	//	ssaoNoise[i] = std::move(noise);
+	//}
+	//return std::move(ssaoNoise);
+
+	std::uniform_real_distribution<float> RandomFloats(0.0, 1.0); // Ëæ»ú¸¡µãÊý£¬·¶Î§0.0 - 1.0
+	std::default_random_engine generator;
 	std::vector<Vector4f> ssaoNoise;
 	ssaoNoise.resize(16);
 	for (unsigned int i = 0; i < 16; i++)
 	{
-		glm::vec2 xy = glm::circularRand(1.0f);
-		float z = glm::linearRand(0.0f, 1.0f);
-		float w = glm::linearRand(0.0f, 1.0f);
-
-		Vector4f noise(xy[0], xy[1],z,w);
+		Vector4f noise(RandomFloats(generator), RandomFloats(generator), RandomFloats(generator), RandomFloats(generator)); // rotate around z-axis (in tangent space)
 		ssaoNoise[i] = std::move(noise);
 	}
 	return std::move(ssaoNoise);

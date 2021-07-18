@@ -36,7 +36,7 @@ private:
 	{
 		float Near=0.1;
 		float Far=100.f;
-		float fov = 45;
+		float fov = MATH_PI / 4;
 		float pad;
 		Vector2f FocalLen;
 		float AOStrength = 1.9;

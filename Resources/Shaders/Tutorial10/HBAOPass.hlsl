@@ -42,12 +42,16 @@ float ViewSpaceZFromDepth(float d)
     float z = d * 2.0 - 1.0;
     //视线坐标系看向的z轴负方向，因此要求视觉空间的z值应该要把线性深度变成负值
     return -(-HBAOPass.Near * HBAOPass.Far) / (z * (HBAOPass.Far - HBAOPass.Near) - HBAOPass.Far);
+    
+  //  d = d * 2.0 - 1.0;
+	 ////视线坐标系看向的z轴负方向，因此要求视觉空间的z值应该要把线性深度变成负值
+  //  return -(2.0 * HBAOPass.Near * HBAOPass.Far) / (HBAOPass.Far + HBAOPass.Near - d * (HBAOPass.Far - HBAOPass.Near));
 }
 
 float3 UVToViewSpace(float2 uv, float z)
 {
     uv = uv * 2.0 - 1.0;
-    uv.x = uv.x * tan(HBAOPass.fov / 2.0) * HBAOPass.WindowHeight / HBAOPass.WindowHeight * z;
+    uv.x = uv.x * tan(HBAOPass.fov / 2.0) * HBAOPass.WindowWidth / HBAOPass.WindowHeight * z;
     uv.y = uv.y * tan(HBAOPass.fov / 2.0) * z;
     return float3(-uv, z);
 }
@@ -122,7 +126,6 @@ float HorizonOcclusion(float2 TexCoord,
     float tanS;
     float d2;
     float3 S;
-    numSamples = min(numSamples, 10);
     [loop]
     for (float s = 1; s <= numSamples; ++s)
     {
@@ -138,6 +141,7 @@ float HorizonOcclusion(float2 TexCoord,
             sinH = sinS;
         }
     }
+	
     return ao;
 }
 
@@ -147,10 +151,10 @@ float2 RotateDirections(float2 Dir, float2 CosSin)
                   Dir.x * CosSin.y + Dir.y * CosSin.x);
 }
 
-void ComputeSteps(inout float2 stepSizeUv, inout float numSteps, float rayRadiusPix, float rand, float numSamples)
+void ComputeSteps(inout float2 stepSizeUv, inout float numSteps, float rayRadiusPix, float rand)
 {
-    numSteps = min(numSamples, rayRadiusPix);
-    numSteps = min(numSteps, 10);
+    float NumSamples = 3;
+    numSteps = min(NumSamples, rayRadiusPix);
     float stepSizePix = rayRadiusPix / (numSteps + 1);
 
     float maxNumSteps = HBAOPass.MaxRadiusPixels / stepSizePix;
@@ -161,7 +165,7 @@ void ComputeSteps(inout float2 stepSizeUv, inout float numSteps, float rayRadius
         stepSizePix = HBAOPass.MaxRadiusPixels / numSteps;
     }
 
-    stepSizeUv = stepSizePix * float2(1.0 / HBAOPass.WindowHeight, 1.0 / HBAOPass.WindowHeight);
+    stepSizeUv = stepSizePix * float2(1.0 / HBAOPass.WindowWidth, 1.0 / HBAOPass.WindowHeight);
 }
 
 VertexOutput vs_main(in uint VertID : SV_VertexID)
@@ -177,7 +181,7 @@ VertexOutput vs_main(in uint VertID : SV_VertexID)
 float4 ps_main(VertexOutput pin) : SV_Target
 {
     float2 NoiseScale = float2(HBAOPass.WindowWidth / 4.0f, HBAOPass.WindowHeight / 4.0f);
-    const float numDirections = 6;
+    const float NumDirections = 24;
     const float PI = 3.14159265;
     
     float3 P, Pr, Pl, Pt, Pb;
@@ -202,17 +206,17 @@ float4 ps_main(VertexOutput pin) : SV_Target
     if (rayRadiusPix > 1.0)
     {
         ao = 0.0;
-        ComputeSteps(stepSizeUV, numSteps, rayRadiusPix, random.z, 3);
-        float alpha = 2.0 * PI / numDirections;
+        ComputeSteps(stepSizeUV, numSteps, rayRadiusPix, random.z);
+        float alpha = 2.0 * PI / NumDirections;
         [loop]
-        for (float d = 0; d < numDirections; ++d)
+        for (float d = 0; d < NumDirections; ++d)
         {
             float theta = alpha * d;
             float2 dir = RotateDirections(float2(cos(theta), sin(theta)), random.xy);
-            float2 deltaUV = dir * stepSizeUV;
+            float2 deltaUV = stepSizeUV * dir;
             ao += HorizonOcclusion(pin.tex, deltaUV, P, dPdu, dPdv, random.z, numSteps);
         }
-        ao = 1.0 - ao / numDirections * HBAOPass.AOStrength;
+        ao = 1.0 - ao / NumDirections * HBAOPass.AOStrength;
     }
     return float4(ao,0,0, 1.0);
 
