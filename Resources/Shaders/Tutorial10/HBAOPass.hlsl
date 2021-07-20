@@ -193,9 +193,9 @@ float4 ps_main(VertexOutput pin) : SV_Target
     float3 dPdu = MinDiff(P, Pr, Pl);
     float3 dPdv = MinDiff(P, Pt, Pb) * (HBAOPass.WindowHeight * 1.0 / HBAOPass.WindowWidth);
     
-    float3 leftDir = min(P - Pl, Pr - P) ? P - Pl : Pb - P; //求出最小的变换量
-    float3 upDir = min(P - Pb, Pt - P) ? P - Pb : Pt - P; //求出最小的变换量
-    float3 normal = normalize(cross(leftDir, upDir));
+    //float3 leftDir = MinDiff(P, Pr, Pl);
+    //float3 upDir = MinDiff(P, Pt, Pb);
+    //float3 normal = normalize(cross(upDir,leftDir));
     
     float3 random = NoiseTexture.Sample(LinearSampler, pin.tex * NoiseScale).rgb;
     float2 rayRadiusUV = 0.5 * HBAOPass.R * HBAOPass.FocalLen / -P.z;
@@ -219,5 +219,5 @@ float4 ps_main(VertexOutput pin) : SV_Target
         ao = 1.0 - ao / NumDirections * HBAOPass.AOStrength;
     }
     return float4(ao,0,0, 1.0);
-
+   // return float4(normal.rgb, 1.0);
 }

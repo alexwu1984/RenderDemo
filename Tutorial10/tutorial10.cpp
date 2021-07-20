@@ -44,19 +44,20 @@ public:
 	{
 		FDirectLightGameMode::OnUpdate();
 
-		m_Camera = FCamera(Vector3f(-25.1728, 12.768, -85.1058), Vector3f(0, 0, 0), Vector3f(0, 1, 0));
-		//m_Camera = FCamera(Vector3f(0.f, 0.f, -5.f), Vector3f(0.f, 0.0f, 0.f), Vector3f(0.f, 1.f, 0.f));
+		//m_Camera = FCamera(Vector3f(-25.1728, 12.768, -85.1058), Vector3f(0, 0, 0), Vector3f(0, 1, 0));
+		m_Camera = FCamera(Vector3f(0.f, 0.f, -5.f), Vector3f(0.f, 0.0f, 0.f), Vector3f(0.f, 1.f, 0.f));
 		std::vector< std::shared_ptr<FRenderItem> > DiffiusePassList;
 
 		std::shared_ptr<FRenderItem> ActorItem = std::make_shared<FRenderItem>();
-		ActorItem->Init(L"../Resources/Models/lost_empire/lost_empire.obj");
-		//ActorItem->Init(L"../Resources/Models/Marry/Marry.obj");
+		//ActorItem->Init(L"../Resources/Models/lost_empire/lost_empire.obj");
+		ActorItem->Init(L"../Resources/Models/Marry/Marry.obj");
 		ActorItem->Model->SetLightDir(m_LightInfo.LightDir);
 		ActorItem->Model->SetLightIntensity(0.5);
 		DiffiusePassList.push_back(ActorItem);
 
 		m_GBufferRenderPass.Init(DiffiusePassList, L"../Resources/Shaders/Tutorial10/GBuffer.hlsl",m_GameDesc.Width, m_GameDesc.Height);
 		m_ScreenQuadRenderPass.Init(L"../Resources/Shaders/Tutorial10/SCreenQuad.hlsl", m_GameDesc.Width, m_GameDesc.Height);
+		//m_ScreenQuadRenderPass.Init(L"../Resources/Shaders/SCreenQuad.hlsl", m_GameDesc.Width, m_GameDesc.Height);
 		m_HBAOPass.Init(m_GameDesc.Width, m_GameDesc.Height);
 		m_HBAOBlurPass.Init( L"../Resources/Shaders/Tutorial10/HBAOBlurPass.hlsl", m_GameDesc.Width, m_GameDesc.Height);
 	}
@@ -94,6 +95,15 @@ public:
 			[this](FCommandContext& CommandContext) {
 
 			});
+
+		//m_ScreenQuadRenderPass.Render(CommandContext, [this](FCommandContext& CommandContext) {
+		//	CommandContext.TransitionResource(m_HBAOPass.GetAOBuffer(), D3D12_RESOURCE_STATE_PIXEL_SHADER_RESOURCE);
+
+		//	CommandContext.SetDynamicDescriptor(0, 0, m_HBAOPass.GetAOBuffer().GetSRV());
+		//	},
+		//	[this](FCommandContext& CommandContext) {
+
+		//	});
 	}
 
 private:

@@ -57,7 +57,7 @@ VertexOutput vs_main(VertexIN IN)
 PixelOutput ps_main(VertexOutput IN)
 {
 	PixelOutput output;
-    output.DiffuseAlbedo = DiffuseTexture.Sample(LinearSampler, IN.tex);;
+    output.DiffuseAlbedo = DiffuseTexture.Sample(LinearSampler, IN.tex);
     output.Normal = float4(IN.normalw, 1.0);
     output.Position = float4(IN.FragPosInViewSpace.xyz, IN.FragPosInViewSpace.z);
     return output;
