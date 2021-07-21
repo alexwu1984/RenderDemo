@@ -1,11 +1,10 @@
-#include "samplepostprocesspass.h"
-#include "Model.h"
+#include "SamplePostProcessPass.h"
 #include "SamplerManager.h"
 #include "CommandContext.h"
 #include "RenderWindow.h"
 #include "RenderPipelineInfo.h"
 #include "StringUnit.h"
-#include "Geometry.h"
+#include "Shader.h"
 
 SamplePostProcessPass::SamplePostProcessPass()
 {

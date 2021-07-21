@@ -42,7 +42,8 @@ set(HEADER_FILES
 	include/Inc.h
 	include/ImguiManager.h
 	include/GameInput.h
-	 )
+	include/SamplePostProcessPass.h
+)
 
 set(SOURCES
 	src/ApplicationWin32.cpp
@@ -81,6 +82,7 @@ set(SOURCES
 	src/AiMeshData.cpp
 	src/ImguiManager.cpp
 	src/GameInput.cpp
+	src/SamplePostProcessPass.cpp
 )
 
 set( IMGUI_HEADERS

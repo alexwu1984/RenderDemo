@@ -60,8 +60,6 @@ add_executable(Tutorial09 Tutorial09/tutorial9.cpp
 						  Tutorial09/screenquadrenderpass.h
 						  Tutorial09/ssaopass.cpp
 						  Tutorial09/ssaopass.h
-						  Tutorial09/samplepostprocesspass.cpp
-						  Tutorial09/samplepostprocesspass.h
 						  Tutorial09/ssdopass.cpp
 						  Tutorial09/ssdopass.h
 )
@@ -72,12 +70,10 @@ set_target_properties(Tutorial09 PROPERTIES
 add_executable(Tutorial10 Tutorial10/tutorial10.cpp 
 						  Tutorial10/gbufferrenderpass.cpp
 						  Tutorial10/gbufferrenderpass.h
-						  Tutorial10/screenquadrenderpass.cpp
-						  Tutorial10/screenquadrenderpass.h
 						  Tutorial10/hbaopass.cpp
 						  Tutorial10/hbaopass.h
-						  Tutorial10/samplepostprocesspass.cpp
-						  Tutorial10/samplepostprocesspass.h
+						  Tutorial10/screenquadrenderpass.cpp
+						  Tutorial10/screenquadrenderpass.h
 )
 target_link_libraries(Tutorial10 LINK_PUBLIC DirectX12Lib 
                       glm_static
@@ -86,3 +82,14 @@ set_target_properties(Tutorial10 PROPERTIES
 	PROJECT_LABEL "Tutorial10 - Image Space Horizon Based Ambient Occlusion")
 	
 add_subdirectory(SHSampler)
+
+add_executable(Tutorial11 Tutorial11/tutorial11.cpp 
+						  Tutorial11/gbufferrenderpass.cpp
+						  Tutorial11/gbufferrenderpass.h
+						  Tutorial11/screenquadrenderpass.cpp
+						  Tutorial11/screenquadrenderpass.h
+)
+target_link_libraries(Tutorial11 LINK_PUBLIC DirectX12Lib 
+                      ../ThirdParty/Assimp/lib/x64/assimp-vc140-mt)
+set_target_properties(Tutorial11 PROPERTIES
+	PROJECT_LABEL "Tutorial11 - Efficient GPU Screen-Space Ray Tracing")
