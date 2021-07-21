@@ -46,9 +46,9 @@ void FModel::Draw(FCommandContext& CommandContext, FRenderItem* renderItem)
 			CommandContext.SetIndexBuffer(SubMeshData.IndexBuffer.IndexBufferView());
 
 			std::shared_ptr<FMaterial> Material = m_AiMeshDataWapper.m_Materials[SubMeshData.MaterialIndex];
-			if (Material->GetTexture().GetResource())
+			if (Material->GetDiffuseTexture().GetResource())
 			{
-				CommandContext.SetDynamicDescriptor(m_textureIndex, 0, Material->GetTexture().GetSRV());				
+				CommandContext.SetDynamicDescriptor(m_textureIndex, 0, Material->GetDiffuseTexture().GetSRV());				
 			}
 
 			if (renderItem)
@@ -69,7 +69,7 @@ void FModel::Draw(FCommandContext& CommandContext, FRenderItem* renderItem)
 
 			if (m_DrawParam)
 			{
-				m_DrawParam(CommandContext, Material->GetTexture().GetResource() ? 1 : 0);
+				m_DrawParam(CommandContext, Material->GetDiffuseTexture().GetResource() ? 1 : 0);
 			}
 
 			CommandContext.DrawIndexed(SubMeshData.IndexCount, 0);
@@ -92,9 +92,9 @@ void FModel::Draw(FCommandContext& CommandContext, FRenderItem* renderItem)
 			size_t MtlIndex = m_MeshDataWapper.m_MeshData->GetSubMaterialIndex(i);
 			std::shared_ptr<FMaterial> Material = m_MeshDataWapper.m_Materials[MtlIndex];
 
-			if (Material->GetTexture().GetResource())
+			if (Material->GetDiffuseTexture().GetResource())
 			{
-				CommandContext.SetDynamicDescriptor(m_textureIndex, 0, Material->GetTexture().GetSRV());
+				CommandContext.SetDynamicDescriptor(m_textureIndex, 0, Material->GetDiffuseTexture().GetSRV());
 			}
 
 			if (renderItem)
@@ -114,7 +114,7 @@ void FModel::Draw(FCommandContext& CommandContext, FRenderItem* renderItem)
 
 			if (m_DrawParam)
 			{
-				m_DrawParam(CommandContext, Material->GetTexture().GetResource() ? 1 : 0);
+				m_DrawParam(CommandContext, Material->GetDiffuseTexture().GetResource() ? 1 : 0);
 			}
 
 			CommandContext.DrawIndexed((UINT)m_MeshDataWapper.m_MeshData->GetSubIndexCount(i), (UINT)m_MeshDataWapper.m_MeshData->GetSubIndexStart(i));
@@ -210,7 +210,27 @@ void FModel::InitializeResource()
 			auto MtlData = m_AiMeshDataWapper.m_MeshData->GetMaterialData(MatItem.first);
 			if (!MtlData.DiffuseTexPath.empty())
 			{
-				material->LoadTexture(MtlData.DiffuseTexPath);
+				material->LoadDiffuseTexture(MtlData.DiffuseTexPath);
+			}
+			if (!MtlData.NormalTexPath.empty())
+			{
+				material->LoadNormalTexture(MtlData.NormalTexPath);
+			}
+			if (!MtlData.SpecularTexPath.empty())
+			{
+				material->LoadSpecularTexture(MtlData.SpecularTexPath);
+			}
+			if (!MtlData.EmissiveTexPath.empty())
+			{
+				material->LoadEmissiveTexture(MtlData.EmissiveTexPath);
+			}
+			if (!MtlData.AmbientTexPath.empty())
+			{
+				material->LoadAmbientTexture(MtlData.AmbientTexPath);
+			}
+			if (!MtlData.AlphaTexPath.empty())
+			{
+				material->LoadAlphaTexture(MtlData.AlphaTexPath);
 			}
 			material->SetColor(MtlData.Kd, MtlData.Ks);
 			m_AiMeshDataWapper.m_Materials.insert({ MatItem.first,material });
@@ -242,7 +262,7 @@ void FModel::InitializeResource()
 			MaterialData MtlData = m_MeshDataWapper.m_MeshData->GetMaterialData(i);
 			if (!MtlData.BaseColorPath.empty())
 			{
-				material->LoadTexture(MtlData.BaseColorPath);
+				material->LoadDiffuseTexture(MtlData.BaseColorPath);
 			}
 			material->SetColor(MtlData.Kd, MtlData.Ks);
 			m_MeshDataWapper.m_Materials.push_back(material);
@@ -299,7 +319,7 @@ void FModel::InitializeResource()
 			 if (it != m_AiMeshDataWapper.m_Materials.end())
 			 {
 				 std::shared_ptr<FMaterial> material = it->second;
-				 if (material->GetTexture().GetResource())
+				 if (material->GetDiffuseTexture().GetResource())
 				 {
 					 return true;
 				 }
@@ -314,7 +334,7 @@ void FModel::InitializeResource()
 			 size_t MtlIndex = m_MeshDataWapper.m_MeshData->GetSubMaterialIndex(i);
 			 std::shared_ptr<FMaterial> material = m_MeshDataWapper.m_Materials[MtlIndex];
 
-			 if (material->GetTexture().GetResource())
+			 if (material->GetDiffuseTexture().GetResource())
 			 {
 				 return true;
 			 }
@@ -342,7 +362,7 @@ void FModel::InitializeResource()
 		 std::shared_ptr<FMaterial> Material = Model->m_AiMeshDataWapper.m_Materials[SubMeshData.MaterialIndex];
 
 		 std::shared_ptr< BasePassInfoWrapper> InfoWrapper = std::make_shared<BasePassInfoWrapper>();
-		 InfoWrapper->BasePassInfo.mUseTex = Material->GetTexture().GetResource() ? 1 : 0;
+		 InfoWrapper->BasePassInfo.mUseTex = Material->GetDiffuseTexture().GetResource() ? 1 : 0;
 		 InfoWrapper->BasePassConstBuf.CreateUpload(L"BasePassInfo", sizeof(InfoWrapper->BasePassInfo));
 		 InfoWrapper->BasePassCpuHandle = InfoWrapper->BasePassConstBuf.CreateConstantBufferView(0, sizeof(InfoWrapper->BasePassInfo));
 		 MapBasePassInfos.insert({ SubMeshData.MaterialIndex,InfoWrapper });

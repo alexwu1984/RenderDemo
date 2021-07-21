@@ -160,9 +160,27 @@ void FAiMeshData::TraverserNodes(const aiScene* scene)
 		aiMaterial* pAiMat = scene->mMaterials[SubMeshData.MaterialIndex];
 		FMaterialData& MaterialData = m_Materials[SubMeshData.MaterialIndex];
 
+		//test
+		//for (int32_t typeIndex = aiTextureType_DIFFUSE; typeIndex < aiTextureType_UNKNOWN; ++typeIndex)
+		//{
+		//	aiTextureType type = (aiTextureType)typeIndex;
+		//	int32_t TextureCount = pAiMat->GetTextureCount(type);
+		//	for (int32_t i = 0; i < TextureCount; ++i)
+		//	{
+		//		aiString Str;
+		//		pAiMat->GetTexture(type, i, &Str);
+		//		std::wstring TextureName = core::u8_ucs2(Str.C_Str(), Str.length);
+		//		TextureName = m_Directory + L"/" + TextureName;
+		//	}
+
+		//}
+
 		LoadTextureFromMaterial(aiTextureType_DIFFUSE, pAiMat, MaterialData.DiffuseTexPath);
-		LoadTextureFromMaterial(aiTextureType_NORMALS, pAiMat, MaterialData.NormalTexPath);
-		LoadTextureFromMaterial(aiTextureType_SPECULAR, pAiMat, MaterialData.SpecularTexPath);
+		LoadTextureFromMaterial(aiTextureType_HEIGHT, pAiMat, MaterialData.NormalTexPath);
+		LoadTextureFromMaterial(aiTextureType_SHININESS, pAiMat, MaterialData.SpecularTexPath);
+		LoadTextureFromMaterial(aiTextureType_EMISSIVE, pAiMat, MaterialData.EmissiveTexPath);
+		LoadTextureFromMaterial(aiTextureType_AMBIENT, pAiMat, MaterialData.AmbientTexPath);
+		LoadTextureFromMaterial(aiTextureType_OPACITY, pAiMat, MaterialData.AlphaTexPath);
 
 		for (int i = 0; i < VET_Max; ++i)
 		{

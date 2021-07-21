@@ -17,7 +17,32 @@ void FMaterial::SetColor(const Vector3f& kd, const Vector3f& ks)
 	m_colorInfo.ks = ks;
 }
 
-void FMaterial::LoadTexture(const std::wstring& file)
+void FMaterial::LoadDiffuseTexture(const std::wstring& file)
 {
-	m_Texture.LoadFromFile(file);
+	m_DiffuseTex.LoadFromFile(file);
+}
+
+void FMaterial::LoadNormalTexture(const std::wstring& file)
+{
+	m_NormalTex.LoadFromFile(file);
+}
+
+void FMaterial::LoadSpecularTexture(const std::wstring& file)
+{
+	m_SpecularTex.LoadFromFile(file);
+}
+
+void FMaterial::LoadEmissiveTexture(const std::wstring& file)
+{
+	m_EmissiveTex.LoadFromFile(file);
+}
+
+void FMaterial::LoadAmbientTexture(const std::wstring& file)
+{
+	m_AmbientTex.LoadFromFile(file);
+}
+
+void FMaterial::LoadAlphaTexture(const std::wstring& file)
+{
+	m_AlphaTex.LoadFromFile(file);
 }

@@ -41,6 +41,9 @@ struct FMaterialData
 	std::wstring DiffuseTexPath;
 	std::wstring SpecularTexPath;
 	std::wstring NormalTexPath;
+	std::wstring EmissiveTexPath;
+	std::wstring AmbientTexPath;
+	std::wstring AlphaTexPath;
 	//ambient color
 	Vector3f Ka;
 	// Diffuse Color
