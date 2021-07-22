@@ -4,18 +4,17 @@
 #include "MathLib.h"
 #include "ColorBuffer.h"
 #include "DepthBuffer.h"
-#include "GpuBuffer.h"
 
 struct FRenderItem;
 class FCommandContext;
 class RenderPipelineInfo;
 class FCamera;
 
-class GBufferRenderPass
+class ScreenSpaceRayTracingPass
 {
 public:
-	GBufferRenderPass();
-	~GBufferRenderPass();
+	ScreenSpaceRayTracingPass();
+	~ScreenSpaceRayTracingPass();
 
 	void Init(const std::vector < std::shared_ptr<FRenderItem>>& ItemList, const std::wstring& ShaderFile, int Width, int Height);
 	void Render(FCommandContext& CommandContext);
@@ -40,13 +39,4 @@ private:
 	FColorBuffer m_PositionBuffer;
 	FDepthBuffer m_DepthBuffer;
 	Vector2<int> m_GameWndSize;
-
-	struct ProjectInfo
-	{
-		float fNear = 0.1;
-		float fFar = 100;
-	};
-	ProjectInfo m_ProjectInfo;
-	FConstBuffer m_CBProjectInfo;
-	D3D12_CPU_DESCRIPTOR_HANDLE m_CBProjectInfoCpuHandle;
 };

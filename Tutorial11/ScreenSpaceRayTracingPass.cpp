@@ -1,4 +1,4 @@
-#include "gbufferrenderpass.h"
+#include "ScreenSpaceRayTracingPass.h"
 #include "Model.h"
 #include "SamplerManager.h"
 #include "CommandContext.h"
@@ -7,17 +7,17 @@
 #include "Camera.h"
 #include "StringUnit.h"
 
-GBufferRenderPass::GBufferRenderPass()
+ScreenSpaceRayTracingPass::ScreenSpaceRayTracingPass()
 {
 
 }
 
-GBufferRenderPass::~GBufferRenderPass()
+ScreenSpaceRayTracingPass::~ScreenSpaceRayTracingPass()
 {
 
 }
 
-void GBufferRenderPass::Init(const std::vector < std::shared_ptr<FRenderItem>>& ItemList, const std::wstring& ShaderFile, int Width, int Height)
+void ScreenSpaceRayTracingPass::Init(const std::vector < std::shared_ptr<FRenderItem>>& ItemList, const std::wstring& ShaderFile, int Width, int Height)
 {
 	m_ItemList = ItemList;
 	m_GameWndSize = { Width,Height };
@@ -25,7 +25,7 @@ void GBufferRenderPass::Init(const std::vector < std::shared_ptr<FRenderItem>>& 
 	SetupPipelineState(ShaderFile);
 }
 
-void GBufferRenderPass::Render(FCommandContext& CommandContext)
+void ScreenSpaceRayTracingPass::Render(FCommandContext& CommandContext)
 {
 	// Set necessary state.
 	CommandContext.SetRootSignature(m_GBufferSignature);
@@ -48,7 +48,6 @@ void GBufferRenderPass::Render(FCommandContext& CommandContext)
 	CommandContext.ClearDepth(m_DepthBuffer);
 	CommandContext.SetPrimitiveTopology(D3D_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
 	CommandContext.SetPipelineState(m_GBufferRenderState->GetPipelineState());
-	CommandContext.SetDynamicDescriptor(1, 0, m_CBProjectInfoCpuHandle);
 
 	for (std::shared_ptr<FRenderItem> item : m_ItemList)
 	{
@@ -62,7 +61,7 @@ void GBufferRenderPass::Render(FCommandContext& CommandContext)
 	CommandContext.Flush(false);
 }
 
-void GBufferRenderPass::Update(const Vector3f& LightDir, const FMatrix& View, const FMatrix& Proj, FCamera& MainCamera)
+void ScreenSpaceRayTracingPass::Update(const Vector3f& LightDir, const FMatrix& View, const FMatrix& Proj, FCamera& MainCamera)
 {
 	for (auto Item : m_ItemList)
 	{
@@ -85,7 +84,7 @@ void GBufferRenderPass::Update(const Vector3f& LightDir, const FMatrix& View, co
 	}
 }
 
-void GBufferRenderPass::SetupRootSignature()
+void ScreenSpaceRayTracingPass::SetupRootSignature()
 {
 	FSamplerDesc GBufferSamplerDesc;
 	GBufferSamplerDesc.Filter = D3D12_FILTER_MIN_MAG_MIP_POINT;
@@ -101,9 +100,10 @@ void GBufferRenderPass::SetupRootSignature()
 	m_GBufferSignature.InitStaticSampler(0, GBufferSamplerDesc);
 	m_GBufferSignature.Finalize(L"GBufferSignature", D3D12_ROOT_SIGNATURE_FLAG_ALLOW_INPUT_ASSEMBLER_INPUT_LAYOUT);
 
+
 }
 
-void GBufferRenderPass::SetupPipelineState(const std::wstring& ShaderFile)
+void ScreenSpaceRayTracingPass::SetupPipelineState(const std::wstring& ShaderFile)
 {
 	std::shared_ptr<FShader> shader = FShaderMgr::Get().CreateShader(core::ucs2_u8(ShaderFile), ShaderFile);
 
@@ -126,9 +126,4 @@ void GBufferRenderPass::SetupPipelineState(const std::wstring& ShaderFile)
 	m_NormalBuffer.Create(L"Normal Buffer", m_GameWndSize.x, m_GameWndSize.y, 1, DXGI_FORMAT_R32G32B32A32_FLOAT);
 	m_PositionBuffer.Create(L"Position Buffer", m_GameWndSize.x, m_GameWndSize.y, 1, DXGI_FORMAT_R32G32B32A32_FLOAT);
 	m_DepthBuffer.Create(L"Depth Buffer", m_GameWndSize.x, m_GameWndSize.y, DXGI_FORMAT_D24_UNORM_S8_UINT);
-
-	m_CBProjectInfo.CreateUpload(L"ProjectInfo", sizeof(ProjectInfo));
-	m_CBProjectInfoCpuHandle = m_CBProjectInfo.CreateConstantBufferView(0, sizeof(ProjectInfo));
-
-	memcpy(m_CBProjectInfo.Map(), &m_ProjectInfo, sizeof(m_ProjectInfo));
 }

@@ -48,7 +48,6 @@ void GBufferRenderPass::Render(FCommandContext& CommandContext)
 	CommandContext.ClearDepth(m_DepthBuffer);
 	CommandContext.SetPrimitiveTopology(D3D_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
 	CommandContext.SetPipelineState(m_GBufferRenderState->GetPipelineState());
-	CommandContext.SetDynamicDescriptor(1, 0, m_CBProjectInfoCpuHandle);
 
 	for (std::shared_ptr<FRenderItem> item : m_ItemList)
 	{
@@ -101,6 +100,7 @@ void GBufferRenderPass::SetupRootSignature()
 	m_GBufferSignature.InitStaticSampler(0, GBufferSamplerDesc);
 	m_GBufferSignature.Finalize(L"GBufferSignature", D3D12_ROOT_SIGNATURE_FLAG_ALLOW_INPUT_ASSEMBLER_INPUT_LAYOUT);
 
+
 }
 
 void GBufferRenderPass::SetupPipelineState(const std::wstring& ShaderFile)
@@ -126,9 +126,4 @@ void GBufferRenderPass::SetupPipelineState(const std::wstring& ShaderFile)
 	m_NormalBuffer.Create(L"Normal Buffer", m_GameWndSize.x, m_GameWndSize.y, 1, DXGI_FORMAT_R32G32B32A32_FLOAT);
 	m_PositionBuffer.Create(L"Position Buffer", m_GameWndSize.x, m_GameWndSize.y, 1, DXGI_FORMAT_R32G32B32A32_FLOAT);
 	m_DepthBuffer.Create(L"Depth Buffer", m_GameWndSize.x, m_GameWndSize.y, DXGI_FORMAT_D24_UNORM_S8_UINT);
-
-	m_CBProjectInfo.CreateUpload(L"ProjectInfo", sizeof(ProjectInfo));
-	m_CBProjectInfoCpuHandle = m_CBProjectInfo.CreateConstantBufferView(0, sizeof(ProjectInfo));
-
-	memcpy(m_CBProjectInfo.Map(), &m_ProjectInfo, sizeof(m_ProjectInfo));
 }
