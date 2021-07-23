@@ -54,8 +54,6 @@ set_target_properties(Tutorial08 PROPERTIES
 add_executable(Tutorial09 Tutorial09/tutorial9.cpp 
                           Tutorial09/normalrenderpass.cpp
 						  Tutorial09/normalrenderpass.h
-						  Tutorial09/gbufferrenderpass.cpp
-						  Tutorial09/gbufferrenderpass.h
 						  Tutorial09/screenquadrenderpass.cpp
 						  Tutorial09/screenquadrenderpass.h
 						  Tutorial09/ssaopass.cpp
@@ -68,8 +66,6 @@ set_target_properties(Tutorial09 PROPERTIES
 	PROJECT_LABEL "Tutorial09 - Approximating Dynamic Global Illumination in Image Space")
 	
 add_executable(Tutorial10 Tutorial10/tutorial10.cpp 
-						  Tutorial10/gbufferrenderpass.cpp
-						  Tutorial10/gbufferrenderpass.h
 						  Tutorial10/hbaopass.cpp
 						  Tutorial10/hbaopass.h
 						  Tutorial10/screenquadrenderpass.cpp
@@ -84,10 +80,10 @@ set_target_properties(Tutorial10 PROPERTIES
 add_subdirectory(SHSampler)
 
 add_executable(Tutorial11 Tutorial11/tutorial11.cpp 
-						  Tutorial11/gbufferrenderpass.cpp
-						  Tutorial11/gbufferrenderpass.h
 						  Tutorial11/screenquadrenderpass.cpp
 						  Tutorial11/screenquadrenderpass.h
+						  Tutorial11/ScreenSpaceRayTracingPass.cpp
+						  Tutorial11/ScreenSpaceRayTracingPass.h
 )
 target_link_libraries(Tutorial11 LINK_PUBLIC DirectX12Lib 
                       ../ThirdParty/Assimp/lib/x64/assimp-vc140-mt)
