@@ -43,6 +43,7 @@ set(HEADER_FILES
 	include/ImguiManager.h
 	include/GameInput.h
 	include/SamplePostProcessPass.h
+	include/GBufferRenderPass.h
 )
 
 set(SOURCES
@@ -83,6 +84,7 @@ set(SOURCES
 	src/ImguiManager.cpp
 	src/GameInput.cpp
 	src/SamplePostProcessPass.cpp
+	src/GBufferRenderPass.cpp
 )
 
 set( IMGUI_HEADERS

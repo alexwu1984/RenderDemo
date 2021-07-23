@@ -46,31 +46,39 @@ void FModel::Draw(FCommandContext& CommandContext, FRenderItem* renderItem)
 			CommandContext.SetIndexBuffer(SubMeshData.IndexBuffer.IndexBufferView());
 
 			std::shared_ptr<FMaterial> Material = m_AiMeshDataWapper.m_Materials[SubMeshData.MaterialIndex];
-			if (Material->GetDiffuseTexture().GetResource())
+			if (m_CustomDrawParam)
 			{
-				CommandContext.SetDynamicDescriptor(m_textureIndex, 0, Material->GetDiffuseTexture().GetSRV());				
+				m_CustomDrawParam(CommandContext, Material, renderItem->MapBasePassInfos[SubMeshData.MaterialIndex]);
 			}
-
-			if (renderItem)
+			else
 			{
-				CommandContext.SetDynamicDescriptor(renderItem->CBVRootIndex, 0, renderItem->MapBasePassInfos[SubMeshData.MaterialIndex]->BasePassCpuHandle);
+				if (Material->GetDiffuseTexture().GetResource())
+				{
+					CommandContext.SetDynamicDescriptor(m_textureIndex, 0, Material->GetDiffuseTexture().GetSRV());
+				}
+
+				if (renderItem)
+				{
+					CommandContext.SetDynamicDescriptor(renderItem->CBVRootIndex, 0, renderItem->MapBasePassInfos[SubMeshData.MaterialIndex]->BasePassCpuHandle);
+				}
+
+				if (!m_UseOutsideColor)
+				{
+					auto [kd, ks] = Material->GetColor();
+					m_lightMaterial.uKd = kd;
+					m_lightMaterial.uKs = ks;
+				}
+				memcpy(m_LightMaterialConstBuf.Map(), &m_lightMaterial, sizeof(m_lightMaterial));
+
+				CommandContext.SetDynamicDescriptor(m_lightMaterialIndex, 0, m_LightMaterialCpuHandle);
+
+				if (m_DrawParam)
+				{
+					m_DrawParam(CommandContext, Material->GetDiffuseTexture().GetResource() ? 1 : 0);
+				}
 			}
+			
 
-
-			if (!m_UseOutsideColor)
-			{
-				auto [kd, ks] = Material->GetColor();
-				m_lightMaterial.uKd = kd;
-				m_lightMaterial.uKs = ks;
-			}
-			memcpy(m_LightMaterialConstBuf.Map(), &m_lightMaterial, sizeof(m_lightMaterial));
-
-			CommandContext.SetDynamicDescriptor(m_lightMaterialIndex, 0, m_LightMaterialCpuHandle);
-
-			if (m_DrawParam)
-			{
-				m_DrawParam(CommandContext, Material->GetDiffuseTexture().GetResource() ? 1 : 0);
-			}
 
 			CommandContext.DrawIndexed(SubMeshData.IndexCount, 0);
 		}

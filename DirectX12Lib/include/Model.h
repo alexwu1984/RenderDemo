@@ -10,7 +10,38 @@
 class FCommandContext;
 class RenderPipelineInfo;
 class FMaterial;
-struct FRenderItem;
+
+struct FRenderItem
+{
+	FRenderItem() {}
+	~FRenderItem() {}
+	void Init();
+	void Init(const std::wstring& path);
+
+
+	struct BasePassInfoWrapper
+	{
+		struct
+		{
+			FMatrix projectionMatrix;
+			FMatrix modelMatrix;
+			FMatrix viewMatrix;
+			int mUseTex = 0;
+			Vector3i pad;
+		} BasePassInfo;
+
+		FConstBuffer BasePassConstBuf;
+		D3D12_CPU_DESCRIPTOR_HANDLE BasePassCpuHandle;
+	};
+
+	std::map<int32_t, std::shared_ptr< BasePassInfoWrapper> > MapBasePassInfos;
+
+	int CBVRootIndex = 0;
+
+	std::shared_ptr<class FModel> Model;
+	std::shared_ptr<class FGeometry> Geo;
+	std::shared_ptr<class RenderPipelineInfo> PiplelineInfo;
+};
 
 class FModel
 {
@@ -41,6 +72,8 @@ public:
 	void InitRootIndex(int lightMaterialIndex, int textureIndex);
 	void SetColor(const Vector3f& color);
 	bool HasTexture() const;
+
+	std::function<void(FCommandContext&, std::shared_ptr< FMaterial>,std::shared_ptr<FRenderItem::BasePassInfoWrapper>)> m_CustomDrawParam;
 
 private:
 	void InitializeResource();
@@ -120,34 +153,3 @@ protected:
 	bool m_UseOutsideColor = false;
 };
 
-struct FRenderItem
-{
-	FRenderItem() {}
-	~FRenderItem() {}
-	void Init();
-	void Init(const std::wstring& path);
-
-
-	struct BasePassInfoWrapper
-	{
-		struct
-		{
-			FMatrix projectionMatrix;
-			FMatrix modelMatrix;
-			FMatrix viewMatrix;
-			int mUseTex = 0;
-			Vector3i pad;
-		} BasePassInfo;
-
-		FConstBuffer BasePassConstBuf;
-		D3D12_CPU_DESCRIPTOR_HANDLE BasePassCpuHandle;
-	};
-
-	std::map<int32_t, std::shared_ptr< BasePassInfoWrapper> > MapBasePassInfos;
-
-	int CBVRootIndex = 0;
-
-	std::shared_ptr<FModel> Model;
-	std::shared_ptr<class FGeometry> Geo;
-	std::shared_ptr<class RenderPipelineInfo> PiplelineInfo;
-};

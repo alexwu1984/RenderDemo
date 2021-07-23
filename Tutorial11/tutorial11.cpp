@@ -27,6 +27,7 @@
 #include "gbufferrenderpass.h"
 #include "screenquadrenderpass.h"
 #include "samplepostprocesspass.h"
+#include "ScreenSpaceRayTracingPass.h"
 
 constexpr int32_t RSM_BUFFER_SIZE = 256;
 extern FCommandListManager g_CommandListManager;
@@ -52,8 +53,9 @@ public:
 		ActorItem->Model->SetLightIntensity(0.5);
 		DiffiusePassList.push_back(ActorItem);
 
-		m_GBufferRenderPass.Init(DiffiusePassList, L"../Resources/Shaders/Tutorial10/GBuffer.hlsl",m_GameDesc.Width, m_GameDesc.Height);
+		m_GBufferRenderPass.Init(DiffiusePassList, L"../Resources/Shaders/Tutorial11/GBuffer.hlsl",m_GameDesc.Width, m_GameDesc.Height);
 		m_ScreenQuadRenderPass.Init(L"../Resources/Shaders/SCreenQuad.hlsl", m_GameDesc.Width, m_GameDesc.Height);
+		m_SSRPass.Init(DiffiusePassList,L"../Resources/Shaders/Tutorial11/ScreenSpaceRayTracing.hlsl", m_GameDesc.Width, m_GameDesc.Height);
 	}
 
 	virtual void OnUpdate()
@@ -103,7 +105,7 @@ public:
 private:
 	GBufferRenderPass m_GBufferRenderPass;
 	ScreenQuadRenderPass m_ScreenQuadRenderPass;
-	SamplePostProcessPass m_HBAOBlurPass;
+	ScreenSpaceRayTracingPass m_SSRPass;
 };
 
 int main()
