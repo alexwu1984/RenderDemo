@@ -68,7 +68,7 @@ Result RayMarching(Ray vRay)
     Result result;
     
     float3 Begin = vRay.Origin;
-    float End = vRay.Origin + vRay.Direction * SSRCBInfo.RayLength;
+    float3 End = vRay.Origin + vRay.Direction * SSRCBInfo.RayLength;
     
     float3 V0 = projectToViewSpace(Begin);
     float3 V1 = projectToViewSpace(End);
@@ -85,13 +85,14 @@ Result RayMarching(Ray vRay)
     // NDC space
     float2 P0 = H0.xy * k0;
     float2 P1 = H1.xy * k1;
-    float Size = float2(SSRCBInfo.WindowWidth, SSRCBInfo.WindowHeight);
+    float2 Size = float2(SSRCBInfo.WindowWidth, SSRCBInfo.WindowHeight);
     
     //Screen space
     P0 = (P0 + 1) / 2 * Size;
     P1 = (P0 + 1) / 2 * Size;
     
-    P1 += float2((distanceSquared(P0, P1) < 0.0001) ? 0.01 : 0.0);
+    float distance = (distanceSquared(P0, P1) < 0.0001) ? 0.01 : 0.0;
+    P1 += float2(distance, distance);
     
     float2 Delta = P1 - P0;
     bool Permute = false;
@@ -123,7 +124,7 @@ Result RayMarching(Ray vRay)
     float EndX = P1.x * StepDir;
     float3 Q = Q0;
     float prevZMaxEstimate = V0.z;
-    
+    [loop]
     for (float2 P = P0; Step < MaxStep;Step++,P += dp,Q.z += dQ.z,k+=dk)
     {
         result.UV = Permute ? P.yx : P;
@@ -178,7 +179,7 @@ PixelOutput ps_main(VertexOutput IN)
 {
     PixelOutput output;
     
-    float3 OrginPoint = IN.FragPosInWorldSpace;
+    float3 OrginPoint = IN.FragPosInWorldSpace.xyz;
     float3 ViewDir = normalize(SSRCBInfo.CameraPosInWorldSpace - OrginPoint);
     float3 Normal = float3(0, 1, 0);
     float3 ReflectDir = normalize(reflect(-ViewDir, Normal));
