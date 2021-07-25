@@ -67,7 +67,7 @@ public:
 	void SetCameraPos(const Vector3f& cameraPos);
 	void SetLightMVP(FMatrix modelMatrix,FMatrix viewMatrix,FMatrix projectionMatrix);
 	BoundingBox GetBoundBox() const;
-	void SetDrawParam(const std::function<void(FCommandContext& , bool hasTexture)>& fun);
+	void SetDrawParam(const std::function<void(FCommandContext& , std::shared_ptr<FMaterial>)>& fun);
 	void SetShadowType(int32_t shadowType);
 	void InitRootIndex(int lightMaterialIndex, int textureIndex);
 	void SetColor(const Vector3f& color);
@@ -146,7 +146,7 @@ protected:
 
 	FConstBuffer m_LightMaterialConstBuf;
 	D3D12_CPU_DESCRIPTOR_HANDLE m_LightMaterialCpuHandle;
-	std::function<void(FCommandContext&,bool hasTexture)> m_DrawParam;
+	std::function<void(FCommandContext&, std::shared_ptr<FMaterial>)> m_DrawParam;
 
 	int32_t m_lightMaterialIndex = 1;
 	int32_t m_textureIndex =2;

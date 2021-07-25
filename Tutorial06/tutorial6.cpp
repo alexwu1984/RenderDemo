@@ -30,6 +30,7 @@
 #include "RenderPipelineInfo.h"
 #include "Geometry.h"
 #include "BlurFilter.h"
+#include "Material.h"
 
 constexpr int32_t SHADOW_BUFFER_SIZE = 1024;
 
@@ -275,7 +276,6 @@ private:
 		CommandContext.SetRootSignature(m_RootSignature);
 		CommandContext.SetViewportAndScissor(0, 0, m_GameDesc.Width, m_GameDesc.Height);
 
-
 		RenderWindow& renderWindow = RenderWindow::Get();
 		FColorBuffer& BackBuffer = renderWindow.GetBackBuffer();
 		FDepthBuffer& DepthBuffer = renderWindow.GetDepthBuffer();
@@ -292,9 +292,9 @@ private:
 
 		if (m_Actor)
 		{
-			m_Actor->SetDrawParam([this](FCommandContext& CommandContext,bool hasMaterial)
+			m_Actor->SetDrawParam([this](FCommandContext& CommandContext, std::shared_ptr<FMaterial> Material)
 			{
-					m_uboVS.mUseTex = hasMaterial;
+					m_uboVS.mUseTex = Material->GetDiffuseTexture().GetResource() ? true : false;
 					CommandContext.SetConstantArray(0, sizeof(m_uboVS) / 4, &m_uboVS);
 					if (m_ShadowMode == SM_VSM)
 					{
@@ -313,9 +313,9 @@ private:
 
 		if (m_Floor)
 		{
-			m_Floor->SetDrawParam([this](FCommandContext& CommandContext, bool hasMaterial)
+			m_Floor->SetDrawParam([this](FCommandContext& CommandContext, std::shared_ptr<FMaterial> Material)
 			{
-					m_uboVS.mUseTex = hasMaterial;
+					m_uboVS.mUseTex = Material->GetDiffuseTexture().GetResource() ? true : false;
 					CommandContext.SetConstantArray(0, sizeof(m_uboVS) / 4, &m_uboVS);
 					if (m_ShadowMode == SM_VSM)
 					{
@@ -385,15 +385,11 @@ private:
 		CommandContext.SetPipelineState(m_ShadowMapRenderState->GetPipelineState());
 		CommandContext.SetConstantArray(0, sizeof(m_uboVS) / 4, &m_uboVS);
 
-		m_Actor->SetDrawParam([this](FCommandContext& CommandContext, bool hasMaterial)
-		{
-		});
+		m_Actor->SetDrawParam([this](FCommandContext& , std::shared_ptr<FMaterial>){});
 		m_Actor->SetLightMVP(m_uboVS.modelMatrix, m_uboVS.viewMatrix, m_uboVS.projectionMatrix);
 		m_Actor->Draw(CommandContext);
 
-		m_Floor->SetDrawParam([this](FCommandContext& CommandContext, bool hasMaterial)
-			{
-			});
+		m_Floor->SetDrawParam([this](FCommandContext& , std::shared_ptr<FMaterial>){});
 		m_Floor->SetLightMVP(m_uboVS.modelMatrix, m_uboVS.viewMatrix, m_uboVS.projectionMatrix);
 		m_Floor->Draw(CommandContext);
 

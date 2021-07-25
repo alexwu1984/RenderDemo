@@ -72,10 +72,10 @@ void FModel::Draw(FCommandContext& CommandContext, FRenderItem* renderItem)
 
 				CommandContext.SetDynamicDescriptor(m_lightMaterialIndex, 0, m_LightMaterialCpuHandle);
 
-				if (m_DrawParam)
-				{
-					m_DrawParam(CommandContext, Material->GetDiffuseTexture().GetResource() ? 1 : 0);
-				}
+			if (m_DrawParam)
+			{
+				m_DrawParam(CommandContext, Material);
+
 			}
 			
 
@@ -122,7 +122,7 @@ void FModel::Draw(FCommandContext& CommandContext, FRenderItem* renderItem)
 
 			if (m_DrawParam)
 			{
-				m_DrawParam(CommandContext, Material->GetDiffuseTexture().GetResource() ? 1 : 0);
+				m_DrawParam(CommandContext, Material);
 			}
 
 			CommandContext.DrawIndexed((UINT)m_MeshDataWapper.m_MeshData->GetSubIndexCount(i), (UINT)m_MeshDataWapper.m_MeshData->GetSubIndexStart(i));
@@ -293,7 +293,7 @@ void FModel::InitializeResource()
 	return m_MeshDataWapper.m_MeshData->GetBoundBox();
  }
 
- void FModel::SetDrawParam(const std::function<void(FCommandContext&, bool hasTexture)>& fun)
+ void FModel::SetDrawParam(const std::function<void(FCommandContext&, std::shared_ptr<FMaterial>)>& fun)
  {
 	 m_DrawParam = fun;
  }

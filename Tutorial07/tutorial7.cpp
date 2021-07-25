@@ -209,7 +209,7 @@ public:
 		CommandContext.SetPrimitiveTopology(D3D_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
 
 
-		m_Actor->SetDrawParam([this](FCommandContext& CommandContext, bool hasTexture) {
+		m_Actor->SetDrawParam([this](FCommandContext& CommandContext, std::shared_ptr<FMaterial>) {
 			CommandContext.SetDynamicDescriptor(4, 0, m_skyBoxTex1.GetSRV());
 			CommandContext.SetDynamicDescriptor(5, 0, m_skyBoxTex2.GetSRV());
 			CommandContext.SetDynamicDescriptor(6, 0, m_skyBoxTex3.GetSRV());
