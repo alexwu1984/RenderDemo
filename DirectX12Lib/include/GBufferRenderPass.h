@@ -18,7 +18,7 @@ public:
 
 	void Init(const std::vector < std::shared_ptr<FRenderItem>>& ItemList, const std::wstring& ShaderFile, int Width, int Height);
 	void Render(FCommandContext& CommandContext);
-	void Update(const Vector3f& LightDir, const FMatrix& View, const FMatrix& Proj, FCamera& MainCamera);
+	void Update(const Vector3f& LightDir, const FMatrix& LightView, const FMatrix& LightProj, FCamera& MainCamera);
 
 	FColorBuffer& GetAlbedoBuffer() { return m_AlbedoBuffer; }
 	FColorBuffer& GetNormalBuffer() { return m_NormalBuffer; }

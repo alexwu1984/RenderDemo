@@ -1,5 +1,14 @@
 #pragma pack_matrix(row_major)
 
+struct BasePassInfo
+{
+    float4x4 ProjectionMatrix;
+    float4x4 ModelMatrix;
+    float4x4 ViewMatrix;
+    int mUseTex ;
+    float3 pad;
+};
+
 struct SSRInfo
 {
     float Near;
@@ -8,9 +17,6 @@ struct SSRInfo
     float WindowHeight;
     float3 CameraPosInWorldSpace;
     float RayLength;
-    float4x4 ModelMatrix;
-    float4x4 ProjectionMatrix;
-    float4x4 ViewMatrix;
 };
 
 struct Ray
@@ -27,7 +33,8 @@ struct Result
     int IterationCount;
 };
 
-ConstantBuffer<SSRInfo> SSRCBInfo : register(b0);
+ConstantBuffer<BasePassInfo> BasePassCBInfo : register(b0);
+ConstantBuffer<SSRInfo> SSRCBInfo : register(b1);
 Texture2D DepthTexture : register(t0);
 Texture2D AlbedoTexture : register(t1);
 
@@ -42,18 +49,18 @@ float LinearizeDepth(float d)
 
 float4 projectToScreenSpace(float3 vPoint)
 {
-    return mul(float4(vPoint, 1), SSRCBInfo.ProjectionMatrix);
+    return mul(float4(vPoint, 1), BasePassCBInfo.ProjectionMatrix);
 }
 
 float3 projectToViewSpace(float3 vPointInViewSpace)
 {
-    return mul(float4(vPointInViewSpace, 1), SSRCBInfo.ViewMatrix).xyz;
+    return mul(float4(vPointInViewSpace, 1), BasePassCBInfo.ViewMatrix).xyz;
 }
 
-float distanceSquared(float2 A, float2 B)
+float2 distanceSquared(float2 A, float2 B)
 {
     A -= B;
-    return dot(A, A);
+    return float2(dot(A, A), dot(A, A));
 }
 
 bool Query(float2 z, float2 uv)
@@ -66,58 +73,58 @@ bool Query(float2 z, float2 uv)
 Result RayMarching(Ray vRay)
 {
     Result result;
-    
+
     float3 Begin = vRay.Origin;
     float3 End = vRay.Origin + vRay.Direction * SSRCBInfo.RayLength;
-    
+
     float3 V0 = projectToViewSpace(Begin);
     float3 V1 = projectToViewSpace(End);
-    
+
     float4 H0 = projectToScreenSpace(V0);
     float4 H1 = projectToScreenSpace(V1);
-    
+
     float k0 = 1.0 / H0.w;
     float k1 = 1.0 / H1.w;
-    
+
     float3 Q0 = V0 * k0;
     float3 Q1 = V1 * k1;
-    
-    // NDC space
+
+	// NDC-space not Screen Space
     float2 P0 = H0.xy * k0;
     float2 P1 = H1.xy * k1;
     float2 Size = float2(SSRCBInfo.WindowWidth, SSRCBInfo.WindowHeight);
-    
-    //Screen space
+	//Screen Space
     P0 = (P0 + 1) / 2 * Size;
-    P1 = (P0 + 1) / 2 * Size;
+    P1 = (P1 + 1) / 2 * Size;
+
     
-    float distance = (distanceSquared(P0, P1) < 0.0001) ? 0.01 : 0.0;
-    P1 += float2(distance, distance);
-    
+    P1 += float2((distanceSquared(P0, P1) < 0.0001) ? 0.01 : 0.0);
+
     float2 Delta = P1 - P0;
+
     bool Permute = false;
-    if(abs(Delta.x) < abs(Delta.y))
+    if (abs(Delta.x) < abs(Delta.y))
     {
         Permute = true;
         Delta = Delta.yx;
         P0 = P0.yx;
         P1 = P1.yx;
     }
-    
     float StepDir = sign(Delta.x);
     float Invdx = StepDir / Delta.x;
     float3 dQ = (Q1 - Q0) * Invdx;
     float dk = (k1 - k0) * Invdx;
-    float2 dp = float2(StepDir, Delta.y * Invdx);
+    float2 dP = float2(StepDir, Delta.y * Invdx);
     float Stride = 1.0f;
-    dp *= Stride;
+
+    dP *= Stride;
     dQ *= Stride;
     dk *= Stride;
-    
-    P0 += dp;
+
+    P0 += dP;
     Q0 += dQ;
     k0 += dk;
-    
+	
     int Step = 0;
     int MaxStep = 5000;
     float k = k0;
@@ -125,24 +132,21 @@ Result RayMarching(Ray vRay)
     float3 Q = Q0;
     float prevZMaxEstimate = V0.z;
     [loop]
-    for (float2 P = P0; Step < MaxStep;Step++,P += dp,Q.z += dQ.z,k+=dk)
+    for (float2 P = P0; Step < MaxStep; Step++, P += dP, Q.z += dQ.z, k += dk)
     {
         result.UV = Permute ? P.yx : P;
         float2 Depths;
         Depths.x = prevZMaxEstimate;
-        Depths.y = (dQ.z * 0.5 + Q.z) / (dk * 0.5 + k);
+        Depths.y = 1-(dQ.z * 0.5 + Q.z) / (dk * 0.5 + k);
         prevZMaxEstimate = Depths.y;
         if (Depths.x < Depths.y)
             Depths.xy = Depths.yx;
         if (result.UV.x > SSRCBInfo.WindowWidth || result.UV.x < 0 || result.UV.y > SSRCBInfo.WindowHeight || result.UV.y < 0)
-        {
             break;
-        }
         result.IsHit = Query(Depths, result.UV);
-        if(result.IsHit)
+        if (result.IsHit)
             break;
     }
-    
     return result;
 }
 
@@ -164,8 +168,8 @@ struct VertexOutput
 VertexOutput vs_main(VertexIN IN)
 {
     VertexOutput OUT;
-    OUT.gl_Position = mul(float4(IN.inPos, 1.0f), mul(SSRCBInfo.ModelMatrix, mul(SSRCBInfo.ViewMatrix, SSRCBInfo.ProjectionMatrix)));
-    OUT.FragPosInWorldSpace = mul(float4(IN.inPos, 1.0f), SSRCBInfo.ModelMatrix);
+    OUT.gl_Position = mul(float4(IN.inPos, 1.0f), mul(BasePassCBInfo.ModelMatrix, mul(BasePassCBInfo.ViewMatrix, BasePassCBInfo.ProjectionMatrix)));
+    OUT.FragPosInWorldSpace = mul(float4(IN.inPos, 1.0f), BasePassCBInfo.ModelMatrix);
     OUT.tex = IN.tex;
     return OUT;
 }
@@ -201,11 +205,15 @@ PixelOutput ps_main(VertexOutput IN)
     }
     else
     {
-        float4 PointInScreen = mul(mul(float4(OrginPoint, 1), SSRCBInfo.ViewMatrix), SSRCBInfo.ProjectionMatrix);
+        float4 PointInScreen = mul(mul(float4(OrginPoint, 1), BasePassCBInfo.ViewMatrix), BasePassCBInfo.ProjectionMatrix);
         PointInScreen.xy /= PointInScreen.w;
-        PointInScreen.xy = PointInScreen.xy * float2(0.5, 0.5) + float2(0.5, -0.5);
+        PointInScreen.xy = PointInScreen.xy * float2(0.5, 0.5) + float2(0.5, 0.5);
+        PointInScreen.y = 1 - PointInScreen.y;
         
         output.Color = AlbedoTexture.Sample(LinearSampler, PointInScreen.xy);
+
     }
+
     return output;
+
 }

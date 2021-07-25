@@ -73,7 +73,7 @@ public:
 	void SetColor(const Vector3f& color);
 	bool HasTexture() const;
 
-	std::function<void(FCommandContext&, std::shared_ptr< FMaterial>,std::shared_ptr<FRenderItem::BasePassInfoWrapper>)> m_CustomDrawParam;
+	std::function<void(FCommandContext&, std::shared_ptr< FMaterial>,std::shared_ptr<FRenderItem::BasePassInfoWrapper>)> CustomDrawParam;
 
 private:
 	void InitializeResource();

@@ -61,7 +61,7 @@ void GBufferRenderPass::Render(FCommandContext& CommandContext)
 	CommandContext.Flush(false);
 }
 
-void GBufferRenderPass::Update(const Vector3f& LightDir, const FMatrix& View, const FMatrix& Proj, FCamera& MainCamera)
+void GBufferRenderPass::Update(const Vector3f& LightDir, const FMatrix& LightView, const FMatrix& LightProj, FCamera& MainCamera)
 {
 	for (auto Item : m_ItemList)
 	{
@@ -69,7 +69,7 @@ void GBufferRenderPass::Update(const Vector3f& LightDir, const FMatrix& View, co
 		if (Model)
 		{
 			Model->SetLightDir(LightDir);
-			Model->SetLightMVP(Model->GetModelMatrix(), View, Proj);
+			Model->SetLightMVP(Model->GetModelMatrix(), LightView, LightProj);
 
 			for (auto& PassInfo : Item->MapBasePassInfos)
 			{
@@ -87,7 +87,7 @@ void GBufferRenderPass::Update(const Vector3f& LightDir, const FMatrix& View, co
 void GBufferRenderPass::SetupRootSignature()
 {
 	FSamplerDesc GBufferSamplerDesc;
-	GBufferSamplerDesc.Filter = D3D12_FILTER_MIN_MAG_MIP_POINT;
+	GBufferSamplerDesc.Filter = D3D12_FILTER_MIN_MAG_POINT_MIP_LINEAR;
 	GBufferSamplerDesc.ComparisonFunc = D3D12_COMPARISON_FUNC_LESS_EQUAL;
 	GBufferSamplerDesc.AddressU = D3D12_TEXTURE_ADDRESS_MODE_BORDER;
 	GBufferSamplerDesc.AddressV = D3D12_TEXTURE_ADDRESS_MODE_BORDER;

@@ -54,48 +54,27 @@ public:
 		DiffiusePassList.push_back(ActorItem);
 
 		m_GBufferRenderPass.Init(DiffiusePassList, L"../Resources/Shaders/Tutorial11/GBuffer.hlsl",m_GameDesc.Width, m_GameDesc.Height);
+		m_SSRPass.Init(DiffiusePassList, L"../Resources/Shaders/Tutorial11/ScreenSpaceRayTracing.hlsl", m_GameDesc.Width, m_GameDesc.Height);
 		m_ScreenQuadRenderPass.Init(L"../Resources/Shaders/SCreenQuad.hlsl", m_GameDesc.Width, m_GameDesc.Height);
-		m_SSRPass.Init(DiffiusePassList,L"../Resources/Shaders/Tutorial11/ScreenSpaceRayTracing.hlsl", m_GameDesc.Width, m_GameDesc.Height);
+		
 	}
 
 	virtual void OnUpdate()
 	{
 		FDirectLightGameMode::OnUpdate();
 		m_GBufferRenderPass.Update(m_LightInfo.LightDir, m_LightInfo.ViewMatrix, m_LightInfo.ProjectionMatrix, m_Camera);
+		m_SSRPass.Update(m_Camera);
 	}
 
 	virtual void DoRender(FCommandContext& CommandContext)
 	{
 		m_GBufferRenderPass.Render(CommandContext);
-		
-		//计算AO
-		//m_HBAOPass.Render(CommandContext, m_GBufferRenderPass.GetDepthBuffer());
-		//m_HBAOBlurPass.Render(CommandContext, [this](FCommandContext& CommandContext) {
-		//	CommandContext.TransitionResource(m_HBAOPass.GetAOBuffer(), D3D12_RESOURCE_STATE_PIXEL_SHADER_RESOURCE);
-		//	CommandContext.SetDynamicDescriptor(m_HBAOBlurPass.GetSRVRootIndex(), 0, m_HBAOPass.GetAOBuffer().GetSRV());
-		//	},
-		//	[this](FCommandContext& CommandContext) {
-		//		CommandContext.TransitionResource(m_HBAOPass.GetAOBuffer(), D3D12_RESOURCE_STATE_RENDER_TARGET);
-		//	});
-
-
-		//合并结果
-
-		//m_ScreenQuadRenderPass.Render(CommandContext, [this](FCommandContext& CommandContext) {
-		//	CommandContext.TransitionResource(m_HBAOBlurPass.GetResult(), D3D12_RESOURCE_STATE_PIXEL_SHADER_RESOURCE);
-		//	CommandContext.TransitionResource(m_GBufferRenderPass.GetAlbedoBuffer(), D3D12_RESOURCE_STATE_PIXEL_SHADER_RESOURCE);
-
-		//	CommandContext.SetDynamicDescriptor(0, 0, m_HBAOBlurPass.GetResult().GetSRV());
-		//	CommandContext.SetDynamicDescriptor(1, 0, m_GBufferRenderPass.GetAlbedoBuffer().GetSRV());
-		//	},
-		//	[this](FCommandContext& CommandContext) {
-
-		//	});
+		m_SSRPass.Render(CommandContext, m_GBufferRenderPass.GetDepthBuffer(), m_GBufferRenderPass.GetAlbedoBuffer());
 
 		m_ScreenQuadRenderPass.Render(CommandContext, [this](FCommandContext& CommandContext) {
-			CommandContext.TransitionResource(m_GBufferRenderPass.GetAlbedoBuffer(), D3D12_RESOURCE_STATE_PIXEL_SHADER_RESOURCE);
+			CommandContext.TransitionResource(m_SSRPass.GetAlbedoBuffer(), D3D12_RESOURCE_STATE_PIXEL_SHADER_RESOURCE);
 
-			CommandContext.SetDynamicDescriptor(0, 0, m_GBufferRenderPass.GetAlbedoBuffer().GetSRV());
+			CommandContext.SetDynamicDescriptor(0, 0, m_SSRPass.GetAlbedoBuffer().GetSRV());
 			},
 			[this](FCommandContext& CommandContext) {
 

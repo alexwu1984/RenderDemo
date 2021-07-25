@@ -46,9 +46,9 @@ void FModel::Draw(FCommandContext& CommandContext, FRenderItem* renderItem)
 			CommandContext.SetIndexBuffer(SubMeshData.IndexBuffer.IndexBufferView());
 
 			std::shared_ptr<FMaterial> Material = m_AiMeshDataWapper.m_Materials[SubMeshData.MaterialIndex];
-			if (m_CustomDrawParam)
+			if (CustomDrawParam)
 			{
-				m_CustomDrawParam(CommandContext, Material, renderItem->MapBasePassInfos[SubMeshData.MaterialIndex]);
+				CustomDrawParam(CommandContext, Material, renderItem->MapBasePassInfos[SubMeshData.MaterialIndex]);
 			}
 			else
 			{
@@ -78,8 +78,9 @@ void FModel::Draw(FCommandContext& CommandContext, FRenderItem* renderItem)
 
 				}
 
-				CommandContext.DrawIndexed(SubMeshData.IndexCount, 0);
+				
 			}
+			CommandContext.DrawIndexed(SubMeshData.IndexCount, 0);
 		}
 	}
 	else
