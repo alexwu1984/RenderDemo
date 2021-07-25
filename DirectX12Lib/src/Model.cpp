@@ -33,7 +33,7 @@ void FModel::Draw(FCommandContext& CommandContext, FRenderItem* renderItem)
 	if (m_UseAiMesh)
 	{
 		const auto& SubMeshDataList = m_AiMeshDataWapper.m_MeshData->GetSubMeshData();
-		for (int32_t index = SubMeshDataList.size() - 1 ; index >= 0; --index)
+		for (int32_t index = SubMeshDataList.size() - 1; index >= 0; --index)
 		{
 			const auto& SubMeshData = SubMeshDataList[index];
 			for (int vI = 0, slot = 0; vI < VET_Max; ++vI)
@@ -72,17 +72,15 @@ void FModel::Draw(FCommandContext& CommandContext, FRenderItem* renderItem)
 
 				CommandContext.SetDynamicDescriptor(m_lightMaterialIndex, 0, m_LightMaterialCpuHandle);
 
-			if (m_DrawParam)
-			{
-				m_DrawParam(CommandContext, Material);
+				if (m_DrawParam)
+				{
+					m_DrawParam(CommandContext, Material);
 
+				}
+
+				CommandContext.DrawIndexed(SubMeshData.IndexCount, 0);
 			}
-			
-
-
-			CommandContext.DrawIndexed(SubMeshData.IndexCount, 0);
 		}
-
 	}
 	else
 	{
