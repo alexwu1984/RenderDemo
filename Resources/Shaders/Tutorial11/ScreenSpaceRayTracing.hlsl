@@ -65,7 +65,9 @@ float2 distanceSquared(float2 A, float2 B)
 
 bool Query(float2 z, float2 uv)
 {
-    float TexZ = DepthTexture.Sample(LinearSampler, uv / float2(SSRCBInfo.WindowWidth, SSRCBInfo.WindowHeight)).r;
+    uv = uv / float2(SSRCBInfo.WindowWidth, SSRCBInfo.WindowHeight);
+    uv.y = 1 - uv.y; //DX 需要取反，跟OPENGL 不一样
+    float TexZ = DepthTexture.Sample(LinearSampler, uv).r;
     float depths = LinearizeDepth(TexZ);
     return z.y < depths && z.x > depths;
 }
@@ -137,7 +139,8 @@ Result RayMarching(Ray vRay)
         result.UV = Permute ? P.yx : P;
         float2 Depths;
         Depths.x = prevZMaxEstimate;
-        Depths.y = 1-(dQ.z * 0.5 + Q.z) / (dk * 0.5 + k);
+        Depths.y = (dQ.z * 0.5 + Q.z) / (dk * 0.5 + k);
+        Depths.y = 1 - Depths.y;
         prevZMaxEstimate = Depths.y;
         if (Depths.x < Depths.y)
             Depths.xy = Depths.yx;
@@ -201,17 +204,18 @@ PixelOutput ps_main(VertexOutput IN)
     float3 Q1 = V1 * k1;
     if (result.IsHit)
     {
-        output.Color =  AlbedoTexture.Sample(LinearSampler, result.UV / float2(SSRCBInfo.WindowWidth, SSRCBInfo.WindowHeight));
+        float2 uv = result.UV / float2(SSRCBInfo.WindowWidth, SSRCBInfo.WindowHeight);
+        uv.y = 1 - uv.y;
+        output.Color = AlbedoTexture.Sample(LinearSampler, uv);
     }
     else
     {
         float4 PointInScreen = mul(mul(float4(OrginPoint, 1), BasePassCBInfo.ViewMatrix), BasePassCBInfo.ProjectionMatrix);
         PointInScreen.xy /= PointInScreen.w;
-        PointInScreen.xy = PointInScreen.xy * float2(0.5, 0.5) + float2(0.5, 0.5);
+        PointInScreen.xy = PointInScreen.xy * 0.5 + 0.5;
         PointInScreen.y = 1 - PointInScreen.y;
-        
+     
         output.Color = AlbedoTexture.Sample(LinearSampler, PointInScreen.xy);
-
     }
 
     return output;

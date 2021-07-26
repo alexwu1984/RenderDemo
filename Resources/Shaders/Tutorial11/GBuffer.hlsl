@@ -57,7 +57,18 @@ VertexOutput vs_main(VertexIN IN)
 PixelOutput ps_main(VertexOutput IN)
 {
 	PixelOutput output;
-    output.DiffuseAlbedo = DiffuseTexture.Sample(LinearSampler, IN.tex);
+    
+    float gamma = 2.2;
+    float InvGamma = 1.0 / 2.2;
+    float3 diffuseColor = pow(DiffuseTexture.Sample(LinearSampler, IN.tex).rgb, float3(gamma, gamma, gamma));
+    float3 mapped = float3(1.0,1.0,1.0) - exp(-diffuseColor);
+    mapped = pow(mapped, float3(InvGamma, InvGamma, InvGamma));
+    output.DiffuseAlbedo = float4(mapped, 1.0);
+   // float alpha = textureLod(u_DiffuseTexture, v2f_TexCoords, 0).a;
+    float alpha = DiffuseTexture.Load(float3(IN.tex,0)).a;
+    if (alpha != 1.0f)
+        discard;
+    
     output.Normal = float4(IN.normalw, 1.0);
     output.Position = float4(IN.FragPosInViewSpace.xyz, IN.FragPosInViewSpace.z);
     return output;
