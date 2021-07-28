@@ -11,7 +11,8 @@ enum VertexElementType : uint8_t
 	VET_Color		= 1,
 	VET_Texcoord	= 2,
 	VET_Normal		= 3,
-	VET_Max			= 4
+	VET_Tangent     = 4,
+	VET_Max			= 5
 };
 
 
@@ -59,6 +60,8 @@ struct SubMeshData
 };
 
 class FObjLoader;
+class FSkyBox;
+class FCubeMapCross;
 
 class MeshData
 {
@@ -91,7 +94,11 @@ public:
 	void UpdateBoundingBox(const Vector3f& pos, Vector3f& vMin, Vector3f& vMax);
 	const BoundingBox& GetBoundBox() const { return m_bounds; }
 
+	void ComputeBoundingBox();
+
 	friend FObjLoader;
+	friend FSkyBox;
+	friend FCubeMapCross;
 
 protected:
 	std::wstring m_filepath;

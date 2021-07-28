@@ -48,8 +48,9 @@ class FModel
 	friend struct FRenderItem;
 public:
 	FModel(const std::wstring& FileName);
+	FModel();
 	~FModel();
-
+	virtual bool IsSkyBox() const;
 	void Draw(FCommandContext& CommandContext, FRenderItem *renderItem = nullptr);
 
 	void GetMeshLayout(std::vector<D3D12_INPUT_ELEMENT_DESC>& MeshLayout);
@@ -75,11 +76,12 @@ public:
 
 	std::function<void(FCommandContext&, std::shared_ptr< FMaterial>,std::shared_ptr<FRenderItem::BasePassInfoWrapper>)> CustomDrawParam;
 
-private:
+protected:
 	void InitializeResource();
 	void UpdateModelMatrix();
 	template<typename MeshData> void GetMeshLayout(MeshData PtrData, std::vector<D3D12_INPUT_ELEMENT_DESC>& MeshLayout)
 	{
+
 		UINT slot = 0;
 		if (PtrData->HasVertexElement(VET_Position))
 		{
@@ -96,6 +98,10 @@ private:
 		if (PtrData->HasVertexElement(VET_Normal))
 		{
 			MeshLayout.push_back({ "NORMAL", 0, DXGI_FORMAT_R32G32B32_FLOAT, slot++, 0, D3D12_INPUT_CLASSIFICATION_PER_VERTEX_DATA, 0 });
+		}
+		if (PtrData->HasVertexElement(VET_Tangent))
+		{
+			MeshLayout.push_back({ "TANGENT", 0, DXGI_FORMAT_R32G32B32_FLOAT, slot++, 0, D3D12_INPUT_CLASSIFICATION_PER_VERTEX_DATA, 0 });
 		}
 	}
 

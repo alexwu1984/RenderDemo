@@ -75,7 +75,6 @@ protected:
 	float m_Radius = 50.0f;
 	float m_ElapsedTime = 0;
 	float m_MainRadius = 10;
-	bool m_firstMouse = true;
 	std::chrono::high_resolution_clock::time_point m_TStart, m_TEnd;
 };
 

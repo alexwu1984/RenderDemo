@@ -158,6 +158,20 @@ void MeshData::UpdateBoundingBox(const Vector3f& pos, Vector3f& vMin, Vector3f& 
 	m_bounds.Extents = 0.5f * (vMax - vMin);
 }
 
+
+void MeshData::ComputeBoundingBox()
+{
+	Vector3f BoundMin = Vector3f(std::numeric_limits<float>::max());
+	Vector3f BoundMax = Vector3f(-std::numeric_limits<float>::max());
+	for (size_t i = 0; i < m_positions.size(); ++i)
+	{
+		BoundMin = Vector3Min(BoundMin, m_positions[i]);
+		BoundMax = Vector3Max(BoundMax, m_positions[i]);
+	}
+	m_bounds.Center = 0.5f * (BoundMin + BoundMax);
+	m_bounds.Extents = 0.5f * (BoundMax - BoundMin);
+}
+
 MeshPlane::MeshPlane()
 	: MeshData(L"Generated Plane")
 {

@@ -44,6 +44,8 @@ set(HEADER_FILES
 	include/GameInput.h
 	include/SamplePostProcessPass.h
 	include/GBufferRenderPass.h
+	include/CubeMapCross.h
+	include/SkyBox.h
 )
 
 set(SOURCES
@@ -85,6 +87,8 @@ set(SOURCES
 	src/GameInput.cpp
 	src/SamplePostProcessPass.cpp
 	src/GBufferRenderPass.cpp
+	src/CubeMapCross.cpp
+	src/SkyBox.cpp
 )
 
 set( IMGUI_HEADERS

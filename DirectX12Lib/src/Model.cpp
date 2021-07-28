@@ -22,10 +22,21 @@ FModel::FModel(const std::wstring& FileName)
 	InitializeResource();
 }
 
+FModel::FModel()
+{
+
+}
+
 FModel::~FModel()
 {
 	m_MeshDataWapper.m_MeshData.reset();
 	m_AiMeshDataWapper.m_MeshData.reset();
+}
+
+
+bool FModel::IsSkyBox() const
+{
+	return false;
 }
 
 void FModel::Draw(FCommandContext& CommandContext, FRenderItem* renderItem)
@@ -99,29 +110,37 @@ void FModel::Draw(FCommandContext& CommandContext, FRenderItem* renderItem)
 			size_t MtlIndex = m_MeshDataWapper.m_MeshData->GetSubMaterialIndex(i);
 			std::shared_ptr<FMaterial> Material = m_MeshDataWapper.m_Materials[MtlIndex];
 
-			if (Material->GetDiffuseTexture().GetResource())
+			if (CustomDrawParam)
 			{
-				CommandContext.SetDynamicDescriptor(m_textureIndex, 0, Material->GetDiffuseTexture().GetSRV());
+				CustomDrawParam(CommandContext, Material, renderItem->MapBasePassInfos[MtlIndex]);
 			}
-
-			if (renderItem)
+			else
 			{
-				CommandContext.SetDynamicDescriptor(renderItem->CBVRootIndex, 0, renderItem->MapBasePassInfos[MtlIndex]->BasePassCpuHandle);
-			}
+				if (Material->GetDiffuseTexture().GetResource())
+				{
+					CommandContext.SetDynamicDescriptor(m_textureIndex, 0, Material->GetDiffuseTexture().GetSRV());
+				}
 
-			if (!m_UseOutsideColor)
-			{
-				auto [kd, ks] = Material->GetColor();
-				m_lightMaterial.uKd = kd;
-				m_lightMaterial.uKs = ks;
-			}
-			memcpy(m_LightMaterialConstBuf.Map(), &m_lightMaterial, sizeof(m_lightMaterial));
+				if (renderItem)
+				{
+					CommandContext.SetDynamicDescriptor(renderItem->CBVRootIndex, 0, renderItem->MapBasePassInfos[MtlIndex]->BasePassCpuHandle);
+				}
 
-			CommandContext.SetDynamicDescriptor(m_lightMaterialIndex, 0, m_LightMaterialCpuHandle);
+				if (!m_UseOutsideColor)
+				{
+					auto [kd, ks] = Material->GetColor();
+					m_lightMaterial.uKd = kd;
+					m_lightMaterial.uKs = ks;
+				}
+				memcpy(m_LightMaterialConstBuf.Map(), &m_lightMaterial, sizeof(m_lightMaterial));
 
-			if (m_DrawParam)
-			{
-				m_DrawParam(CommandContext, Material);
+				CommandContext.SetDynamicDescriptor(m_lightMaterialIndex, 0, m_LightMaterialCpuHandle);
+
+				if (m_DrawParam)
+				{
+					m_DrawParam(CommandContext, Material);
+				}
+
 			}
 
 			CommandContext.DrawIndexed((UINT)m_MeshDataWapper.m_MeshData->GetSubIndexCount(i), (UINT)m_MeshDataWapper.m_MeshData->GetSubIndexStart(i));
