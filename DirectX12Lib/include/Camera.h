@@ -17,6 +17,7 @@ public:
 	void Orbit(float Yaw, float Pitch);
 	void Rotate(float Yaw, float Pitch);
 	void Rotate(float radius, float theta, float phi);
+	void ProcessMouseMovement(float xoffset, float yoffset, bool constrainPitch = true);
 	Vector3f GetUp() const { return Up; }
 	Vector3f GetFocus() const { return Position + Forward * CameraLength; }
 private:
@@ -26,4 +27,7 @@ private:
 	FMatrix ViewMat;
 	float CameraLength;
 	Vector3f Right, Up, Forward, Position;
+	float MouseSensitivity = 0.05;
+	float Yaw = 90.0f;
+	float Pitch = 0;
 };

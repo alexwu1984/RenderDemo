@@ -56,17 +56,32 @@ void FDirectLightGameMode::OnMouseMove(WPARAM btnState, int x, int y)
 	if ((btnState & MK_LBUTTON) != 0)
 	{
 		// Make each pixel correspond to a quarter of a degree.
-		float dx = ConvertToRadians(0.25f * static_cast<float>(x - m_LastMousePos.x));
-		float dy = ConvertToRadians(0.25f * static_cast<float>(y - m_LastMousePos.y));
+		//float dx = ConvertToRadians(0.25f * static_cast<float>(x - m_LastMousePos.x));
+		//float dy = ConvertToRadians(0.25f * static_cast<float>(y - m_LastMousePos.y));
 
 		// Update angles based on input to orbit camera around box.
-		m_Theta += dx;
-		m_Phi += dy;
+		//m_Theta += dx;
+		//m_Phi += dy;
 
 		// Restrict the angle mPhi.
-		m_Phi = Clamp(m_Phi, 0.1f, MATH_PI - 0.1f);
+		//m_Phi = Clamp(m_Phi, 0.1f, MATH_PI - 0.1f);
 
-		m_Camera.Rotate(dx, dy);
+		//m_Camera.Rotate(dx, dy);
+
+		if (m_firstMouse)
+		{
+			m_LastMousePos.x = x;
+			m_LastMousePos.y = y;
+			m_firstMouse = false;
+		}
+
+		float xoffset = x - m_LastMousePos.x;
+		float yoffset = y - m_LastMousePos.y; // reversed since y-coordinates go from bottom to top
+
+		m_LastMousePos.x = x;
+		m_LastMousePos.y = y;
+
+		m_Camera.ProcessMouseMovement(xoffset, yoffset);
 	}
 	else if ((btnState & MK_RBUTTON) != 0)
 	{

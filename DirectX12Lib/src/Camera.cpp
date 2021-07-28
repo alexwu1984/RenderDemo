@@ -1,5 +1,6 @@
 #include "Camera.h"
 #include <stdio.h>
+#include "glm/glm.hpp"
 
 FCamera::FCamera(const Vector3f& CamPosition, const Vector3f& LookAtPosition, const Vector3f& UpDirection)
 {
@@ -8,11 +9,7 @@ FCamera::FCamera(const Vector3f& CamPosition, const Vector3f& LookAtPosition, co
 	Up = UpDirection.Normalize();
 	Forward = LookAtPosition - CamPosition;
 	CameraLength = Forward.Length();
-	Forward = Forward.Normalize();
-	Right = Cross(Up, Forward);
-	Up = Cross(Forward, Right);
-
-	UpdateViewMatrix();
+	ProcessMouseMovement(0, 0);
 }
 
 
@@ -96,6 +93,37 @@ void FCamera::Rotate(float Yaw, float Pitch)
 	Up = Result.r1;
 	Forward = Result.r2;
 	UpdateViewMatrix();
+}
+
+// processes input received from a mouse input system. Expects the offset value in both the x and y direction.
+void FCamera::ProcessMouseMovement(float xoffset, float yoffset, bool constrainPitch )
+{
+	xoffset *= MouseSensitivity;
+	yoffset *= MouseSensitivity;
+
+	Yaw += xoffset;
+	Pitch += yoffset;
+
+	// make sure that when pitch is out of bounds, screen doesn't get flipped
+	if (constrainPitch)
+	{
+		if (Pitch > 89.0f)
+			Pitch = 89.0f;
+		if (Pitch < -89.0f)
+			Pitch = -89.0f;
+	}
+
+	Forward.x = cosf(glm::radians(Yaw)) * cosf(glm::radians(Pitch));
+	Forward.y = sinf(glm::radians(Pitch));
+	Forward.z = sinf(glm::radians(Yaw)) * cosf(glm::radians(Pitch));
+
+	Right = Cross(Up, Forward);
+	Up = Cross(Forward, Right);
+
+	
+	Vector3f Focus = Position + Forward * CameraLength;
+	ViewMat = FMatrix::MatrixLookAtLH(Position, Focus, Up);
+
 }
 
 void FCamera::Rotate(float radius,float theta, float phi)
