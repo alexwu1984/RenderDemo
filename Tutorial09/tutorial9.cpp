@@ -28,7 +28,7 @@
 #include "gbufferrenderpass.h"
 #include "screenquadrenderpass.h"
 #include "ssaopass.h"
-#include "samplepostprocesspass.h"
+#include "SimplePostProcessPass.h"
 #include "ssdopass.h"
 
 constexpr int32_t RSM_BUFFER_SIZE = 256;
@@ -114,8 +114,8 @@ private:
 	GBufferRenderPass m_GBufferRenderPass;
 	ScreenQuadRenderPass m_ScreenQuadRenderPass;
 	SSAOPass m_SSAOPass;
-	SamplePostProcessPass m_AOBlurPass;
-	SamplePostProcessPass m_DOBlurPass;
+	SimplePostProcessPass m_AOBlurPass;
+	SimplePostProcessPass m_DOBlurPass;
 	SSDOPass m_SSDOPass;
 };
 

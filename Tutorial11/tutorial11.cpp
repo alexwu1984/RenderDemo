@@ -26,7 +26,7 @@
 
 #include "gbufferrenderpass.h"
 #include "screenquadrenderpass.h"
-#include "samplepostprocesspass.h"
+#include "SimplePostProcessPass.h"
 #include "ScreenSpaceRayTracingPass.h"
 
 constexpr int32_t RSM_BUFFER_SIZE = 256;

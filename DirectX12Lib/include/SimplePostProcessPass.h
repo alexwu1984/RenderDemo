@@ -8,11 +8,11 @@ struct FRenderItem;
 class FCommandContext;
 class RenderPipelineInfo;
 
-class SamplePostProcessPass
+class SimplePostProcessPass
 {
 public:
-	SamplePostProcessPass();
-	~SamplePostProcessPass();
+	SimplePostProcessPass();
+	~SimplePostProcessPass();
 
 	void Init(const std::wstring& ShaderFile, int Width, int Height);
 	void Render(FCommandContext& CommandContext, const std::function<void(FCommandContext& CommandContext)>& BeforeDrawParam,

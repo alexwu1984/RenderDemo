@@ -19,15 +19,34 @@
 #include "RenderWindow.h"
 #include "RenderPipelineInfo.h"
 #include "Geometry.h"
+#include "ImguiManager.h"
 
 #include <dxgi1_4.h>
 #include <chrono>
 #include <iostream>
 
 #include "pbrrenderpass.h"
+#include "SimplePostProcessPass.h"
+#include "CubeBuffer.h"
 
-constexpr int32_t RSM_BUFFER_SIZE = 256;
 extern FCommandListManager g_CommandListManager;
+
+const int CUBE_MAP_SIZE = 1024;
+const int IRRADIANCE_SIZE = 256;
+const int PREFILTERED_SIZE = 256;
+const bool CUBEMAP_DEBUG_VIEW = true;
+
+enum EShowMode
+{
+	SM_LongLat,
+	SM_SkyBox,
+	SM_CubeMapCross,
+	SM_Irradiance,
+	SM_Prefiltered,
+	//SM_SphericalHarmonics,
+	SM_PreintegratedGF,
+	SM_PBR,
+};
 
 class Tutorial12 : public FDirectLightGameMode
 {
@@ -56,6 +75,62 @@ public:
 		
 	}
 
+	void OnGUI(FCommandContext& CommandContext)
+	{
+		static bool ShowConfig = true;
+		if (!ShowConfig)
+			return;
+
+		ImguiManager::Get().NewFrame();
+
+		ImGui::SetNextWindowPos(ImVec2(1, 1));
+		ImGui::SetNextWindowCollapsed(true, ImGuiCond_Once);
+		if (ImGui::Begin("Config", &ShowConfig, ImGuiWindowFlags_AlwaysAutoResize))
+		{
+			ImGui::ColorEdit3("Clear Color", &m_ClearColor.x);
+
+			ImGui::Separator();
+
+			ImGui::BeginGroup();
+			ImGui::Text("Show Mode");
+			ImGui::Indent(20);
+			ImGui::RadioButton("Long-Lat View", &m_ShowMode, SM_LongLat);
+			ImGui::RadioButton("Cube Box", &m_ShowMode, SM_SkyBox);
+			ImGui::RadioButton("Cube Cross", &m_ShowMode, SM_CubeMapCross);
+			ImGui::RadioButton("Irradiance", &m_ShowMode, SM_Irradiance);
+			ImGui::RadioButton("Prefiltered", &m_ShowMode, SM_Prefiltered);
+			//ImGui::RadioButton("SphericalHarmonics", &m_ShowMode, SM_SphericalHarmonics);
+			ImGui::RadioButton("PreintegratedGF", &m_ShowMode, SM_PreintegratedGF);
+			ImGui::RadioButton("PBR Mesh", &m_ShowMode, SM_PBR);
+			ImGui::EndGroup();
+
+			if (m_ShowMode == SM_CubeMapCross)
+			{
+				ImGui::SliderInt("Mip Level", &m_MipLevel, 0, m_CubeBuffer.GetNumMips() - 1);
+			}
+			else if (m_ShowMode == SM_Prefiltered)
+			{
+				ImGui::SliderInt("Mip Level", &m_MipLevel, 0, m_PrefilteredCube.GetNumMips() - 1);
+			}
+			//else if (m_ShowMode == SM_SphericalHarmonics)
+			//{
+			//	ImGui::SliderInt("SH Degree", &m_SHDegree, 1, 4);
+			//}
+			else if (m_ShowMode == SM_PBR)
+			{
+				ImGui::Checkbox("Rotate Mesh", &m_RotateMesh);
+				ImGui::SameLine();
+				ImGui::Text("%.3f", m_RotateY);
+			}
+
+			ImGui::Separator();
+
+		}
+		ImGui::End();
+
+		ImguiManager::Get().Render(CommandContext, RenderWindow::Get());
+	}
+
 	virtual void OnUpdate()
 	{
 		FDirectLightGameMode::OnUpdate();
@@ -76,12 +151,22 @@ public:
 		//	[this](FCommandContext& CommandContext) {
 
 		//	});
+		OnGUI(CommandContext);
 	}
 
 private:
 	//GBufferRenderPass m_GBufferRenderPass;
 	//ScreenQuadRenderPass m_ScreenQuadRenderPass;
 	//ScreenSpaceRayTracingPass m_SSRPass;
+	
+	FCubeBuffer m_CubeBuffer, m_IrradianceCube, m_PrefilteredCube;
+	int m_ShowMode = SM_PBR;
+	Vector3f m_ClearColor = Vector3f(0.2f);
+	float m_Exposure = 1.f;
+	int m_MipLevel = 0;
+	int m_NumSamplesPerDir = 10;
+	bool m_RotateMesh = false;
+	float m_RotateY = 0.f;
 };
 
 int main()

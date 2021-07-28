@@ -42,10 +42,11 @@ set(HEADER_FILES
 	include/Inc.h
 	include/ImguiManager.h
 	include/GameInput.h
-	include/SamplePostProcessPass.h
+	include/SimplePostProcessPass.h
 	include/GBufferRenderPass.h
 	include/CubeMapCross.h
 	include/SkyBox.h
+	include/CubeBuffer.h
 )
 
 set(SOURCES
@@ -85,10 +86,11 @@ set(SOURCES
 	src/AiMeshData.cpp
 	src/ImguiManager.cpp
 	src/GameInput.cpp
-	src/SamplePostProcessPass.cpp
+	src/SimplePostProcessPass.cpp
 	src/GBufferRenderPass.cpp
 	src/CubeMapCross.cpp
 	src/SkyBox.cpp
+	src/CubeBuffer.cpp
 )
 
 set( IMGUI_HEADERS

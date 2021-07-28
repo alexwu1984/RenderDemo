@@ -125,10 +125,10 @@ void FDirectLightGameMode::OnRender()
 
 	DoRender(CommandContext);
 
+	CommandContext.TransitionResource(RenderWindow::Get().GetBackBuffer(), D3D12_RESOURCE_STATE_PRESENT);
 	CommandContext.Finish(true);
 	RenderWindow::Get().Present();
 
-	
 }
 
 void FDirectLightGameMode::OnUpdate()

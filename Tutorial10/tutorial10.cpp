@@ -27,7 +27,7 @@
 #include "gbufferrenderpass.h"
 #include "screenquadrenderpass.h"
 #include "hbaopass.h"
-#include "samplepostprocesspass.h"
+#include "SimplePostProcessPass.h"
 
 constexpr int32_t RSM_BUFFER_SIZE = 256;
 extern FCommandListManager g_CommandListManager;
@@ -110,7 +110,7 @@ private:
 	GBufferRenderPass m_GBufferRenderPass;
 	ScreenQuadRenderPass m_ScreenQuadRenderPass;
 	HBAOPass m_HBAOPass;
-	SamplePostProcessPass m_HBAOBlurPass;
+	SimplePostProcessPass m_HBAOBlurPass;
 };
 
 int main()

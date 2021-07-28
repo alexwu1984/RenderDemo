@@ -2,6 +2,8 @@
 #include "Inc.h"
 
 const float MATH_PI = 3.141592654f;
+const float MATH_2PI = 2.f * MATH_PI;
+const float MATH_PI_HALF = 0.5f * MATH_PI;
 
 template<typename T>
 struct Vector4;

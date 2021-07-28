@@ -1,4 +1,4 @@
-#include "SamplePostProcessPass.h"
+#include "SimplePostProcessPass.h"
 #include "SamplerManager.h"
 #include "CommandContext.h"
 #include "RenderWindow.h"
@@ -6,24 +6,24 @@
 #include "StringUnit.h"
 #include "Shader.h"
 
-SamplePostProcessPass::SamplePostProcessPass()
+SimplePostProcessPass::SimplePostProcessPass()
 {
 
 }
 
-SamplePostProcessPass::~SamplePostProcessPass()
+SimplePostProcessPass::~SimplePostProcessPass()
 {
 
 }
 
-void SamplePostProcessPass::Init(const std::wstring& ShaderFile, int Width, int Height)
+void SimplePostProcessPass::Init(const std::wstring& ShaderFile, int Width, int Height)
 {
 	m_GameWndSize = { Width,Height };
 	SetupRootSignature();
 	SetupPipelineState(ShaderFile);
 }
 
-void SamplePostProcessPass::Render(FCommandContext& CommandContext, const std::function<void(FCommandContext& CommandContext)>& BeforeDrawParam, 
+void SimplePostProcessPass::Render(FCommandContext& CommandContext, const std::function<void(FCommandContext& CommandContext)>& BeforeDrawParam, 
 	const std::function<void(FCommandContext& CommandContext)>& AfterDrawParam)
 {
 	// Set necessary state.
@@ -54,7 +54,7 @@ void SamplePostProcessPass::Render(FCommandContext& CommandContext, const std::f
 	}
 }
 
-void SamplePostProcessPass::Render(FColorBuffer& RenderTarget, FCommandContext& CommandContext, const std::function<void(FCommandContext& CommandContext)>& BeforeDrawParam, 
+void SimplePostProcessPass::Render(FColorBuffer& RenderTarget, FCommandContext& CommandContext, const std::function<void(FCommandContext& CommandContext)>& BeforeDrawParam, 
 	const std::function<void(FCommandContext& CommandContext)>& AfterDrawParam)
 {
 	CommandContext.SetRootSignature(m_RootSignature);
@@ -84,22 +84,22 @@ void SamplePostProcessPass::Render(FColorBuffer& RenderTarget, FCommandContext& 
 	}
 }
 
-FColorBuffer& SamplePostProcessPass::GetResult()
+FColorBuffer& SimplePostProcessPass::GetResult()
 {
 	return m_PostRenderTarget;
 }
 
-int32_t SamplePostProcessPass::GetCBVRootIndex() const
+int32_t SimplePostProcessPass::GetCBVRootIndex() const
 {
 	return m_CBVRootIndex;
 }
 
-int32_t SamplePostProcessPass::GetSRVRootIndex() const
+int32_t SimplePostProcessPass::GetSRVRootIndex() const
 {
 	return m_SRVRootIndex;
 }
 
-void SamplePostProcessPass::SetupRootSignature()
+void SimplePostProcessPass::SetupRootSignature()
 {
 	FSamplerDesc DefaultSamplerDesc;
 	m_RootSignature.Reset(2, 1);
@@ -109,7 +109,7 @@ void SamplePostProcessPass::SetupRootSignature()
 	m_RootSignature.Finalize(L"ScreenQuadSignature", D3D12_ROOT_SIGNATURE_FLAG_ALLOW_INPUT_ASSEMBLER_INPUT_LAYOUT);
 }
 
-void SamplePostProcessPass::SetupPipelineState(const std::wstring& ShaderFile)
+void SimplePostProcessPass::SetupPipelineState(const std::wstring& ShaderFile)
 {
 	std::shared_ptr<FShader> Shader = FShaderMgr::Get().CreateShader(core::usc2_u8(ShaderFile), ShaderFile);
 	m_RenderState = std::make_shared<RenderPipelineInfo>(Shader);
