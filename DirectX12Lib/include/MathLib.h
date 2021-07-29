@@ -291,6 +291,12 @@ namespace MathLib
 	{
 		return AlignDownWithMask(value, alignment - 1);
 	}
+
+	template <typename T>
+	bool IsAligned(T value, size_t alignment)
+	{
+		return 0 == ((size_t)value & (alignment - 1));
+	}
 }
 
 

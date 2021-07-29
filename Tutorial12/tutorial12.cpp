@@ -26,7 +26,7 @@
 #include <iostream>
 
 #include "pbrrenderpass.h"
-#include "SimplePostProcessPass.h"
+#include "Show2DTexturePass.h"
 #include "CubeBuffer.h"
 
 extern FCommandListManager g_CommandListManager;
@@ -35,6 +35,9 @@ const int CUBE_MAP_SIZE = 1024;
 const int IRRADIANCE_SIZE = 256;
 const int PREFILTERED_SIZE = 256;
 const bool CUBEMAP_DEBUG_VIEW = true;
+
+EVSConstants g_EVSConstants;
+EPSConstants g_EPSConstants;
 
 enum EShowMode
 {
@@ -68,6 +71,8 @@ public:
 		ActorItem->Model->SetLightDir(m_LightInfo.LightDir);
 		ActorItem->Model->SetLightIntensity(0.5);
 		DiffiusePassList.push_back(ActorItem);
+
+		m_LongLatPass.Init();
 
 		//m_GBufferRenderPass.Init(DiffiusePassList, L"../Resources/Shaders/Tutorial11/GBuffer.hlsl",m_GameDesc.Width, m_GameDesc.Height);
 		//m_SSRPass.Init(DiffiusePassList, L"../Resources/Shaders/Tutorial11/ScreenSpaceRayTracing.hlsl", m_GameDesc.Width, m_GameDesc.Height);
@@ -151,6 +156,17 @@ public:
 		//	[this](FCommandContext& CommandContext) {
 
 		//	});
+		RenderWindow& renderWindow = RenderWindow::Get();
+		FColorBuffer& BackBuffer = renderWindow.GetBackBuffer();
+		CommandContext.ClearColor(BackBuffer);
+
+		switch (m_ShowMode)
+		{
+		case SM_LongLat:
+			//ShowTexture2D(CommandContext, m_TextureLongLat);
+			break;
+		};
+
 		OnGUI(CommandContext);
 	}
 
@@ -167,6 +183,7 @@ private:
 	int m_NumSamplesPerDir = 10;
 	bool m_RotateMesh = false;
 	float m_RotateY = 0.f;
+	Show2DTexturePass m_LongLatPass;
 };
 
 int main()

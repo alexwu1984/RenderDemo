@@ -55,11 +55,12 @@ public:
 		ActorItem->Model->SetLightIntensity(0.5);
 		DiffiusePassList.push_back(ActorItem);
 
+		m_HBAOBlurPass.Init(L"../Resources/Shaders/Tutorial10/HBAOBlurPass.hlsl", m_GameDesc.Width, m_GameDesc.Height);
 		m_GBufferRenderPass.Init(DiffiusePassList, L"../Resources/Shaders/Tutorial10/GBuffer.hlsl",m_GameDesc.Width, m_GameDesc.Height);
 		m_ScreenQuadRenderPass.Init(L"../Resources/Shaders/Tutorial10/SCreenQuad.hlsl", m_GameDesc.Width, m_GameDesc.Height);
 		//m_ScreenQuadRenderPass.Init(L"../Resources/Shaders/SCreenQuad.hlsl", m_GameDesc.Width, m_GameDesc.Height);
 		m_HBAOPass.Init(m_GameDesc.Width, m_GameDesc.Height);
-		m_HBAOBlurPass.Init( L"../Resources/Shaders/Tutorial10/HBAOBlurPass.hlsl", m_GameDesc.Width, m_GameDesc.Height);
+		
 	}
 
 	virtual void OnUpdate()
