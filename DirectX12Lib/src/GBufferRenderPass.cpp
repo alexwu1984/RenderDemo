@@ -108,7 +108,7 @@ void GBufferRenderPass::SetupPipelineState(const std::wstring& ShaderFile)
 	std::shared_ptr<FShader> shader = FShaderMgr::Get().CreateShader(core::ucs2_u8(ShaderFile), ShaderFile);
 
 	m_GBufferRenderState = std::make_shared<RenderPipelineInfo>(shader);
-	const DXGI_FORMAT renderTargetFormat[] = { DXGI_FORMAT_R32G32B32A32_FLOAT,DXGI_FORMAT_R32G32B32A32_FLOAT,DXGI_FORMAT_R32G32B32A32_FLOAT };
+	const DXGI_FORMAT renderTargetFormat[] = { m_RenderTargetFormat,m_RenderTargetFormat,m_RenderTargetFormat };
 	m_GBufferRenderState->SetupRenderTargetFormat(3, renderTargetFormat, DXGI_FORMAT_D24_UNORM_S8_UINT);
 	m_GBufferRenderState->SetRasterizerState(FGraphicsPipelineState::RasterizerFront);
 	m_GBufferRenderState->SetBlendState(FPipelineState::BlendDisable);
@@ -122,8 +122,8 @@ void GBufferRenderPass::SetupPipelineState(const std::wstring& ShaderFile)
 	m_GBufferRenderState->SetupPipeline(m_GBufferSignature, MeshLayout);
 	m_GBufferRenderState->PipelineFinalize();
 
-	m_AlbedoBuffer.Create(L"Albedo Buffer", m_GameWndSize.x, m_GameWndSize.y, 1, DXGI_FORMAT_R32G32B32A32_FLOAT);
-	m_NormalBuffer.Create(L"Normal Buffer", m_GameWndSize.x, m_GameWndSize.y, 1, DXGI_FORMAT_R32G32B32A32_FLOAT);
-	m_PositionBuffer.Create(L"Position Buffer", m_GameWndSize.x, m_GameWndSize.y, 1, DXGI_FORMAT_R32G32B32A32_FLOAT);
+	m_AlbedoBuffer.Create(L"Albedo Buffer", m_GameWndSize.x, m_GameWndSize.y, 1, m_RenderTargetFormat);
+	m_NormalBuffer.Create(L"Normal Buffer", m_GameWndSize.x, m_GameWndSize.y, 1, m_RenderTargetFormat);
+	m_PositionBuffer.Create(L"Position Buffer", m_GameWndSize.x, m_GameWndSize.y, 1, m_RenderTargetFormat);
 	m_DepthBuffer.Create(L"Depth Buffer", m_GameWndSize.x, m_GameWndSize.y, DXGI_FORMAT_D24_UNORM_S8_UINT);
 }

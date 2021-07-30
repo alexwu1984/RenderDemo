@@ -34,6 +34,8 @@ private:
 	std::shared_ptr< RenderPipelineInfo> m_GBufferRenderState;
 	FRootSignature m_GBufferSignature;
 
+	//DXGI_FORMAT m_RenderTargetFormat = DXGI_FORMAT_R32G32B32_FLOAT;
+	DXGI_FORMAT m_RenderTargetFormat = DXGI_FORMAT_R32G32B32A32_FLOAT;
 	FColorBuffer m_AlbedoBuffer;
 	FColorBuffer m_NormalBuffer;
 	FColorBuffer m_PositionBuffer;

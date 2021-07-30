@@ -44,13 +44,16 @@ public:
 	{
 		FDirectLightGameMode::OnUpdate();
 
-		m_Camera = FCamera(Vector3f(0, -2.03285, -3.00298), Vector3f(-0.305803, 0.190466, -0.932849), Vector3f(0.f, 1.f, 0.f));
+		//m_Camera = FCamera(Vector3f(0, -2.03285, -3.00298), Vector3f(-0.305803, 0.190466, -0.932849), Vector3f(0.f, 1.f, 0.f));
+		m_Camera = FCamera(Vector3f(0, 0, -5.00298), Vector3f(0, 0, 0), Vector3f(0.f, 1.f, 0.f));
 		m_Camera.ProcessMouseMovement(0, 0);
 		std::vector< std::shared_ptr<FRenderItem> > DiffiusePassList;
 
 		std::shared_ptr<FRenderItem> ActorItem = std::make_shared<FRenderItem>();
-		ActorItem->Init(L"../Resources/Models/VioletSponza/SponzaPBR.obj");
-		//ActorItem->Init(L"../Resources/Models/Marry/Marry.obj");
+		//ActorItem->Init(L"../Resources/Models/harley/harley.obj");
+		ActorItem->Init(L"../Resources/Models/Marry/Marry.obj");
+		ActorItem->Model->SetPosition(Vector3f(0, -1, 0));
+		//ActorItem->Model->SetRotation(FMatrix::RotateY(15));
 		ActorItem->Model->SetLightDir(m_LightInfo.LightDir);
 		ActorItem->Model->SetLightIntensity(0.5);
 		DiffiusePassList.push_back(ActorItem);
@@ -71,7 +74,8 @@ public:
 	virtual void DoRender(FCommandContext& CommandContext)
 	{
 		m_GBufferRenderPass.Render(CommandContext);
-		m_SSRPass.Render(CommandContext, m_GBufferRenderPass.GetDepthBuffer(), m_GBufferRenderPass.GetAlbedoBuffer());
+		m_SSRPass.RenderScreenQuad(CommandContext, m_GBufferRenderPass.GetDepthBuffer(), 
+			m_GBufferRenderPass.GetAlbedoBuffer(), m_GBufferRenderPass.GetNormalBuffer());
 
 		m_ScreenQuadRenderPass.Render(CommandContext, [this](FCommandContext& CommandContext) {
 			CommandContext.TransitionResource(m_SSRPass.GetAlbedoBuffer(), D3D12_RESOURCE_STATE_PIXEL_SHADER_RESOURCE);
