@@ -212,7 +212,7 @@ public:
 			ComputePass(CommandContext);
 		}
 
-		DrawNormalItem(CommandContext);
+		FinalPass(CommandContext);
 		
 		CommandContext.Finish(true);
 
@@ -258,7 +258,7 @@ private:
 	}
 
 
-	void DrawNormalItem(FCommandContext& CommandContext)
+	void FinalPass(FCommandContext& CommandContext)
 	{
 		if (m_ShadowMode == SM_VSM)
 		{
@@ -420,6 +420,7 @@ private:
 		{
 			if (m_GenVSMMode == E_GenWithComputeShader)
 			{
+				CommandContext.TransitionResource(m_ShaderMap->GetBuffer(), D3D12_RESOURCE_STATE_PIXEL_SHADER_RESOURCE);
 				CommandContext.SetDynamicDescriptor(1, 0, m_ShaderMap->Srv());
 			}
 		}
@@ -496,8 +497,8 @@ private:
 		if ((btnState & MK_LBUTTON) != 0)
 		{
 			// Make each pixel correspond to a quarter of a degree.
-			float dx = ConvertToRadians(0.25f * static_cast<float>(x - m_LastMousePos.x));
-			float dy = ConvertToRadians(0.25f * static_cast<float>(y - m_LastMousePos.y));
+			float dx = ConvertToRadians(0.5f * static_cast<float>(x - m_LastMousePos.x));
+			float dy = ConvertToRadians(0.5f * static_cast<float>(y - m_LastMousePos.y));
 
 			// Update angles based on input to orbit camera around box.
 			m_Theta += dx;
@@ -506,7 +507,8 @@ private:
 			// Restrict the angle mPhi.
 			m_Phi = Clamp(m_Phi, 0.1f, MATH_PI - 0.1f);
 
-			m_Camera.Rotate(dx, dy);
+			//m_Camera.Rotate(dx, dy);
+			m_Camera.ProcessMouseMovement(-dx, dy);
 		}
 		else if ((btnState & MK_RBUTTON) != 0)
 		{

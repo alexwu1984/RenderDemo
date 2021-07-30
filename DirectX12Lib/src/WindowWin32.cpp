@@ -119,6 +119,7 @@ LRESULT WindowWin32::WindowProc(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lPar
 	case WM_SYSKEYDOWN:
 	{
 		GameInput::SetKeyState(static_cast<uint8_t>(wParam), EKeyState::Down);
+		Game->OnKeyDown(static_cast<uint8_t>(wParam));
 		if (wParam == VK_ESCAPE)
 		{
 			::PostQuitMessage(0);
@@ -130,6 +131,7 @@ LRESULT WindowWin32::WindowProc(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lPar
 	case WM_SYSKEYUP:
 	{
 		GameInput::SetKeyState(static_cast<uint8_t>(wParam), EKeyState::Up);
+		Game->OnKeyUp(static_cast<uint8_t>(wParam));
 		break;
 	}
 
@@ -139,7 +141,8 @@ LRESULT WindowWin32::WindowProc(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lPar
 	{
 		GameInput::SetKeyState(g_MouseMapping[uMsg], EKeyState::Down);
 		GameInput::MouseStart(GET_X_LPARAM(lParam), GET_Y_LPARAM(lParam));
-		SetCapture(hWnd);
+		//SetCapture(hWnd);
+		Game->OnMouseDown(wParam, GET_X_LPARAM(lParam), GET_Y_LPARAM(lParam));
 		break;
 	}
 
@@ -150,7 +153,7 @@ LRESULT WindowWin32::WindowProc(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lPar
 		GameInput::SetKeyState(g_MouseMapping[uMsg], EKeyState::Up);
 		GameInput::MouseStop();
 		Game->OnMouseUp(wParam, GET_X_LPARAM(lParam), GET_Y_LPARAM(lParam));
-		ReleaseCapture();
+		//ReleaseCapture();
 		break;
 	}
 

@@ -9,7 +9,8 @@ FCamera::FCamera(const Vector3f& CamPosition, const Vector3f& LookAtPosition, co
 	Up = UpDirection.Normalize();
 	Forward = LookAtPosition - CamPosition;
 	CameraLength = Forward.Length();
-	ProcessMouseMovement(0, 0);
+	//ProcessMouseMovement(0, 0);
+	UpdateViewMatrix();
 }
 
 
@@ -98,8 +99,8 @@ void FCamera::Rotate(float Yaw, float Pitch)
 // processes input received from a mouse input system. Expects the offset value in both the x and y direction.
 void FCamera::ProcessMouseMovement(float xoffset, float yoffset, bool constrainPitch )
 {
-	xoffset *= MouseSensitivity;
-	yoffset *= MouseSensitivity;
+	//xoffset *= MouseSensitivity;
+	//yoffset *= MouseSensitivity;
 
 	Yaw += xoffset;
 	Pitch += yoffset;

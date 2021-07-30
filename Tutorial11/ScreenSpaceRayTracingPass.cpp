@@ -27,7 +27,7 @@ void ScreenSpaceRayTracingPass::Init(const std::vector < std::shared_ptr<FRender
 	
 }
 
-void ScreenSpaceRayTracingPass::Render(FCommandContext& CommandContext, FDepthBuffer& Depth, FColorBuffer Albedo)
+void ScreenSpaceRayTracingPass::Render(FCommandContext& CommandContext, FDepthBuffer& Depth, FColorBuffer& Albedo)
 {
 	// Set necessary state.
 	CommandContext.SetRootSignature(m_Signature);
@@ -49,8 +49,11 @@ void ScreenSpaceRayTracingPass::Render(FCommandContext& CommandContext, FDepthBu
 
 	for (std::shared_ptr<FRenderItem> item : m_ItemList)
 	{
-		item->Model->CustomDrawParam = [&Depth, Albedo, this](FCommandContext& Context, std::shared_ptr< FMaterial> Material, std::shared_ptr<FRenderItem::BasePassInfoWrapper> BasePass)
+		item->Model->CustomDrawParam = [&Depth, &Albedo, this](FCommandContext& Context, std::shared_ptr< FMaterial> Material, std::shared_ptr<FRenderItem::BasePassInfoWrapper> BasePass)
 		{
+			Context.TransitionResource(Depth, D3D12_RESOURCE_STATE_PIXEL_SHADER_RESOURCE);
+			Context.TransitionResource(Albedo, D3D12_RESOURCE_STATE_PIXEL_SHADER_RESOURCE);
+
 			Context.SetDynamicDescriptor(0, 0, BasePass->BasePassCpuHandle);
 			Context.SetDynamicDescriptor(1, 0, m_SSRInfoCpuHandle);
 			Context.SetDynamicDescriptor(2, 0, Depth.GetDepthSRV());

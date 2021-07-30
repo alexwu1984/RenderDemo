@@ -18,7 +18,7 @@ public:
 	~ScreenSpaceRayTracingPass();
 
 	void Init(const std::vector < std::shared_ptr<FRenderItem>>& ItemList, const std::wstring& ShaderFile, int Width, int Height);
-	void Render(FCommandContext& CommandContext, FDepthBuffer& Depth, FColorBuffer Albedo);
+	void Render(FCommandContext& CommandContext, FDepthBuffer& Depth, FColorBuffer& Albedo);
 	void Update(FCamera& MainCamera);
 
 	FColorBuffer& GetAlbedoBuffer() { return m_AlbedoBuffer; }
