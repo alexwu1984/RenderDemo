@@ -28,6 +28,8 @@
 #include "pbrrenderpass.h"
 #include "Show2DTexturePass.h"
 #include "CubeBuffer.h"
+#include "SkyBoxPass.h"
+#include "SkyBox.h"
 
 extern FCommandListManager g_CommandListManager;
 
@@ -141,23 +143,12 @@ public:
 	virtual void OnUpdate()
 	{
 		FDirectLightGameMode::OnUpdate();
-		//m_GBufferRenderPass.Update(m_LightInfo.LightDir, m_LightInfo.ViewMatrix, m_LightInfo.ProjectionMatrix, m_Camera);
-		//m_SSRPass.Update(m_Camera);
+
 	}
 
 	virtual void DoRender(FCommandContext& GfxContext)
 	{
-		//m_GBufferRenderPass.Render(CommandContext);
-		//m_SSRPass.Render(CommandContext, m_GBufferRenderPass.GetDepthBuffer(), m_GBufferRenderPass.GetAlbedoBuffer());
 
-		//m_ScreenQuadRenderPass.Render(CommandContext, [this](FCommandContext& CommandContext) {
-		//	CommandContext.TransitionResource(m_SSRPass.GetAlbedoBuffer(), D3D12_RESOURCE_STATE_PIXEL_SHADER_RESOURCE);
-
-		//	CommandContext.SetDynamicDescriptor(0, 0, m_SSRPass.GetAlbedoBuffer().GetSRV());
-		//	},
-		//	[this](FCommandContext& CommandContext) {
-
-		//	});
 		RenderWindow& renderWindow = RenderWindow::Get();
 		FColorBuffer& BackBuffer = renderWindow.GetBackBuffer();
 		GfxContext.TransitionResource(BackBuffer, D3D12_RESOURCE_STATE_RENDER_TARGET,true);
@@ -176,7 +167,10 @@ public:
 	void SetupMesh()
 	{
 		m_TextureLongLat.LoadFromFile(L"../Resources/HDR/spruit_sunrise_2k.hdr",true);
+		m_SkyBox = std::make_shared<FSkyBox>();
+		m_SkeyPass.Init(m_SkyBox, m_GameDesc.Width, m_GameDesc.Height);
 
+		m_CubeBuffer.Create(L"CubeMap", CUBE_MAP_SIZE, CUBE_MAP_SIZE, 0/*full mipmap chain*/, DXGI_FORMAT_R16G16B16A16_FLOAT);
 	}
 
 	void ShowTexture2D(FCommandContext& GfxContext, FTexture& Texture2D)
@@ -190,10 +184,13 @@ public:
 		m_LongLatPass.Render(GfxContext, Texture2D);
 	}
 
+	void GenerateCubeMap()
+	{
+
+	}
+
 private:
-	//GBufferRenderPass m_GBufferRenderPass;
-	//ScreenQuadRenderPass m_ScreenQuadRenderPass;
-	//ScreenSpaceRayTracingPass m_SSRPass;
+
 	FTexture m_TextureLongLat;
 	FCubeBuffer m_CubeBuffer, m_IrradianceCube, m_PrefilteredCube;
 	int m_ShowMode = SM_PBR;
@@ -204,6 +201,8 @@ private:
 	bool m_RotateMesh = false;
 	float m_RotateY = 0.f;
 	Show2DTexturePass m_LongLatPass;
+	SkyBoxPass m_SkeyPass;
+	std::shared_ptr< FSkyBox> m_SkyBox;
 };
 
 int main()

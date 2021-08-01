@@ -1,4 +1,5 @@
-﻿#include "AiMeshData.h"
+﻿#pragma once
+#include "AiMeshData.h"
 #include "GpuBuffer.h"
 #include "Texture.h"
 #include "MathLib.h"

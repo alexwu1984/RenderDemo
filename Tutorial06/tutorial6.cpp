@@ -55,11 +55,12 @@ public:
 	Tutorial6(const GameDesc& Desc) : FGame(Desc)
 		,m_Camera(Vector3f(0.f, 0.f, -5.f), Vector3f(0.f, 0.0f, 0.f), Vector3f(0.f, 1.f, 0.f))
 	{
+		m_Camera.SetMouseRotateSpeed(0.001);
+		m_Camera.SetMouseZoomSpeed(0.001);
 	}
 
 	void OnStartup()
 	{
-
 
 		if (m_GenVSMMode == E_GenWithComputeShader)
 		{
@@ -193,6 +194,7 @@ public:
 		// Frame limit set to 60 fps
 		tEnd = std::chrono::high_resolution_clock::now();
 		float time = std::chrono::duration<float, std::milli>(tEnd - tStart).count();
+		m_Camera.Update(time);
 		if (time < (1000.0f / 400.0f))
 		{
 			return;
@@ -481,51 +483,6 @@ private:
 		}
 	}
 
-	virtual void OnMouseDown(WPARAM btnState, int x, int y)override
-	{
-		m_LastMousePos.x = x;
-		m_LastMousePos.y = y;
-
-		::SetCapture(WindowWin32::Get().GetWindowHandle());
-	}
-	virtual void OnMouseUp(WPARAM btnState, int x, int y)override
-	{
-		::ReleaseCapture();
-	}
-	virtual void OnMouseMove(WPARAM btnState, int x, int y)override
-	{
-		if ((btnState & MK_LBUTTON) != 0)
-		{
-			// Make each pixel correspond to a quarter of a degree.
-			float dx = ConvertToRadians(0.5f * static_cast<float>(x - m_LastMousePos.x));
-			float dy = ConvertToRadians(0.5f * static_cast<float>(y - m_LastMousePos.y));
-
-			// Update angles based on input to orbit camera around box.
-			m_Theta += dx;
-			m_Phi += dy;
-
-			// Restrict the angle mPhi.
-			m_Phi = Clamp(m_Phi, 0.1f, MATH_PI - 0.1f);
-
-			//m_Camera.Rotate(dx, dy);
-			m_Camera.ProcessMouseMovement(-dx, dy);
-		}
-		else if ((btnState & MK_RBUTTON) != 0)
-		{
-			// Make each pixel correspond to 0.2 unit in the scene.
-			float dx = 0.2f * static_cast<float>(x - m_LastMousePos.x);
-			float dy = 0.2f * static_cast<float>(y - m_LastMousePos.y);
-
-			// Update the camera radius based on input.
-			m_Radius += dx - dy;
-
-			// Restrict the radius.
-			m_Radius = Clamp(m_Radius, 5.0f, 150.0f);
-		}
-
-		m_LastMousePos.x = x;
-		m_LastMousePos.y = y;
-	}
 
 	virtual void OnKeyDown(uint8_t Key)
 	{
@@ -555,19 +512,7 @@ private:
 		{
 			m_Floor->SetLightDir(LightDir);
 		}
-		
-
-		if (GetAsyncKeyState('W') & 0x8000)
-			m_Camera.MoveForward(1.0f * dt);
-
-		if (GetAsyncKeyState('S') & 0x8000)
-			m_Camera.MoveForward(-1.0f * dt);
-
-		if (GetAsyncKeyState('A') & 0x8000)
-			m_Camera.MoveRight(-1.0f * dt);
-
-		if (GetAsyncKeyState('D') & 0x8000)
-			m_Camera.MoveRight(1.0f * dt);
+	
 		
 	}
 

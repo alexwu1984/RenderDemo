@@ -1,4 +1,4 @@
-#pragma 
+#pragma once
 #include "MathLib.h"
 
 __declspec(align(16)) struct EVSConstants

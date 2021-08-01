@@ -31,7 +31,7 @@ void Show2DTexturePass::Render(FCommandContext& GfxContext, FTexture& inputTex)
 
 	// Set necessary state.
 	GfxContext.SetRootSignature(m_RootSignature);
-	GfxContext.SetViewportAndScissor(m_Pos.x, m_Pos.y, Size.x, Size.y);
+	GfxContext.SetViewportAndScissor(m_Pos.x, m_Pos.y, m_Size.x, m_Size.y);
 
 	// Indicate that the back buffer will be used as a render target.
 	GfxContext.TransitionResource(BackBuffer, D3D12_RESOURCE_STATE_RENDER_TARGET,true);
@@ -86,6 +86,6 @@ void Show2DTexturePass::SetupPipelineState(const std::wstring& ShaderFile, const
 
 void Show2DTexturePass::SetViewportAndScissor(int32_t x, int32_t y, int32_t w, int32_t h)
 {
-	Size = { w,h };
+	m_Size = { w,h };
 	m_Pos = { x,y };
 }
