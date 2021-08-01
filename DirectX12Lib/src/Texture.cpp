@@ -6,6 +6,8 @@
 
 void FTexture::Create(uint32_t Width, uint32_t Height, DXGI_FORMAT Format, const void* InitialData)
 {
+	m_Width = Width;
+	m_Height = Height;
 	m_CurrentState = D3D12_RESOURCE_STATE_COPY_DEST;
 
 	D3D12_RESOURCE_DESC TexDesc = {};
@@ -47,7 +49,7 @@ void FTexture::Create(uint32_t Width, uint32_t Height, DXGI_FORMAT Format, const
 	D3D12RHI::Get().GetD3D12Device()->CreateShaderResourceView(m_Resource.Get(), nullptr, m_CpuDescriptorHandle);
 }
 
-void FTexture::LoadFromFile(const std::wstring& FileName)
+void FTexture::LoadFromFile(const std::wstring& FileName,bool IsSRGB )
 {
 	m_CurrentState = D3D12_RESOURCE_STATE_COPY_DEST;
 
@@ -69,9 +71,13 @@ void FTexture::LoadFromFile(const std::wstring& FileName)
 	{
 		hr = DirectX::LoadFromWICFile(FileName.c_str(), DirectX::WIC_FLAGS_IGNORE_SRGB, nullptr, image);
 	}
+
+	m_Width = (int)image.GetImages()->width;
+	m_Height = (int)image.GetImages()->height;
+
 	ThrowIfFailed(hr);
 	ID3D12Device* Device = D3D12RHI::Get().GetD3D12Device().Get();
-	ThrowIfFailed(DirectX::CreateTextureEx(Device, image.GetMetadata(), D3D12_RESOURCE_FLAG_NONE, true, m_Resource.ReleaseAndGetAddressOf()));
+	ThrowIfFailed(DirectX::CreateTextureEx(Device, image.GetMetadata(), D3D12_RESOURCE_FLAG_NONE, IsSRGB, m_Resource.ReleaseAndGetAddressOf()));
 
 	m_Resource->SetName(FileName.c_str());
 
@@ -124,6 +130,9 @@ void FTexture::LoadFromFileForCube(const std::array<std::wstring, 6>& FileNames)
 
 	DirectX::ScratchImage cubImage;
 	ThrowIfFailed(cubImage.InitializeCubeFromImages(rawImages.data(), rawImages.size()));
+
+	m_Width = (int)cubImage.GetImages()->width;
+	m_Height = (int)cubImage.GetImages()->height;
 
 	ID3D12Device* Device = D3D12RHI::Get().GetD3D12Device().Get();
 	ThrowIfFailed(DirectX::CreateTextureEx(Device, cubImage.GetMetadata(), D3D12_RESOURCE_FLAG_NONE, true, m_Resource.ReleaseAndGetAddressOf()));

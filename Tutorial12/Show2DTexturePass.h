@@ -8,7 +8,7 @@
 struct FRenderItem;
 class FCommandContext;
 class RenderPipelineInfo;
-class FD3D12Resource;
+class FTexture;
 
 class Show2DTexturePass
 {
@@ -17,7 +17,7 @@ public:
 	~Show2DTexturePass();
 
 	void Init();
-	void Render(FCommandContext& CommandContext, FD3D12Resource& inputTex);
+	void Render(FCommandContext& GfxContext, FTexture& inputTex);
 
 	void SetViewportAndScissor(int32_t x, int32_t y, int32_t w, int32_t h);
 

@@ -74,6 +74,8 @@ public:
 
 		m_LongLatPass.Init();
 
+		SetupMesh();
+
 		//m_GBufferRenderPass.Init(DiffiusePassList, L"../Resources/Shaders/Tutorial11/GBuffer.hlsl",m_GameDesc.Width, m_GameDesc.Height);
 		//m_SSRPass.Init(DiffiusePassList, L"../Resources/Shaders/Tutorial11/ScreenSpaceRayTracing.hlsl", m_GameDesc.Width, m_GameDesc.Height);
 		//m_ScreenQuadRenderPass.Init(L"../Resources/Shaders/SCreenQuad.hlsl", m_GameDesc.Width, m_GameDesc.Height);
@@ -143,7 +145,7 @@ public:
 		//m_SSRPass.Update(m_Camera);
 	}
 
-	virtual void DoRender(FCommandContext& CommandContext)
+	virtual void DoRender(FCommandContext& GfxContext)
 	{
 		//m_GBufferRenderPass.Render(CommandContext);
 		//m_SSRPass.Render(CommandContext, m_GBufferRenderPass.GetDepthBuffer(), m_GBufferRenderPass.GetAlbedoBuffer());
@@ -158,23 +160,41 @@ public:
 		//	});
 		RenderWindow& renderWindow = RenderWindow::Get();
 		FColorBuffer& BackBuffer = renderWindow.GetBackBuffer();
-		CommandContext.ClearColor(BackBuffer);
+		GfxContext.TransitionResource(BackBuffer, D3D12_RESOURCE_STATE_RENDER_TARGET,true);
+		GfxContext.ClearColor(BackBuffer);
 
 		switch (m_ShowMode)
 		{
 		case SM_LongLat:
-			//ShowTexture2D(CommandContext, m_TextureLongLat);
+			ShowTexture2D(GfxContext, m_TextureLongLat);
 			break;
 		};
 
-		OnGUI(CommandContext);
+		OnGUI(GfxContext);
+	}
+
+	void SetupMesh()
+	{
+		m_TextureLongLat.LoadFromFile(L"../Resources/HDR/spruit_sunrise_2k.hdr",true);
+
+	}
+
+	void ShowTexture2D(FCommandContext& GfxContext, FTexture& Texture2D)
+	{
+		float AspectRatio = Texture2D.GetWidth() * 1.f / Texture2D.GetHeight();
+		int Width = std::min(m_GameDesc.Width, Texture2D.GetWidth());
+		int Height = std::min(m_GameDesc.Height, Texture2D.GetHeight());
+		Width = std::min(Width, static_cast<int>(Height * AspectRatio));
+		Height = std::min(Height, static_cast<int>(Width / AspectRatio));
+		m_LongLatPass.SetViewportAndScissor((m_GameDesc.Width - Width) / 2, (m_GameDesc.Height - Height) / 2, Width, Height);
+		m_LongLatPass.Render(GfxContext, Texture2D);
 	}
 
 private:
 	//GBufferRenderPass m_GBufferRenderPass;
 	//ScreenQuadRenderPass m_ScreenQuadRenderPass;
 	//ScreenSpaceRayTracingPass m_SSRPass;
-	
+	FTexture m_TextureLongLat;
 	FCubeBuffer m_CubeBuffer, m_IrradianceCube, m_PrefilteredCube;
 	int m_ShowMode = SM_PBR;
 	Vector3f m_ClearColor = Vector3f(0.2f);

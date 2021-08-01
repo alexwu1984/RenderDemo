@@ -28,6 +28,7 @@
 #include "screenquadrenderpass.h"
 #include "SimplePostProcessPass.h"
 #include "ScreenSpaceRayTracingPass.h"
+#include "baserenderpass.h"
 
 constexpr int32_t RSM_BUFFER_SIZE = 256;
 extern FCommandListManager g_CommandListManager;
@@ -58,9 +59,10 @@ public:
 		ActorItem->Model->SetLightIntensity(0.5);
 		DiffiusePassList.push_back(ActorItem);
 
+		m_BassPass.Init(DiffiusePassList, m_GameDesc.Width, m_GameDesc.Height);
 		m_GBufferRenderPass.Init(DiffiusePassList, L"../Resources/Shaders/Tutorial11/GBuffer.hlsl",m_GameDesc.Width, m_GameDesc.Height);
 		m_SSRPass.Init(DiffiusePassList, L"../Resources/Shaders/Tutorial11/ScreenSpaceRayTracing.hlsl", m_GameDesc.Width, m_GameDesc.Height);
-		m_ScreenQuadRenderPass.Init(L"../Resources/Shaders/SCreenQuad.hlsl", m_GameDesc.Width, m_GameDesc.Height);
+		m_ScreenQuadRenderPass.Init(L"../Resources/Shaders/Tutorial11/SCreenQuad.hlsl", m_GameDesc.Width, m_GameDesc.Height);
 		
 	}
 
@@ -69,10 +71,12 @@ public:
 		FDirectLightGameMode::OnUpdate();
 		m_GBufferRenderPass.Update(m_LightInfo.LightDir, m_LightInfo.ViewMatrix, m_LightInfo.ProjectionMatrix, m_Camera);
 		m_SSRPass.Update(m_Camera);
+		m_BassPass.Update(m_LightInfo.LightDir, m_LightInfo.ViewMatrix, m_LightInfo.ProjectionMatrix, m_Camera);
 	}
 
 	virtual void DoRender(FCommandContext& CommandContext)
 	{
+		m_BassPass.Render(CommandContext);
 		m_GBufferRenderPass.Render(CommandContext);
 		m_SSRPass.RenderScreenQuad(CommandContext, m_GBufferRenderPass.GetDepthBuffer(), 
 			m_GBufferRenderPass.GetAlbedoBuffer(), m_GBufferRenderPass.GetNormalBuffer());
@@ -91,6 +95,7 @@ private:
 	GBufferRenderPass m_GBufferRenderPass;
 	ScreenQuadRenderPass m_ScreenQuadRenderPass;
 	ScreenSpaceRayTracingPass m_SSRPass;
+	BaseRenderPass m_BassPass;
 };
 
 int main()

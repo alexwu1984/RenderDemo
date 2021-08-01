@@ -84,6 +84,8 @@ add_executable(Tutorial11 Tutorial11/tutorial11.cpp
 						  Tutorial11/screenquadrenderpass.h
 						  Tutorial11/ScreenSpaceRayTracingPass.cpp
 						  Tutorial11/ScreenSpaceRayTracingPass.h
+						  Tutorial11/baserenderpass.cpp
+						  Tutorial11/baserenderpass.h
 )
 target_link_libraries(Tutorial11 LINK_PUBLIC DirectX12Lib 
                       ../ThirdParty/Assimp/lib/x64/assimp-vc140-mt)

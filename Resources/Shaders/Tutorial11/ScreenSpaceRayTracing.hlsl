@@ -292,5 +292,5 @@ float4 PS_SSR(float2 Tex : TEXCOORD, float4 ScreenPos : SV_Position) : SV_Target
         float2 uv = HitUVz.xy;
         return AlbedoTexture.Sample(LinearSampler, uv);
     }
-    return float4(0.0, 1.0, 0.0, 0.0);
+    return float4(0.0, 0.0, 0.0, 0.0);
 }

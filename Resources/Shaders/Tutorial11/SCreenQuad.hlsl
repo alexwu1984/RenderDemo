@@ -7,8 +7,7 @@ struct VertexOutput
     float4 gl_Position : SV_Position;
 };
 
-Texture2D AOTexture : register(t0);
-Texture2D AlbedoTexture : register(t1);
+Texture2D Texture : register(t0);
 SamplerState LinearSampler : register(s0);
 
 
@@ -25,10 +24,7 @@ VertexOutput vs_main(in uint VertID : SV_VertexID)
 
 float4 ps_main(VertexOutput pin) : SV_Target
 {
-    float Ambient = AOTexture.Sample(LinearSampler, pin.tex).r;
-    float3 Albedo = AlbedoTexture.Sample(LinearSampler, pin.tex).rgb;
-    return float4(Albedo * Ambient ,1.0);
-
+    return Texture.Sample(LinearSampler, float2(1, 1) - pin.tex);
 }
 
 

@@ -5,6 +5,7 @@
 #include "RenderPipelineInfo.h"
 #include "StringUnit.h"
 #include "Shader.h"
+#include "Texture.h"
 
 Show2DTexturePass::Show2DTexturePass()
 {
@@ -23,34 +24,36 @@ void Show2DTexturePass::Init()
 }
 
 
-void Show2DTexturePass::Render(FCommandContext& CommandContext,FD3D12Resource& inputTex)
+void Show2DTexturePass::Render(FCommandContext& GfxContext, FTexture& inputTex)
 {
 	RenderWindow& renderWindow = RenderWindow::Get();
 	FColorBuffer& BackBuffer = renderWindow.GetBackBuffer();
 
 	// Set necessary state.
-	CommandContext.SetRootSignature(m_RootSignature);
-	CommandContext.SetViewportAndScissor(m_Pos.x, m_Pos.y, Size.x, Size.y);
+	GfxContext.SetRootSignature(m_RootSignature);
+	GfxContext.SetViewportAndScissor(m_Pos.x, m_Pos.y, Size.x, Size.y);
 
 	// Indicate that the back buffer will be used as a render target.
-	CommandContext.TransitionResource(BackBuffer, D3D12_RESOURCE_STATE_RENDER_TARGET,true);
+	GfxContext.TransitionResource(BackBuffer, D3D12_RESOURCE_STATE_RENDER_TARGET,true);
 
 	const D3D12_CPU_DESCRIPTOR_HANDLE RTVs[] = { BackBuffer.GetRTV() };
-	CommandContext.SetRenderTargets(1, RTVs);
+	GfxContext.SetRenderTargets(1, RTVs);
 
 	// Record commands.
-	CommandContext.ClearColor(BackBuffer);
-	CommandContext.SetPrimitiveTopology(D3D_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
-	CommandContext.SetPipelineState(m_RenderState->GetPipelineState());
+	GfxContext.ClearColor(BackBuffer);
+	GfxContext.SetPrimitiveTopology(D3D_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
+	GfxContext.SetPipelineState(m_RenderState->GetPipelineState());
 	
 	g_EVSConstants.ModelMatrix = FMatrix(); // identity
 	g_EVSConstants.ViewProjMatrix = FMatrix::MatrixOrthoLH(1.f, 1.f, -1.f, 1.f);
-	CommandContext.SetDynamicConstantBufferView(0, sizeof(EVSConstants), &g_EVSConstants);
+	GfxContext.SetDynamicConstantBufferView(0, sizeof(EVSConstants), &g_EVSConstants);
 
 	g_EPSConstants.Exposure = 1.0;
-	CommandContext.SetDynamicConstantBufferView(1, sizeof(EPSConstants), &g_EPSConstants);
+	GfxContext.SetDynamicConstantBufferView(1, sizeof(EPSConstants), &g_EPSConstants);
 
-	CommandContext.Draw(3);
+	GfxContext.SetDynamicDescriptor(2, 0, inputTex.GetSRV());
+
+	GfxContext.Draw(3);
 
 }
 
@@ -70,8 +73,8 @@ void Show2DTexturePass::SetupPipelineState(const std::wstring& ShaderFile, const
 {
 	std::shared_ptr<FShader> Shader = FShaderMgr::Get().CreateShader(core::usc2_u8(ShaderFile), entryVSPoint, entryPSPoint, ShaderFile);
 	m_RenderState = std::make_shared<RenderPipelineInfo>(Shader);
-	DXGI_FORMAT format = DXGI_FORMAT_B8G8R8A8_UNORM;
-	m_RenderState->SetupRenderTargetFormat(1, &format, DXGI_FORMAT_UNKNOWN);
+
+	m_RenderState->SetupRenderTargetFormat(1, &RenderWindow::Get().GetColorFormat(), RenderWindow::Get().GetDepthFormat());
 	m_RenderState->SetRasterizerState(FPipelineState::RasterizerTwoSided);
 	m_RenderState->SetDepthStencilState(FPipelineState::DepthStateDisabled);
 	m_RenderState->SetBlendState(FPipelineState::BlendDisable);

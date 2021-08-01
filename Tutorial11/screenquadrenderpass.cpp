@@ -37,7 +37,6 @@ void ScreenQuadRenderPass::Render(FCommandContext& CommandContext, const std::fu
 	CommandContext.SetRenderTargets(1, &BackBuffer.GetRTV());
 
 	// Record commands.
-	CommandContext.ClearColor(BackBuffer);
 	CommandContext.SetPrimitiveTopology(D3D_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
 
 	CommandContext.SetPipelineState(m_ScreenQuadRenderState->GetPipelineState());
@@ -73,7 +72,7 @@ void ScreenQuadRenderPass::SetupPipelineState(const std::wstring& ShaderFile)
 	m_ScreenQuadRenderState = std::make_shared<RenderPipelineInfo>(Shader);
 	m_ScreenQuadRenderState->SetupRenderTargetFormat(1, &RenderWindow::Get().GetColorFormat(), DXGI_FORMAT_UNKNOWN);
 	m_ScreenQuadRenderState->SetRasterizerState(FGraphicsPipelineState::RasterizerTwoSided);
-	m_ScreenQuadRenderState->SetBlendState(FGraphicsPipelineState::BlendDisable);
+	m_ScreenQuadRenderState->SetBlendState(FGraphicsPipelineState::BlendTraditional);
 	m_ScreenQuadRenderState->SetDepthStencilState(FGraphicsPipelineState::DepthStateDisabled);
 
 	m_ScreenQuadRenderState->SetupPipeline(m_ScreenQuadSignature);
