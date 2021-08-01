@@ -47,6 +47,7 @@ set(HEADER_FILES
 	include/CubeMapCross.h
 	include/SkyBox.h
 	include/CubeBuffer.h
+	include/GenerateMips.h
 )
 
 set(SOURCES
@@ -91,6 +92,7 @@ set(SOURCES
 	src/CubeMapCross.cpp
 	src/SkyBox.cpp
 	src/CubeBuffer.cpp
+	src/GenerateMips.cpp
 )
 
 set( IMGUI_HEADERS

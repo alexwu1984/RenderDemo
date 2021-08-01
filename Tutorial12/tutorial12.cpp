@@ -30,6 +30,7 @@
 #include "CubeBuffer.h"
 #include "SkyBoxPass.h"
 #include "SkyBox.h"
+#include "GenCubePass.h"
 
 extern FCommandListManager g_CommandListManager;
 
@@ -65,23 +66,15 @@ public:
 	{
 		FDirectLightGameMode::OnUpdate();
 
-		m_Camera = FCamera(Vector3f(0, -2.03285, -3.00298), Vector3f(-0.305803, 0.190466, -0.932849), Vector3f(0.f, 1.f, 0.f));
-		std::vector< std::shared_ptr<FRenderItem> > DiffiusePassList;
+		m_Camera = FCamera(Vector3f(1.5f, 1.f, 0.f), Vector3f(0.f, 0.3f, 0.f), Vector3f(0.f, 1.f, 0.f));
+		m_Camera.SetMouseMoveSpeed(1e-3f);
+		m_Camera.SetMouseRotateSpeed(1e-4f);
 
-		std::shared_ptr<FRenderItem> ActorItem = std::make_shared<FRenderItem>();
-		ActorItem->Init(L"../Resources/Models/harley/harley.obj");
-		ActorItem->Model->SetLightDir(m_LightInfo.LightDir);
-		ActorItem->Model->SetLightIntensity(0.5);
-		DiffiusePassList.push_back(ActorItem);
-
-		m_LongLatPass.Init();
+		const float FovVertical = MATH_PI / 4.f;
+		m_Camera.SetPerspectiveParams(FovVertical, (float)GetDesc().Width / GetDesc().Height, 0.1f, 100.f);
 
 		SetupMesh();
-
-		//m_GBufferRenderPass.Init(DiffiusePassList, L"../Resources/Shaders/Tutorial11/GBuffer.hlsl",m_GameDesc.Width, m_GameDesc.Height);
-		//m_SSRPass.Init(DiffiusePassList, L"../Resources/Shaders/Tutorial11/ScreenSpaceRayTracing.hlsl", m_GameDesc.Width, m_GameDesc.Height);
-		//m_ScreenQuadRenderPass.Init(L"../Resources/Shaders/SCreenQuad.hlsl", m_GameDesc.Width, m_GameDesc.Height);
-		
+		GenerateCubeMap();
 	}
 
 	void OnGUI(FCommandContext& CommandContext)
@@ -159,6 +152,9 @@ public:
 		case SM_LongLat:
 			ShowTexture2D(GfxContext, m_TextureLongLat);
 			break;
+		case SM_SkyBox:
+			SkyPass(GfxContext);
+			break;
 		};
 
 		OnGUI(GfxContext);
@@ -166,11 +162,22 @@ public:
 
 	void SetupMesh()
 	{
+		std::vector< std::shared_ptr<FRenderItem> > DiffiusePassList;
+
+		std::shared_ptr<FRenderItem> ActorItem = std::make_shared<FRenderItem>();
+		ActorItem->Init(L"../Resources/Models/harley/harley.obj");
+		ActorItem->Model->SetLightDir(m_LightInfo.LightDir);
+		ActorItem->Model->SetLightIntensity(0.5);
+		DiffiusePassList.push_back(ActorItem);
+
+		m_LongLatPass.Init();
+
 		m_TextureLongLat.LoadFromFile(L"../Resources/HDR/spruit_sunrise_2k.hdr",true);
 		m_SkyBox = std::make_shared<FSkyBox>();
-		m_SkeyPass.Init(m_SkyBox, m_GameDesc.Width, m_GameDesc.Height);
+		m_SkyPass.Init(m_SkyBox, m_GameDesc.Width, m_GameDesc.Height);
 
 		m_CubeBuffer.Create(L"CubeMap", CUBE_MAP_SIZE, CUBE_MAP_SIZE, 0/*full mipmap chain*/, DXGI_FORMAT_R16G16B16A16_FLOAT);
+		m_GenCubePass.Init(m_SkyBox, CUBE_MAP_SIZE, CUBE_MAP_SIZE);
 	}
 
 	void ShowTexture2D(FCommandContext& GfxContext, FTexture& Texture2D)
@@ -186,7 +193,12 @@ public:
 
 	void GenerateCubeMap()
 	{
+		m_GenCubePass.Render(m_CubeBuffer, m_TextureLongLat);
+	}
 
+	void SkyPass(FCommandContext& GfxContext)
+	{
+		m_SkyPass.Render(GfxContext,m_Camera, m_CubeBuffer);
 	}
 
 private:
@@ -201,7 +213,8 @@ private:
 	bool m_RotateMesh = false;
 	float m_RotateY = 0.f;
 	Show2DTexturePass m_LongLatPass;
-	SkyBoxPass m_SkeyPass;
+	SkyBoxPass m_SkyPass;
+	GenCubePass m_GenCubePass;
 	std::shared_ptr< FSkyBox> m_SkyBox;
 };
 

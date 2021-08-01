@@ -40,6 +40,7 @@ public:
 	std::shared_ptr<FShader> CreateShader(const std::string& keyName, const std::wstring& fullname, FShader::ShaderType shaderType = FShader::GraphicsShader);
 	std::shared_ptr<FShader> CreateShader(const std::string& keyName, const std::string& entryPoint, const std::wstring& fullname);
 	std::shared_ptr<FShader> CreateShader(const std::string& keyName, const std::string& entryVSPoint, const std::string& entryPSPoint, const std::wstring& fullname);
+	std::shared_ptr<FShader> CreateShaderDirect(const std::wstring& fullname, const std::string& entryVSPoint, const std::string& entryPSPoint);
 
 	std::shared_ptr<FShader> FindShader(const std::string& keyName);
 

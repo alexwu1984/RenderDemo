@@ -100,6 +100,8 @@ add_executable(Tutorial12 Tutorial12/tutorial12.cpp
 						  Tutorial12/Show2DTexturePass.cpp
 						  Tutorial12/SkyBoxPass.h
 						  Tutorial12/SkyBoxPass.cpp
+						  Tutorial12/GenCubePass.h
+						  Tutorial12/GenCubePass.cpp
 )
 target_link_libraries(Tutorial12 LINK_PUBLIC DirectX12Lib 
                       ../ThirdParty/Assimp/lib/x64/assimp-vc140-mt)

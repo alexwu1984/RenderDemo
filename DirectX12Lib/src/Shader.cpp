@@ -79,6 +79,12 @@ std::shared_ptr<FShader> FShaderMgr::CreateShader(const std::string& keyName, co
 	return shader;
 }
 
+std::shared_ptr<FShader> FShaderMgr::CreateShaderDirect(const std::wstring& fullname, const std::string& entryVSPoint, const std::string& entryPSPoint)
+{
+	std::shared_ptr<FShader> shader = std::make_shared<FShader>(fullname, entryVSPoint, entryPSPoint);
+	return shader;
+}
+
 std::shared_ptr<FShader> FShaderMgr::FindShader(const std::string& keyName)
 {
 	auto itFind = m_mapShader.find(keyName);

@@ -23,7 +23,7 @@ void SkyBoxPass::Init(std::shared_ptr< FSkyBox> skyBox, int32_t width, int heigh
 	m_Size = { width,height };
 	m_SkyBox = skyBox;
 	SetupRootSignature();
-	SetupPipelineState(L"../Resources/Shaders/Tutorial12/EnvironmentShaders.hlsl", "VS_SkyCube", "PS_SkyCube");
+	SetupPipelineState(L"../Resources/Shaders/EnvironmentShaders.hlsl", "VS_SkyCube", "PS_SkyCube");
 }
 
 void SkyBoxPass::Render(FCommandContext& GfxContext, FCamera& MainCamera,FCubeBuffer& CubeBuffer)
@@ -73,7 +73,7 @@ void SkyBoxPass::SetupRootSignature()
 
 void SkyBoxPass::SetupPipelineState(const std::wstring& ShaderFile, const std::string& entryVSPoint, const std::string& entryPSPoint)
 {
-	std::shared_ptr<FShader> Shader = FShaderMgr::Get().CreateShader(core::usc2_u8(ShaderFile), entryVSPoint, entryPSPoint, ShaderFile);
+	std::shared_ptr<FShader> Shader = FShaderMgr::Get().CreateShaderDirect(ShaderFile, entryVSPoint, entryPSPoint);
 	m_RenderState = std::make_shared<RenderPipelineInfo>(Shader);
 
 	m_RenderState->SetupRenderTargetFormat(1, &RenderWindow::Get().GetColorFormat(), RenderWindow::Get().GetDepthFormat());

@@ -10,11 +10,11 @@ extern EVSConstants g_EVSConstants;
 
 __declspec(align(16)) struct EPSConstants
 {
-	float		Exposure;
-	int			MipLevel;
-	int			MaxMipLevel;
-	int			NumSamplesPerDir;
-	int			Degree;
+	float		Exposure = 1.0;
+	int			MipLevel = 0 ;
+	int			MaxMipLevel = 1;
+	int			NumSamplesPerDir = 0;
+	int			Degree = 1;
 	Vector3f	CameraPos;
 	Vector4f	Coeffs[16];
 } ;

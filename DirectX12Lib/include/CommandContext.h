@@ -14,6 +14,7 @@ class FCommandContext;
 class FRootSignature;
 class FD3D12Resource;
 class FPipelineState;
+class FCubeBuffer;
 
 class FContextManager
 {
@@ -75,6 +76,7 @@ public:
 	void CopySubresource(FD3D12Resource& Dest, UINT DestSubIndex, FD3D12Resource& Src, UINT SrcSubIndex);
 
 	void TransitionResource(FD3D12Resource& Resource, D3D12_RESOURCE_STATES NewState, bool Flush = false);
+	void TransitionSubResource(FD3D12Resource& Resource, D3D12_RESOURCE_STATES OldState, D3D12_RESOURCE_STATES NewState, uint32_t Subresource);
 
 	void SetDescriptorHeap(D3D12_DESCRIPTOR_HEAP_TYPE Type, ID3D12DescriptorHeap* HeapPtr);
 	void SetDescriptorHeaps(UINT HeapCount, D3D12_DESCRIPTOR_HEAP_TYPE Type[], ID3D12DescriptorHeap* HeapPtrs[]);
@@ -98,6 +100,7 @@ public:
 	void SetViewportAndScissor(const D3D12_VIEWPORT& Viewport, const D3D12_RECT& Scissor);
 
 	void ClearColor(FColorBuffer& Target);
+	void ClearColor(FCubeBuffer& Target, int Face, int Mip);
 	void ClearDepth(FDepthBuffer& Target);
 	void SetRenderTargets(UINT NumRTVs, const D3D12_CPU_DESCRIPTOR_HANDLE RTVs[]);
 	void SetRenderTargets(UINT NumRTVs, const D3D12_CPU_DESCRIPTOR_HANDLE RTVs[], D3D12_CPU_DESCRIPTOR_HANDLE DSV);

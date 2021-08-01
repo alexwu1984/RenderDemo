@@ -20,7 +20,7 @@ Show2DTexturePass::~Show2DTexturePass()
 void Show2DTexturePass::Init()
 {
 	SetupRootSignature();
-	SetupPipelineState(L"../Resources/Shaders/Tutorial12/EnvironmentShaders.hlsl", "VS_ShowTexture2D", "PS_ShowTexture2D");
+	SetupPipelineState(L"../Resources/Shaders/EnvironmentShaders.hlsl", "VS_ShowTexture2D", "PS_ShowTexture2D");
 }
 
 
@@ -71,7 +71,7 @@ void Show2DTexturePass::SetupRootSignature()
 
 void Show2DTexturePass::SetupPipelineState(const std::wstring& ShaderFile, const std::string& entryVSPoint, const std::string& entryPSPoint)
 {
-	std::shared_ptr<FShader> Shader = FShaderMgr::Get().CreateShader(core::usc2_u8(ShaderFile), entryVSPoint, entryPSPoint, ShaderFile);
+	std::shared_ptr<FShader> Shader = FShaderMgr::Get().CreateShaderDirect(ShaderFile, entryVSPoint, entryPSPoint);
 	m_RenderState = std::make_shared<RenderPipelineInfo>(Shader);
 
 	m_RenderState->SetupRenderTargetFormat(1, &RenderWindow::Get().GetColorFormat(), RenderWindow::Get().GetDepthFormat());

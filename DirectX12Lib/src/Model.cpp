@@ -108,40 +108,44 @@ void FModel::Draw(FCommandContext& CommandContext, FRenderItem* renderItem)
 		for (size_t i = 0; i < m_MeshDataWapper.m_MeshData->GetMeshCount(); ++i)
 		{
 			size_t MtlIndex = m_MeshDataWapper.m_MeshData->GetSubMaterialIndex(i);
-			std::shared_ptr<FMaterial> Material = m_MeshDataWapper.m_Materials[MtlIndex];
-
-			if (CustomDrawParam)
+			if (m_MeshDataWapper.m_Materials.size() > 0 )
 			{
-				CustomDrawParam(CommandContext, Material, renderItem->MapBasePassInfos[MtlIndex]);
+				std::shared_ptr<FMaterial> Material = m_MeshDataWapper.m_Materials[MtlIndex];
+
+				if (CustomDrawParam)
+				{
+					CustomDrawParam(CommandContext, Material, renderItem->MapBasePassInfos[MtlIndex]);
+				}
+				else
+				{
+					if (Material->GetDiffuseTexture().GetResource())
+					{
+						CommandContext.SetDynamicDescriptor(m_textureIndex, 0, Material->GetDiffuseTexture().GetSRV());
+					}
+
+					if (renderItem)
+					{
+						CommandContext.SetDynamicDescriptor(renderItem->CBVRootIndex, 0, renderItem->MapBasePassInfos[MtlIndex]->BasePassCpuHandle);
+					}
+
+					if (!m_UseOutsideColor)
+					{
+						auto [kd, ks] = Material->GetColor();
+						m_lightMaterial.uKd = kd;
+						m_lightMaterial.uKs = ks;
+					}
+					memcpy(m_LightMaterialConstBuf.Map(), &m_lightMaterial, sizeof(m_lightMaterial));
+
+					CommandContext.SetDynamicDescriptor(m_lightMaterialIndex, 0, m_LightMaterialCpuHandle);
+
+					if (m_DrawParam)
+					{
+						m_DrawParam(CommandContext, Material);
+					}
+
+				}
 			}
-			else
-			{
-				if (Material->GetDiffuseTexture().GetResource())
-				{
-					CommandContext.SetDynamicDescriptor(m_textureIndex, 0, Material->GetDiffuseTexture().GetSRV());
-				}
 
-				if (renderItem)
-				{
-					CommandContext.SetDynamicDescriptor(renderItem->CBVRootIndex, 0, renderItem->MapBasePassInfos[MtlIndex]->BasePassCpuHandle);
-				}
-
-				if (!m_UseOutsideColor)
-				{
-					auto [kd, ks] = Material->GetColor();
-					m_lightMaterial.uKd = kd;
-					m_lightMaterial.uKs = ks;
-				}
-				memcpy(m_LightMaterialConstBuf.Map(), &m_lightMaterial, sizeof(m_lightMaterial));
-
-				CommandContext.SetDynamicDescriptor(m_lightMaterialIndex, 0, m_LightMaterialCpuHandle);
-
-				if (m_DrawParam)
-				{
-					m_DrawParam(CommandContext, Material);
-				}
-
-			}
 
 			CommandContext.DrawIndexed((UINT)m_MeshDataWapper.m_MeshData->GetSubIndexCount(i), (UINT)m_MeshDataWapper.m_MeshData->GetSubIndexStart(i));
 		}

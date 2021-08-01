@@ -10,16 +10,16 @@ class FCommandContext;
 class RenderPipelineInfo;
 class FCubeBuffer;
 class FSkyBox;
-class FCamera;
+class FTexture;
 
-class SkyBoxPass
+class GenCubePass
 {
 public:
-	SkyBoxPass();
-	~SkyBoxPass();
+	GenCubePass();
+	~GenCubePass();
 
 	void Init(std::shared_ptr< FSkyBox> skyBox,int32_t width,int height);
-	void Render(FCommandContext& GfxContext, FCamera& MainCamera, FCubeBuffer& CubeBuffer);
+	void Render(FCubeBuffer& CubeBuffer, FTexture& inputTex);
 
 private:
 	void SetupRootSignature();
@@ -27,7 +27,7 @@ private:
 
 	std::shared_ptr< FSkyBox> m_SkyBox;
 	std::shared_ptr< RenderPipelineInfo> m_RenderState;
-	FRootSignature m_SkySignature;
+	FRootSignature m_GenCubeSignature;
 	Vector2<int> m_Size;
 	int32_t m_CBVRootIndex = 0;
 	int32_t m_SRVRootIndex = 1;
