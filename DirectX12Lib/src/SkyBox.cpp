@@ -2,6 +2,7 @@
 
 FSkyBox::FSkyBox()
 {
+	m_UseAiMesh = false;
 	m_MeshDataWapper.m_MeshData = std::make_shared<MeshData>(L"SkyBox");
 
 	//https://docs.microsoft.com/en-us/windows/win32/direct3d9/cubic-environment-mapping

@@ -34,57 +34,10 @@ void FGame::OnShutdown()
 FDirectLightGameMode::FDirectLightGameMode(const GameDesc& Desc)
 	:FGame(Desc), m_Camera(Vector3f(0.f, 0.f, -1.f), Vector3f(0.f, 0.0f, 0.f), Vector3f(0.f, 1.f, 0.f))
 {
-
+	m_Camera.SetMouseRotateSpeed(0.001);
+	m_Camera.SetMouseZoomSpeed(0.001);
 }
 
-
-void FDirectLightGameMode::OnMouseDown(WPARAM btnState, int x, int y)
-{
-	m_LastMousePos.x = x;
-	m_LastMousePos.y = y;
-
-	::SetCapture(WindowWin32::Get().GetWindowHandle());
-}
-
-void FDirectLightGameMode::OnMouseUp(WPARAM btnState, int x, int y)
-{
-	::ReleaseCapture();
-}
-
-void FDirectLightGameMode::OnMouseMove(WPARAM btnState, int x, int y)
-{
-	if ((btnState & MK_LBUTTON) != 0)
-	{
-		// Make each pixel correspond to a quarter of a degree.
-		float dx = ConvertToRadians(2.5f * static_cast<float>(x - m_LastMousePos.x));
-		float dy = ConvertToRadians(2.5f * static_cast<float>(y - m_LastMousePos.y));
-
-		// Update angles based on input to orbit camera around box.
-		m_Theta += dx;
-		m_Phi += dy;
-
-		// Restrict the angle mPhi.
-		m_Phi = Clamp(m_Phi, 0.1f, MATH_PI - 0.1f);
-
-		//m_Camera.Rotate(dx, dy);
-		m_Camera.ProcessMouseMovement(-dx, -dy);
-	}
-	else if ((btnState & MK_RBUTTON) != 0)
-	{
-		// Make each pixel correspond to 0.2 unit in the scene.
-		float dx = 0.2f * static_cast<float>(x - m_LastMousePos.x);
-		float dy = 0.2f * static_cast<float>(y - m_LastMousePos.y);
-
-		// Update the camera radius based on input.
-		m_Radius += dx - dy;
-
-		// Restrict the radius.
-		m_Radius = Clamp(m_Radius, 5.0f, 150.0f);
-	}
-
-	m_LastMousePos.x = x;
-	m_LastMousePos.y = y;
-}
 
 void FDirectLightGameMode::OnKeyDown(uint8_t Key)
 {
@@ -108,8 +61,9 @@ void FDirectLightGameMode::OnKeyDown(uint8_t Key)
 void FDirectLightGameMode::OnRender()
 {
 	m_TEnd = std::chrono::high_resolution_clock::now();
-	float time = std::chrono::duration<float, std::milli>(m_TEnd - m_TStart).count();
-	if (time < (1000.0f / 400.0f))
+	float delta = std::chrono::duration<float, std::milli>(m_TEnd - m_TStart).count();
+	m_Camera.Update(delta);
+	if (delta < (1000.0f / 400.0f))
 	{
 		return;
 	}
@@ -117,7 +71,7 @@ void FDirectLightGameMode::OnRender()
 	m_TStart = std::chrono::high_resolution_clock::now();
 
 	// Update Uniforms
-	m_DeltaTime = 0.001f * time;
+	m_DeltaTime = 0.001f * delta;
 	m_ElapsedTime += m_DeltaTime;
 	m_ElapsedTime = fmodf(m_ElapsedTime, 6.283185307179586f);
 
