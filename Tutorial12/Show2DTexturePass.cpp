@@ -24,7 +24,7 @@ void Show2DTexturePass::Init()
 }
 
 
-void Show2DTexturePass::Render(FCommandContext& GfxContext, FTexture& inputTex)
+void Show2DTexturePass::ShowTexture2D(FCommandContext& GfxContext, FTexture& inputTex)
 {
 	RenderWindow& renderWindow = RenderWindow::Get();
 	FColorBuffer& BackBuffer = renderWindow.GetBackBuffer();
@@ -56,7 +56,6 @@ void Show2DTexturePass::Render(FCommandContext& GfxContext, FTexture& inputTex)
 	GfxContext.Draw(3);
 
 }
-
 
 void Show2DTexturePass::SetupRootSignature()
 {

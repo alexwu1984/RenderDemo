@@ -9,7 +9,7 @@
 class FCommandContext;
 class RenderPipelineInfo;
 class FCubeBuffer;
-class FSkyBox;
+class FModel;
 class FTexture;
 
 class GenCubePass
@@ -18,14 +18,16 @@ public:
 	GenCubePass();
 	~GenCubePass();
 
-	void Init(std::shared_ptr< FSkyBox> skyBox,int32_t width,int height);
-	void Render(FCubeBuffer& CubeBuffer, FTexture& inputTex);
+	void Init(std::shared_ptr< FModel> skyBox,int32_t width,int height, 
+		const std::wstring& ShaderFile, const std::string& entryVSPoint, const std::string& entryPSPoint);
+	void GenerateCubeMap(FCubeBuffer& CubeBuffer, FTexture& inputTex);
+	void GenerateIrradianceMap(FCubeBuffer& CubeBuffer,FCubeBuffer& IrradianceCube,int NumSamplesPerDir);
 
 private:
 	void SetupRootSignature();
 	void SetupPipelineState(const std::wstring& ShaderFile, const std::string& entryVSPoint, const std::string& entryPSPoint);
 
-	std::shared_ptr< FSkyBox> m_SkyBox;
+	std::shared_ptr< FModel> m_Cube;
 	std::shared_ptr< RenderPipelineInfo> m_RenderState;
 	FRootSignature m_GenCubeSignature;
 	Vector2<int> m_Size;

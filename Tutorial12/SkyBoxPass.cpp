@@ -18,12 +18,12 @@ SkyBoxPass::~SkyBoxPass()
 
 }
 
-void SkyBoxPass::Init(std::shared_ptr< FSkyBox> skyBox, int32_t width, int height)
+void SkyBoxPass::Init(std::shared_ptr< FModel> skyBox, int32_t width, int height, const std::wstring& ShaderFile, const std::string& entryVSPoint, const std::string& entryPSPoint)
 {
 	m_Size = { width,height };
 	m_SkyBox = skyBox;
 	SetupRootSignature();
-	SetupPipelineState(L"../Resources/Shaders/EnvironmentShaders.hlsl", "VS_SkyCube", "PS_SkyCube");
+	SetupPipelineState(ShaderFile, entryVSPoint, entryPSPoint);
 }
 
 void SkyBoxPass::Render(FCommandContext& GfxContext, FCamera& MainCamera,FCubeBuffer& CubeBuffer)
@@ -53,6 +53,40 @@ void SkyBoxPass::Render(FCommandContext& GfxContext, FCamera& MainCamera,FCubeBu
 	GfxContext.SetDynamicConstantBufferView(0, sizeof(g_EVSConstants), &g_EVSConstants);
 
 	g_EPSConstants.Exposure = 1.0;
+	GfxContext.SetDynamicConstantBufferView(1, sizeof(g_EPSConstants), &g_EPSConstants);
+
+	GfxContext.SetDynamicDescriptor(2, 0, CubeBuffer.GetCubeSRV());
+
+	m_SkyBox->Draw(GfxContext);
+}
+
+void SkyBoxPass::ShowCubeMapDebugView(FCommandContext& GfxContext, FCubeBuffer& CubeBuffer, float Exposure, int MipLevel)
+{
+	// Set necessary state.
+	GfxContext.SetRootSignature(m_SkySignature);
+	GfxContext.SetPipelineState(m_RenderState->GetPipelineState());
+	GfxContext.SetPrimitiveTopology(D3D_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
+	uint32_t Size = std::min(m_Size.x, m_Size.y);
+	//Size = std::min(Size, CubeBuffer.GetWidth());
+	GfxContext.SetViewportAndScissor((m_Size.x - Size) / 2, (m_Size.y - Size) / 2, Size, Size);
+
+	RenderWindow& renderWindow = RenderWindow::Get();
+	FColorBuffer& BackBuffer = renderWindow.GetBackBuffer();
+
+	// Indicate that the back buffer will be used as a render target.
+	GfxContext.TransitionResource(CubeBuffer, D3D12_RESOURCE_STATE_PIXEL_SHADER_RESOURCE);
+	GfxContext.TransitionResource(BackBuffer, D3D12_RESOURCE_STATE_RENDER_TARGET, true);
+
+	GfxContext.SetRenderTargets(1, &BackBuffer.GetRTV());
+
+	GfxContext.ClearColor(BackBuffer);
+
+	g_EVSConstants.ModelMatrix = FMatrix(); // identity
+	g_EVSConstants.ViewProjMatrix = FMatrix::MatrixOrthoLH(1.f, 1.f, -1.f, 1.f);
+	GfxContext.SetDynamicConstantBufferView(0, sizeof(g_EVSConstants), &g_EVSConstants);
+
+	g_EPSConstants.Exposure = Exposure;
+	g_EPSConstants.MipLevel = MipLevel;
 	GfxContext.SetDynamicConstantBufferView(1, sizeof(g_EPSConstants), &g_EPSConstants);
 
 	GfxContext.SetDynamicDescriptor(2, 0, CubeBuffer.GetCubeSRV());

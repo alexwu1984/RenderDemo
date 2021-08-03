@@ -17,7 +17,7 @@ public:
 	~Show2DTexturePass();
 
 	void Init();
-	void Render(FCommandContext& GfxContext, FTexture& inputTex);
+	void ShowTexture2D(FCommandContext& GfxContext, FTexture& inputTex);
 
 	void SetViewportAndScissor(int32_t x, int32_t y, int32_t w, int32_t h);
 

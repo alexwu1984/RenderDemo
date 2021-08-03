@@ -9,7 +9,7 @@
 class FCommandContext;
 class RenderPipelineInfo;
 class FCubeBuffer;
-class FSkyBox;
+class FModel;
 class FCamera;
 
 class SkyBoxPass
@@ -18,14 +18,16 @@ public:
 	SkyBoxPass();
 	~SkyBoxPass();
 
-	void Init(std::shared_ptr< FSkyBox> skyBox,int32_t width,int height);
+	void Init(std::shared_ptr< FModel> skyBox,int32_t width,int height,
+		const std::wstring& ShaderFile, const std::string& entryVSPoint, const std::string& entryPSPoint);
 	void Render(FCommandContext& GfxContext, FCamera& MainCamera, FCubeBuffer& CubeBuffer);
+	void ShowCubeMapDebugView(FCommandContext& GfxContext, FCubeBuffer& CubeBuffer, float Exposure, int MipLevel);
 
 private:
 	void SetupRootSignature();
 	void SetupPipelineState(const std::wstring& ShaderFile, const std::string& entryVSPoint, const std::string& entryPSPoint);
 
-	std::shared_ptr< FSkyBox> m_SkyBox;
+	std::shared_ptr< FModel> m_SkyBox;
 	std::shared_ptr< RenderPipelineInfo> m_RenderState;
 	FRootSignature m_SkySignature;
 	Vector2<int> m_Size;

@@ -31,6 +31,7 @@
 #include "SkyBoxPass.h"
 #include "SkyBox.h"
 #include "GenCubePass.h"
+#include "CubeMapCross.h"
 
 extern FCommandListManager g_CommandListManager;
 
@@ -75,6 +76,7 @@ public:
 
 		SetupMesh();
 		GenerateCubeMap();
+		GenerateIrradianceMap();
 	}
 
 	void OnGUI(FCommandContext& CommandContext)
@@ -153,7 +155,10 @@ public:
 			ShowTexture2D(GfxContext, m_TextureLongLat);
 			break;
 		case SM_SkyBox:
-			SkyPass(GfxContext);
+			SkyPass(GfxContext, m_CubeBuffer);
+			break;
+		case SM_CubeMapCross:
+			m_CubeMapCrossDebug.ShowCubeMapDebugView(GfxContext, m_IrradianceCube, 1.0, m_MipLevel);
 			break;
 		};
 
@@ -174,10 +179,15 @@ public:
 
 		m_TextureLongLat.LoadFromFile(L"../Resources/HDR/spruit_sunrise_2k.hdr",true);
 		m_SkyBox = std::make_shared<FSkyBox>();
-		m_SkyPass.Init(m_SkyBox, m_GameDesc.Width, m_GameDesc.Height);
+		m_SkyPass.Init(m_SkyBox, m_GameDesc.Width, m_GameDesc.Height, L"../Resources/Shaders/EnvironmentShaders.hlsl", "VS_SkyCube", "PS_SkyCube");
+		m_CubeMapCross = std::make_shared<FCubeMapCross>();
 
 		m_CubeBuffer.Create(L"CubeMap", CUBE_MAP_SIZE, CUBE_MAP_SIZE, 0/*full mipmap chain*/, DXGI_FORMAT_R16G16B16A16_FLOAT);
-		m_GenCubePass.Init(m_SkyBox, CUBE_MAP_SIZE, CUBE_MAP_SIZE);
+		m_IrradianceCube.Create(L"Irradiance Map", IRRADIANCE_SIZE, IRRADIANCE_SIZE, 1, DXGI_FORMAT_R16G16B16A16_FLOAT);
+
+		m_GenCubePass.Init(m_SkyBox, CUBE_MAP_SIZE, CUBE_MAP_SIZE,L"../Resources/Shaders/EnvironmentShaders.hlsl", "VS_LongLatToCube", "PS_LongLatToCube");
+		m_GenIrradiancePass.Init(m_CubeMapCross, IRRADIANCE_SIZE, IRRADIANCE_SIZE, L"../Resources/Shaders/EnvironmentShaders.hlsl", "VS_SkyCube", "PS_GenIrradiance");
+		m_CubeMapCrossDebug.Init(m_CubeMapCross, m_GameDesc.Width, m_GameDesc.Height, L"../Resources/Shaders/EnvironmentShaders.hlsl", "VS_CubeMapCross", "PS_CubeMapCross");
 	}
 
 	void ShowTexture2D(FCommandContext& GfxContext, FTexture& Texture2D)
@@ -188,17 +198,22 @@ public:
 		Width = std::min(Width, static_cast<int>(Height * AspectRatio));
 		Height = std::min(Height, static_cast<int>(Width / AspectRatio));
 		m_LongLatPass.SetViewportAndScissor((m_GameDesc.Width - Width) / 2, (m_GameDesc.Height - Height) / 2, Width, Height);
-		m_LongLatPass.Render(GfxContext, Texture2D);
+		m_LongLatPass.ShowTexture2D(GfxContext, Texture2D);
 	}
 
 	void GenerateCubeMap()
 	{
-		m_GenCubePass.Render(m_CubeBuffer, m_TextureLongLat);
+		m_GenCubePass.GenerateCubeMap(m_CubeBuffer, m_TextureLongLat);
 	}
 
-	void SkyPass(FCommandContext& GfxContext)
+	void GenerateIrradianceMap()
 	{
-		m_SkyPass.Render(GfxContext,m_Camera, m_CubeBuffer);
+		m_GenIrradiancePass.GenerateIrradianceMap(m_CubeBuffer, m_IrradianceCube, 10);
+	}
+
+	void SkyPass(FCommandContext& GfxContext,FCubeBuffer& CubeBuffer)
+	{
+		m_SkyPass.Render(GfxContext,m_Camera, CubeBuffer);
 	}
 
 private:
@@ -214,8 +229,11 @@ private:
 	float m_RotateY = 0.f;
 	Show2DTexturePass m_LongLatPass;
 	SkyBoxPass m_SkyPass;
+	SkyBoxPass m_CubeMapCrossDebug;
 	GenCubePass m_GenCubePass;
+	GenCubePass m_GenIrradiancePass;
 	std::shared_ptr< FSkyBox> m_SkyBox;
+	std::shared_ptr< FCubeMapCross > m_CubeMapCross;
 };
 
 int main()
