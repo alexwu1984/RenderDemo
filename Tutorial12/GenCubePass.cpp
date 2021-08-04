@@ -20,12 +20,12 @@ GenCubePass::~GenCubePass()
 }
 
 void GenCubePass::Init(std::shared_ptr< FModel> skyBox, int32_t width, int height,
-	const std::wstring& ShaderFile, const std::string& entryVSPoint, const std::string& entryPSPoint)
+	const std::wstring& ShaderFile, const std::string& entryVSPoint, const std::string& entryPSPoint, CubePass passType)
 {
+	m_passType = passType;
 	m_Size = { width,height };
 	m_Cube = skyBox;
 	SetupRootSignature();
-//L"../Resources/Shaders/EnvironmentShaders.hlsl", "VS_LongLatToCube", "PS_LongLatToCube"
 	SetupPipelineState(ShaderFile, entryVSPoint, entryPSPoint);
 }
 
@@ -93,11 +93,21 @@ void GenCubePass::GenerateIrradianceMap(FCubeBuffer& CubeBuffer, FCubeBuffer& Ir
 void GenCubePass::SetupRootSignature()
 {
 	FSamplerDesc PointSamplerDesc(D3D12_FILTER_MIN_MAG_MIP_POINT, D3D12_TEXTURE_ADDRESS_MODE_CLAMP);
+	FSamplerDesc DefaultSamplerDesc(D3D12_FILTER_MIN_MAG_MIP_LINEAR, D3D12_TEXTURE_ADDRESS_MODE_CLAMP);
+
 	m_GenCubeSignature.Reset(3, 1);
 	m_GenCubeSignature[0].InitAsBufferCBV(0, D3D12_SHADER_VISIBILITY_VERTEX);
 	m_GenCubeSignature[1].InitAsBufferCBV(0, D3D12_SHADER_VISIBILITY_PIXEL);
 	m_GenCubeSignature[2].InitAsDescriptorRange(D3D12_DESCRIPTOR_RANGE_TYPE_SRV, 0, 1);
-	m_GenCubeSignature.InitStaticSampler(0, PointSamplerDesc, D3D12_SHADER_VISIBILITY_PIXEL);
+	if (m_passType == CubePass_CubeMap)
+	{
+		m_GenCubeSignature.InitStaticSampler(0, PointSamplerDesc, D3D12_SHADER_VISIBILITY_PIXEL);
+	}
+	else
+	{
+		m_GenCubeSignature.InitStaticSampler(0, DefaultSamplerDesc, D3D12_SHADER_VISIBILITY_PIXEL);
+	}
+	
 	m_GenCubeSignature.Finalize(L"GenCubePass", D3D12_ROOT_SIGNATURE_FLAG_ALLOW_INPUT_ASSEMBLER_INPUT_LAYOUT);
 }
 

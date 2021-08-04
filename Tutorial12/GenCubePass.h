@@ -15,11 +15,17 @@ class FTexture;
 class GenCubePass
 {
 public:
+	enum CubePass
+	{
+		CubePass_CubeMap,
+		CubePass_IrradianceMap,
+	};
+public:
 	GenCubePass();
 	~GenCubePass();
 
 	void Init(std::shared_ptr< FModel> skyBox,int32_t width,int height, 
-		const std::wstring& ShaderFile, const std::string& entryVSPoint, const std::string& entryPSPoint);
+		const std::wstring& ShaderFile, const std::string& entryVSPoint, const std::string& entryPSPoint, CubePass passType);
 	void GenerateCubeMap(FCubeBuffer& CubeBuffer, FTexture& inputTex);
 	void GenerateIrradianceMap(FCubeBuffer& CubeBuffer,FCubeBuffer& IrradianceCube,int NumSamplesPerDir);
 
@@ -27,6 +33,7 @@ private:
 	void SetupRootSignature();
 	void SetupPipelineState(const std::wstring& ShaderFile, const std::string& entryVSPoint, const std::string& entryPSPoint);
 
+	CubePass m_passType;
 	std::shared_ptr< FModel> m_Cube;
 	std::shared_ptr< RenderPipelineInfo> m_RenderState;
 	FRootSignature m_GenCubeSignature;

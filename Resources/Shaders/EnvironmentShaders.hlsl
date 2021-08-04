@@ -88,16 +88,17 @@ float4 PS_GenIrradiance(VertexOutput In) : SV_Target
 {
     float3 Normal = normalize(In.LocalDirection);
     float3 Irradiance = { 0.0, 0.0, 0.0 };
-    
+
     float3 Up = { 0.0, 1.0, 0.0 };
     float3 Right = cross(Up, Normal);
     Up = cross(Normal, Right);
-    
+
     float sampleDelta = 1.0 / NumSamplesPerDir;
 
     uint2 Dimension;
     CubeEnvironment.GetDimensions(Dimension.x, Dimension.y);
     float lod = max(log2(Dimension.x / float(NumSamplesPerDir)) + 1.0, 0.0);
+
     float NumSamples = 0.0;
     for (float phi = 0.0; phi < 2.0 * PI; phi += sampleDelta)
     {
