@@ -176,3 +176,68 @@ float4 PS_CubeMapCross(VertexOutput In) : SV_Target
 
     return float4(ToneMapping(Color * Exposure), 1.0);
 }
+
+//-------------------------------------------------------
+// Generate Prefiltered map
+//-------------------------------------------------------
+
+// VS is same as VS_SkyCube
+
+float3 PrefilterEnvMap(uint2 Random, float Roughness, float3 R)
+{
+    float3 FilteredColor = 0;
+    float Weight = 0;
+
+    uint CubeSize = 1 << (MaxMipLevel - 1);
+    const float SolidAngleTexel = 4 * PI / (6 * CubeSize * CubeSize);
+
+    const uint NumSamples = Roughness < 0.1 ? 32 : 64;
+    for (uint i = 0; i < NumSamples; i++)
+    {
+        float2 E = Hammersley(i, NumSamples, Random);
+        float3 H = TangentToWorld(ImportanceSampleGGX(E, Pow4(Roughness)).xyz, R);
+        float3 L = 2 * dot(R, H) * H - R;
+
+        float NoL = saturate(dot(R, L));
+        float NoH = saturate(dot(R, H));
+        if (NoL > 0)
+        {
+			//https://placeholderart.wordpress.com/2015/07/28/implementation-notes-runtime-environment-map-filtering-for-image-based-lighting/
+			//float PDF = D_GGX( Pow4(Roughness), NoH ) * NoH / (4 * VoH);  //NoH == VoH
+            float PDF = D_GGX(Pow4(Roughness), NoH) * 0.25;
+            float SolidAngleSample = 1.0 / (NumSamples * PDF);
+            float MipBias = 1.0;
+            float Mip = clamp(0.5 * log2(SolidAngleSample / SolidAngleTexel) + MipBias, 0, MaxMipLevel - 1);
+
+            FilteredColor += CubeEnvironment.SampleLevel(LinearSampler, L, Mip).rgb * NoL;
+            Weight += NoL;
+        }
+    }
+
+    return FilteredColor / max(Weight, 0.001);
+}
+
+float4 PS_GenPrefiltered(VertexOutput In) : SV_Target
+{
+    int2 PixelPos = int2(In.Position.xy);
+    uint2 Random = Rand3DPCG16(uint3(PixelPos, In.Position.x * 1024)).xy;
+
+    float3 R = normalize(In.LocalDirection);
+	//float Roughness = MipLevel / (MaxMipLevel - 1.0);
+    float Roughness = ComputeReflectionCaptureRoughnessFromMip(MipLevel, MaxMipLevel - 1.0);
+    float3 Prefiltered = PrefilterEnvMap(Random, Roughness, R);
+    return float4(Prefiltered, 1.0);
+}
+
+float2 PS_PreIntegrateBRDF(in VertexOutput_Texture2D In) : SV_Target0
+{
+    int2 PixelPos = int2(In.Pos.xy);
+    uint2 Random = Rand3DPCG16(uint3(PixelPos, In.Pos.x * 128)).xy;
+
+    float Roughness = In.Tex.y;
+    float m = Roughness * Roughness;
+    float m2 = m * m;
+    float NoV = In.Tex.x;
+    
+    return IntegrateBRDF(Random, m2, NoV);
+}

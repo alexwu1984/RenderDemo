@@ -106,6 +106,7 @@ float2 Hammersley(uint Index, uint NumSamples, uint2 Random)
 	return float2(E1, E2);
 }
 
+
 // [ Duff et al. 2017, "Building an Orthonormal Basis, Revisited" ]
 float3x3 GetTangentBasis(float3 TangentZ)
 {
@@ -255,4 +256,46 @@ float3 GetSHIrradiance(float3 Normal,int Degree,float3 Coeffs[16])
 	for (int i = 0; i < Degree * Degree; i++)
 		Color += Coeffs[i] * basis[i];
 	return Color;
+}
+
+float G1(float k, float NoV)
+{
+    return NoV / (NoV * (1.0f - k) + k);
+}
+
+float G_Smith(float NoL, float NoV, float roughness)
+{
+    float k = (roughness * roughness) * 0.5f;
+    return G1(k, NoL) * G1(k, NoV);
+}
+
+float2 IntegrateBRDF(uint2 Random,float Roughness, float NoV)
+{
+    float3 V;
+    V.x = sqrt(1.0f - NoV * NoV); // sin
+    V.y = 0;
+    V.z = NoV; // cos
+    float A = 0;
+    float B = 0;
+    const uint NumSamples = 128;
+    for (uint i = 0; i < NumSamples; i++)
+    {
+        float2 Xi = Hammersley(i, NumSamples, Random);
+        float3 H = ImportanceSampleGGX(Xi, Roughness);
+        float3 L = 2 * dot(V, H) * H - V;
+        float NoL = saturate(L.z);
+        float NoH = saturate(H.z);
+        float VoH = saturate(dot(V, H));
+        if (NoL > 0)
+        {
+            float G = G_Smith(NoL, NoV, Roughness);
+            float G_Vis = G * VoH / (NoH * NoV);
+            float Fc = pow(1 - VoH, 5);
+            A += (1 - Fc) * G_Vis;
+            B += Fc * G_Vis;
+        }
+    }
+    //return float2(A, B) / NumSamples;
+    return float2(1, 0.5);
+
 }

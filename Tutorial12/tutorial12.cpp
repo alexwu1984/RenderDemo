@@ -32,6 +32,7 @@
 #include "SkyBox.h"
 #include "GenCubePass.h"
 #include "CubeMapCross.h"
+#include "PreIntegrateBRDFPass.h"
 
 extern FCommandListManager g_CommandListManager;
 
@@ -77,6 +78,8 @@ public:
 		SetupMesh();
 		GenerateCubeMap();
 		GenerateIrradianceMap();
+		GeneratePrefilterEnvironmentMap();
+		PreIntegrateBRDF();
 	}
 
 	void OnGUI(FCommandContext& CommandContext)
@@ -163,6 +166,12 @@ public:
 		case SM_Irradiance:
 			m_CubeMapCrossDebug.ShowCubeMapDebugView(GfxContext, m_IrradianceCube, 1.0, m_MipLevel);
 			break;
+		case SM_Prefiltered:
+			m_CubeMapCrossDebug.ShowCubeMapDebugView(GfxContext, m_PrefilteredCube, 1.0, m_MipLevel);
+			break;
+		case SM_PreintegratedGF:
+			ShowTexture2D(GfxContext, m_PreintegrateBRDF);
+			break;
 		};
 
 		OnGUI(GfxContext);
@@ -179,6 +188,7 @@ public:
 		DiffiusePassList.push_back(ActorItem);
 
 		m_LongLatPass.Init();
+		m_PreintergrateBRDFPass.Init();
 
 		m_TextureLongLat.LoadFromFile(L"../Resources/HDR/spruit_sunrise_2k.hdr",true);
 		m_SkyBox = std::make_shared<FSkyBox>();
@@ -187,10 +197,15 @@ public:
 
 		m_CubeBuffer.Create(L"CubeMap", CUBE_MAP_SIZE, CUBE_MAP_SIZE, 0/*full mipmap chain*/, DXGI_FORMAT_R16G16B16A16_FLOAT);
 		m_IrradianceCube.Create(L"Irradiance Map", IRRADIANCE_SIZE, IRRADIANCE_SIZE, 1, DXGI_FORMAT_R16G16B16A16_FLOAT);
+		m_PrefilteredCube.Create(L"Prefilter Environment Map", PREFILTERED_SIZE, PREFILTERED_SIZE, 0, DXGI_FORMAT_R16G16B16A16_FLOAT);
 
 		m_GenCubePass.Init(m_SkyBox, CUBE_MAP_SIZE, CUBE_MAP_SIZE,L"../Resources/Shaders/EnvironmentShaders.hlsl", "VS_LongLatToCube", "PS_LongLatToCube",GenCubePass::CubePass_CubeMap);
 		m_GenIrradiancePass.Init(m_SkyBox, IRRADIANCE_SIZE, IRRADIANCE_SIZE, L"../Resources/Shaders/EnvironmentShaders.hlsl", "VS_SkyCube", "PS_GenIrradiance",GenCubePass::CubePass_IrradianceMap);
+		m_GenPrefilterEnvMapPass.Init(m_SkyBox, PREFILTERED_SIZE, PREFILTERED_SIZE, L"../Resources/Shaders/EnvironmentShaders.hlsl", "VS_SkyCube", "PS_GenPrefiltered", GenCubePass::CubePass_PreFilterEnvMap);
 		m_CubeMapCrossDebug.Init(m_CubeMapCross, m_GameDesc.Width, m_GameDesc.Height, L"../Resources/Shaders/EnvironmentShaders.hlsl", "VS_CubeMapCross", "PS_CubeMapCross");
+
+		m_PreintegrateBRDF.Create(L"PreintegratedGF", 128, 32, 1, DXGI_FORMAT_R32G32_FLOAT);
+		
 	}
 
 	void ShowTexture2D(FCommandContext& GfxContext, FTexture& Texture2D)
@@ -201,7 +216,18 @@ public:
 		Width = std::min(Width, static_cast<int>(Height * AspectRatio));
 		Height = std::min(Height, static_cast<int>(Width / AspectRatio));
 		m_LongLatPass.SetViewportAndScissor((m_GameDesc.Width - Width) / 2, (m_GameDesc.Height - Height) / 2, Width, Height);
-		m_LongLatPass.ShowTexture2D(GfxContext, Texture2D);
+		m_LongLatPass.ShowTexture2D(GfxContext, Texture2D.GetSRV());
+	}
+
+	void ShowTexture2D(FCommandContext& GfxContext, FColorBuffer& Texture2D)
+	{
+		float AspectRatio = Texture2D.GetWidth() * 1.f / Texture2D.GetHeight();
+		int Width = std::min((uint32_t)m_GameDesc.Width, Texture2D.GetWidth());
+		int Height = std::min((uint32_t)m_GameDesc.Height, Texture2D.GetHeight());
+		Width = std::min(Width, static_cast<int>(Height * AspectRatio));
+		Height = std::min(Height, static_cast<int>(Width / AspectRatio));
+		m_LongLatPass.SetViewportAndScissor((m_GameDesc.Width - Width) / 2, (m_GameDesc.Height - Height) / 2, Width, Height);
+		m_LongLatPass.ShowTexture2D(GfxContext, Texture2D.GetSRV());
 	}
 
 	void GenerateCubeMap()
@@ -214,6 +240,16 @@ public:
 		m_GenIrradiancePass.GenerateIrradianceMap(m_CubeBuffer, m_IrradianceCube, 10);
 	}
 
+	void GeneratePrefilterEnvironmentMap()
+	{
+		m_GenPrefilterEnvMapPass.GeneratePrefilteredMap(m_CubeBuffer, m_PrefilteredCube);
+	}
+
+	void PreIntegrateBRDF()
+	{
+		m_PreintergrateBRDFPass.IntegrateBRDF(m_PreintegrateBRDF);
+	}
+
 	void SkyPass(FCommandContext& GfxContext,FCubeBuffer& CubeBuffer)
 	{
 		m_SkyPass.Render(GfxContext,m_Camera, CubeBuffer);
@@ -222,6 +258,7 @@ public:
 private:
 
 	FTexture m_TextureLongLat;
+	FColorBuffer m_PreintegrateBRDF;
 	FCubeBuffer m_CubeBuffer, m_IrradianceCube, m_PrefilteredCube;
 	int m_ShowMode = SM_PBR;
 	Vector3f m_ClearColor = Vector3f(0.2f);
@@ -231,10 +268,12 @@ private:
 	bool m_RotateMesh = false;
 	float m_RotateY = 0.f;
 	Show2DTexturePass m_LongLatPass;
+	PreIntegrateBRDFPass m_PreintergrateBRDFPass;
 	SkyBoxPass m_SkyPass;
 	SkyBoxPass m_CubeMapCrossDebug;
 	GenCubePass m_GenCubePass;
 	GenCubePass m_GenIrradiancePass;
+	GenCubePass m_GenPrefilterEnvMapPass;
 	std::shared_ptr< FSkyBox> m_SkyBox;
 	std::shared_ptr< FCubeMapCross > m_CubeMapCross;
 };

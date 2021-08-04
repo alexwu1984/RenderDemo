@@ -90,6 +90,45 @@ void GenCubePass::GenerateIrradianceMap(FCubeBuffer& CubeBuffer, FCubeBuffer& Ir
 	GfxContext.Finish(true);
 }
 
+void GenCubePass::GeneratePrefilteredMap(FCubeBuffer& CubeBuffer, FCubeBuffer& PrefilteredCube)
+{
+	FCommandContext& GfxContext = FCommandContext::Begin(D3D12_COMMAND_LIST_TYPE_DIRECT, L"3D Queue");
+
+	GfxContext.SetRootSignature(m_GenCubeSignature);
+	GfxContext.SetPipelineState(m_RenderState->GetPipelineState());
+	GfxContext.SetPrimitiveTopology(D3D_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
+
+	GfxContext.TransitionResource(CubeBuffer, D3D12_RESOURCE_STATE_PIXEL_SHADER_RESOURCE);
+	GfxContext.TransitionResource(PrefilteredCube, D3D12_RESOURCE_STATE_RENDER_TARGET, true);
+
+	GfxContext.SetDynamicDescriptor(2, 0, CubeBuffer.GetCubeSRV());
+
+	g_EVSConstants.ModelMatrix = FMatrix(); // identity
+	uint32_t NumMips = PrefilteredCube.GetNumMips();
+	g_EPSConstants.MaxMipLevel = NumMips;
+	for (uint32_t MipLevel = 0; MipLevel < NumMips; ++MipLevel)
+	{
+		uint32_t Size = m_Size.x >> MipLevel;
+		GfxContext.SetViewportAndScissor(0, 0, Size, Size);
+
+		g_EPSConstants.MipLevel = MipLevel;
+		GfxContext.SetDynamicConstantBufferView(1, sizeof(g_EPSConstants), &g_EPSConstants);
+
+		for (int i = 0; i < 6; ++i)
+		{
+			GfxContext.SetRenderTargets(1, &PrefilteredCube.GetRTV(i, MipLevel));
+			GfxContext.ClearColor(PrefilteredCube, i, MipLevel);
+
+			g_EVSConstants.ViewProjMatrix = PrefilteredCube.GetViewProjMatrix(i);
+			GfxContext.SetDynamicConstantBufferView(0, sizeof(g_EVSConstants), &g_EVSConstants);
+
+			m_Cube->Draw(GfxContext);
+		}
+	}
+
+	GfxContext.Finish(true);
+}
+
 void GenCubePass::SetupRootSignature()
 {
 	FSamplerDesc PointSamplerDesc(D3D12_FILTER_MIN_MAG_MIP_POINT, D3D12_TEXTURE_ADDRESS_MODE_CLAMP);

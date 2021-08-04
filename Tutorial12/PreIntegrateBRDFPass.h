@@ -10,16 +10,15 @@ class FCommandContext;
 class RenderPipelineInfo;
 class FTexture;
 
-class Show2DTexturePass
+class PreIntegrateBRDFPass
 {
 public:
-	Show2DTexturePass();
-	~Show2DTexturePass();
+	PreIntegrateBRDFPass();
+	~PreIntegrateBRDFPass();
 
 	void Init();
-	void ShowTexture2D(FCommandContext& GfxContext, D3D12_CPU_DESCRIPTOR_HANDLE inputTex);
+	void IntegrateBRDF(FColorBuffer& target);
 
-	void SetViewportAndScissor(int32_t x, int32_t y, int32_t w, int32_t h);
 
 private:
 	void SetupRootSignature();
@@ -27,8 +26,7 @@ private:
 
 	std::shared_ptr< RenderPipelineInfo> m_RenderState;
 	FRootSignature m_RootSignature;
-	Vector2<int> m_Size;
-	Vector2<int> m_Pos;
+	Vector2<int> m_Size = { 128,32 };
 	int32_t m_CBVRootIndex = 0;
 	int32_t m_SRVRootIndex = 1;
 

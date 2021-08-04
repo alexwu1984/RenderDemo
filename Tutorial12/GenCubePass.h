@@ -19,6 +19,7 @@ public:
 	{
 		CubePass_CubeMap,
 		CubePass_IrradianceMap,
+		CubePass_PreFilterEnvMap,
 	};
 public:
 	GenCubePass();
@@ -28,6 +29,7 @@ public:
 		const std::wstring& ShaderFile, const std::string& entryVSPoint, const std::string& entryPSPoint, CubePass passType);
 	void GenerateCubeMap(FCubeBuffer& CubeBuffer, FTexture& inputTex);
 	void GenerateIrradianceMap(FCubeBuffer& CubeBuffer,FCubeBuffer& IrradianceCube,int NumSamplesPerDir);
+	void GeneratePrefilteredMap(FCubeBuffer& CubeBuffer, FCubeBuffer& PrefilteredCube);
 
 private:
 	void SetupRootSignature();
