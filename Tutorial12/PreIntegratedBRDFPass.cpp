@@ -1,4 +1,4 @@
-#include "PreIntegrateBRDFPass.h"
+#include "PreIntegratedBRDFPass.h"
 #include "SamplerManager.h"
 #include "CommandContext.h"
 #include "RenderWindow.h"
@@ -7,24 +7,24 @@
 #include "Shader.h"
 #include "Texture.h"
 
-PreIntegrateBRDFPass::PreIntegrateBRDFPass()
+PreIntegratedBRDFPass::PreIntegratedBRDFPass()
 {
 
 }
 
-PreIntegrateBRDFPass::~PreIntegrateBRDFPass()
+PreIntegratedBRDFPass::~PreIntegratedBRDFPass()
 {
 
 }
 
-void PreIntegrateBRDFPass::Init()
+void PreIntegratedBRDFPass::Init()
 {
 	SetupRootSignature();
 	SetupPipelineState(L"../Resources/Shaders/EnvironmentShaders.hlsl", "VS_ShowTexture2D", "PS_PreIntegrateBRDF");
 }
 
 
-void PreIntegrateBRDFPass::IntegrateBRDF(FColorBuffer& target)
+void PreIntegratedBRDFPass::IntegrateBRDF(FColorBuffer& target)
 {
 	FCommandContext& GfxContext = FCommandContext::Begin(D3D12_COMMAND_LIST_TYPE_DIRECT, L"3D Queue");
 	RenderWindow& renderWindow = RenderWindow::Get();
@@ -53,7 +53,7 @@ void PreIntegrateBRDFPass::IntegrateBRDF(FColorBuffer& target)
 	GfxContext.Finish(true);
 }
 
-void PreIntegrateBRDFPass::SetupRootSignature()
+void PreIntegratedBRDFPass::SetupRootSignature()
 {
 	FSamplerDesc PointSamplerDesc(D3D12_FILTER_MIN_MAG_MIP_POINT, D3D12_TEXTURE_ADDRESS_MODE_CLAMP);
 	m_RootSignature.Reset(3, 1);
@@ -64,7 +64,7 @@ void PreIntegrateBRDFPass::SetupRootSignature()
 	m_RootSignature.Finalize(L"PreIntegrateBRDFPass", D3D12_ROOT_SIGNATURE_FLAG_ALLOW_INPUT_ASSEMBLER_INPUT_LAYOUT);
 }
 
-void PreIntegrateBRDFPass::SetupPipelineState(const std::wstring& ShaderFile, const std::string& entryVSPoint, const std::string& entryPSPoint)
+void PreIntegratedBRDFPass::SetupPipelineState(const std::wstring& ShaderFile, const std::string& entryVSPoint, const std::string& entryPSPoint)
 {
 	std::shared_ptr<FShader> Shader = FShaderMgr::Get().CreateShaderDirect(ShaderFile, entryVSPoint, entryPSPoint);
 	m_RenderState = std::make_shared<RenderPipelineInfo>(Shader);

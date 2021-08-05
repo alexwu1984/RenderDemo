@@ -17,7 +17,7 @@ struct FRenderItem
 	FRenderItem() {}
 	~FRenderItem() {}
 	void Init();
-	void Init(const std::wstring& path);
+	void Init(const std::wstring& path, bool FlipV = false, bool UseAiMesh = true);
 
 
 	struct BasePassInfoWrapper
@@ -48,7 +48,7 @@ class FModel
 {
 	friend struct FRenderItem;
 public:
-	FModel(const std::wstring& FileName);
+	FModel(const std::wstring& FileName, bool FlipV = false,bool UseAiMesh = true);
 	FModel();
 	~FModel();
 	virtual bool IsSkyBox() const;
@@ -152,7 +152,7 @@ protected:
 	}m_lightMaterial;
 
 	FConstBuffer m_LightMaterialConstBuf;
-	D3D12_CPU_DESCRIPTOR_HANDLE m_LightMaterialCpuHandle;
+	D3D12_CPU_DESCRIPTOR_HANDLE m_LightMaterialCpuHandle ;
 	std::function<void(FCommandContext&, std::shared_ptr<FMaterial>)> m_DrawParam;
 
 	int32_t m_lightMaterialIndex = 1;

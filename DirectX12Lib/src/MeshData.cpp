@@ -13,7 +13,7 @@ MeshData::~MeshData()
 
 bool MeshData::HasVertexElement(VertexElementType type) const
 {
-	switch(type)
+	switch (type)
 	{
 	case VET_Position:
 		return !m_positions.empty();
@@ -23,6 +23,8 @@ bool MeshData::HasVertexElement(VertexElementType type) const
 		return !m_texcoords.empty();
 	case VET_Normal:
 		return !m_normals.empty();
+	case VET_Tangent:
+		return !m_tangents.empty();
 	default:
 		return nullptr;
 	}
@@ -35,7 +37,7 @@ uint32_t MeshData::GetVertexCount() const
 
 uint32_t MeshData::GetVertexSize(VertexElementType type) const
 {
-	switch(type)
+	switch (type)
 	{
 	case VET_Position:
 	case VET_Color:
@@ -43,6 +45,8 @@ uint32_t MeshData::GetVertexSize(VertexElementType type) const
 		return (uint32_t)m_positions.size() * sizeof(Vector3f);
 	case VET_Texcoord:
 		return (uint32_t)m_texcoords.size() * sizeof(Vector2f);
+	case VET_Tangent:
+		return (uint32_t)m_tangents.size() * sizeof(Vector4f);
 	default:
 		return 0;
 	}
@@ -50,7 +54,7 @@ uint32_t MeshData::GetVertexSize(VertexElementType type) const
 
 uint32_t MeshData::GetVertexStride(VertexElementType type) const
 {
-	switch(type)
+	switch (type)
 	{
 	case VET_Position:
 	case VET_Color:
@@ -58,6 +62,8 @@ uint32_t MeshData::GetVertexStride(VertexElementType type) const
 		return sizeof(Vector3f);
 	case VET_Texcoord:
 		return sizeof(Vector2f);
+	case VET_Tangent:
+		return sizeof(Vector4f);
 	default:
 		return 0;
 	}
@@ -65,7 +71,7 @@ uint32_t MeshData::GetVertexStride(VertexElementType type) const
 
 const float* MeshData::GetVertexData(VertexElementType type)
 {
-	switch(type)
+	switch (type)
 	{
 	case VET_Position:
 		return (float*)&m_positions[0];
@@ -75,6 +81,8 @@ const float* MeshData::GetVertexData(VertexElementType type)
 		return (float*)&m_texcoords[0];
 	case VET_Normal:
 		return (float*)&m_normals[0];
+	case VET_Tangent:
+		return (float*)&m_tangents[0];
 	default:
 		return nullptr;
 	}

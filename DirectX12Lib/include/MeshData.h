@@ -30,12 +30,12 @@ struct MaterialData
 {
 	std::string Name;
 	std::wstring BaseColorPath;
-	std::string NormalPath;
-	std::string MetallicPath;
-	std::string RoughnessPath;
-	std::string AoPath;
-	std::string OpacityPath;
-	std::string EmissivePath;
+	std::wstring NormalPath;
+	std::wstring MetallicPath;
+	std::wstring RoughnessPath;
+	std::wstring AoPath;
+	std::wstring OpacityPath;
+	std::wstring EmissivePath;
 	//ambient color
 	Vector3f Ka;
 	// Diffuse Color
@@ -106,6 +106,7 @@ protected:
 	std::vector<Vector3f> m_colors;
 	std::vector<Vector2f> m_texcoords;
 	std::vector<Vector3f> m_normals;
+	std::vector<Vector4f> m_tangents;
 	std::vector<uint32_t> m_indices;
 
 	std::vector<MaterialData> m_materials;

@@ -6,20 +6,21 @@
 #include "RenderPipelineInfo.h"
 #include "AiObjLoader.h"
 
-FModel::FModel(const std::wstring& FileName)
+FModel::FModel(const std::wstring& FileName, bool FlipV, bool UseAiMesh)
 	: m_FileName(FileName)
 	, m_Scale(1.f)
 {
-	m_UseAiMesh = true;
+	m_UseAiMesh = UseAiMesh;
 	if (m_UseAiMesh)
 	{
 		m_AiMeshDataWapper.m_MeshData = FAiObjLoader::GetLoader().LoadObj(FileName);
 	}
 	else
 	{
-		m_MeshDataWapper.m_MeshData = FObjLoader::LoadObj(FileName);
+		m_MeshDataWapper.m_MeshData = FObjLoader::LoadObj(FileName, FlipV);
 	}
 	InitializeResource();
+	m_LightMaterialCpuHandle.ptr = D3D12_CPU_VIRTUAL_ADDRESS_UNKNOWN;
 }
 
 FModel::FModel()
@@ -71,6 +72,12 @@ void FModel::Draw(FCommandContext& CommandContext, FRenderItem* renderItem)
 				if (renderItem)
 				{
 					CommandContext.SetDynamicDescriptor(renderItem->CBVRootIndex, 0, renderItem->MapBasePassInfos[SubMeshData.MaterialIndex]->BasePassCpuHandle);
+				}
+
+				if (D3D12_CPU_VIRTUAL_ADDRESS_UNKNOWN == m_LightMaterialCpuHandle.ptr)
+				{
+					m_LightMaterialConstBuf.CreateUpload(L"lightMaterial", sizeof(m_lightMaterial));
+					m_LightMaterialCpuHandle = m_LightMaterialConstBuf.CreateConstantBufferView(0, sizeof(m_lightMaterial));
 				}
 
 				if (!m_UseOutsideColor)
@@ -126,6 +133,12 @@ void FModel::Draw(FCommandContext& CommandContext, FRenderItem* renderItem)
 					if (renderItem)
 					{
 						CommandContext.SetDynamicDescriptor(renderItem->CBVRootIndex, 0, renderItem->MapBasePassInfos[MtlIndex]->BasePassCpuHandle);
+					}
+
+					if (D3D12_CPU_VIRTUAL_ADDRESS_UNKNOWN == m_LightMaterialCpuHandle.ptr)
+					{
+						m_LightMaterialConstBuf.CreateUpload(L"lightMaterial", sizeof(m_lightMaterial));
+						m_LightMaterialCpuHandle = m_LightMaterialConstBuf.CreateConstantBufferView(0, sizeof(m_lightMaterial));
 					}
 
 					if (!m_UseOutsideColor)
@@ -246,9 +259,13 @@ void FModel::InitializeResource()
 			{
 				material->LoadNormalTexture(MtlData.NormalTexPath);
 			}
-			if (!MtlData.SpecularTexPath.empty())
+			if (!MtlData.MetallicPath.empty())
 			{
-				material->LoadSpecularTexture(MtlData.SpecularTexPath);
+				material->LoadMetallicTexture(MtlData.MetallicPath);
+			}
+			if (!MtlData.RoughnessPath.empty())
+			{
+				material->LoadRoughnessPath(MtlData.RoughnessPath);
 			}
 			if (!MtlData.EmissiveTexPath.empty())
 			{
@@ -258,9 +275,9 @@ void FModel::InitializeResource()
 			{
 				material->LoadAmbientTexture(MtlData.AmbientTexPath);
 			}
-			if (!MtlData.AlphaTexPath.empty())
+			if (!MtlData.OpacityTexPath.empty())
 			{
-				material->LoadAlphaTexture(MtlData.AlphaTexPath);
+				material->LoadOpacityTexture(MtlData.OpacityTexPath);
 			}
 			material->SetColor(MtlData.Kd, MtlData.Ks);
 			m_AiMeshDataWapper.m_Materials.insert({ MatItem.first,material });
@@ -294,14 +311,35 @@ void FModel::InitializeResource()
 			{
 				material->LoadDiffuseTexture(MtlData.BaseColorPath);
 			}
+			if (!MtlData.NormalPath.empty())
+			{
+				material->LoadNormalTexture(MtlData.NormalPath);
+			}
+			if (!MtlData.MetallicPath.empty())
+			{
+				material->LoadMetallicTexture(MtlData.MetallicPath);
+			}
+			if (!MtlData.RoughnessPath.empty())
+			{
+				material->LoadRoughnessPath(MtlData.RoughnessPath);
+			}
+			if (!MtlData.EmissivePath.empty())
+			{
+				material->LoadEmissiveTexture(MtlData.EmissivePath);
+			}
+			if (!MtlData.AoPath.empty())
+			{
+				material->LoadAmbientTexture(MtlData.AoPath);
+			}
+			if (!MtlData.OpacityPath.empty())
+			{
+				material->LoadOpacityTexture(MtlData.OpacityPath);
+			}
 			material->SetColor(MtlData.Kd, MtlData.Ks);
 			m_MeshDataWapper.m_Materials.push_back(material);
 		}
 	}
 
-
-	m_LightMaterialConstBuf.CreateUpload(L"lightMaterial", sizeof(m_lightMaterial));
-	m_LightMaterialCpuHandle = m_LightMaterialConstBuf.CreateConstantBufferView(0, sizeof(m_lightMaterial));
 	m_lightMaterial.shadowtype = 0;
 	m_lightMaterial.uLightColor = Vector4f(1.0);
 }
@@ -383,18 +421,38 @@ void FModel::InitializeResource()
 	 MapBasePassInfos.insert({ 0,InfoWrapper });
  }
 
- void FRenderItem::Init(const std::wstring& path)
+ void FRenderItem::Init(const std::wstring& path, bool FlipV, bool UseAiMesh )
  {
-	 Model = std::make_shared<FModel>(path);
-	 const auto& SubMeshDataList = Model->m_AiMeshDataWapper.m_MeshData->GetSubMeshData();
-	 for (const auto& SubMeshData : SubMeshDataList)
+	 Model = std::make_shared<FModel>(path, FlipV,UseAiMesh);
+	 if (Model->m_AiMeshDataWapper.m_MeshData)
 	 {
-		 std::shared_ptr<FMaterial> Material = Model->m_AiMeshDataWapper.m_Materials[SubMeshData.MaterialIndex];
+		 const auto& SubMeshDataList = Model->m_AiMeshDataWapper.m_MeshData->GetSubMeshData();
+		 for (const auto& SubMeshData : SubMeshDataList)
+		 {
+			 std::shared_ptr<FMaterial> Material = Model->m_AiMeshDataWapper.m_Materials[SubMeshData.MaterialIndex];
 
-		 std::shared_ptr< BasePassInfoWrapper> InfoWrapper = std::make_shared<BasePassInfoWrapper>();
-		 InfoWrapper->BasePassInfo.mUseTex = Material->GetDiffuseTexture().GetResource() ? 1 : 0;
-		 InfoWrapper->BasePassConstBuf.CreateUpload(L"BasePassInfo", sizeof(InfoWrapper->BasePassInfo));
-		 InfoWrapper->BasePassCpuHandle = InfoWrapper->BasePassConstBuf.CreateConstantBufferView(0, sizeof(InfoWrapper->BasePassInfo));
-		 MapBasePassInfos.insert({ SubMeshData.MaterialIndex,InfoWrapper });
+			 std::shared_ptr< BasePassInfoWrapper> InfoWrapper = std::make_shared<BasePassInfoWrapper>();
+			 InfoWrapper->BasePassInfo.mUseTex = Material->GetDiffuseTexture().GetResource() ? 1 : 0;
+			 InfoWrapper->BasePassConstBuf.CreateUpload(L"BasePassInfo", sizeof(InfoWrapper->BasePassInfo));
+			 InfoWrapper->BasePassCpuHandle = InfoWrapper->BasePassConstBuf.CreateConstantBufferView(0, sizeof(InfoWrapper->BasePassInfo));
+			 MapBasePassInfos.insert({ SubMeshData.MaterialIndex,InfoWrapper });
+		 }
+	 }
+	 else if (Model->m_MeshDataWapper.m_MeshData)
+	 {
+		 for (size_t i = 0; i < Model->m_MeshDataWapper.m_MeshData->GetMeshCount(); ++i)
+		 {
+			 size_t MtlIndex = Model->m_MeshDataWapper.m_MeshData->GetSubMaterialIndex(i);
+			 if (Model->m_MeshDataWapper.m_Materials.size() > 0)
+			 {
+				 std::shared_ptr<FMaterial> Material = Model->m_MeshDataWapper.m_Materials[MtlIndex];
+				 std::shared_ptr< BasePassInfoWrapper> InfoWrapper = std::make_shared<BasePassInfoWrapper>();
+				 InfoWrapper->BasePassInfo.mUseTex = Material->GetDiffuseTexture().GetResource() ? 1 : 0;
+				 InfoWrapper->BasePassConstBuf.CreateUpload(L"BasePassInfo", sizeof(InfoWrapper->BasePassInfo));
+				 InfoWrapper->BasePassCpuHandle = InfoWrapper->BasePassConstBuf.CreateConstantBufferView(0, sizeof(InfoWrapper->BasePassInfo));
+				 MapBasePassInfos.insert({ MtlIndex,InfoWrapper });
+			 }
+		 }
+
 	 }
  }

@@ -26,6 +26,8 @@ bool FSubMeshData::HasVertexElement(VertexElementType type) const
 		return !Texcoords.empty();
 	case VET_Normal:
 		return !Normals.empty();
+	case VET_Tangent:
+		return !Tangets.empty();
 	default:
 		return nullptr;
 	}
@@ -44,6 +46,8 @@ uint32_t FSubMeshData::GetVertexSize(VertexElementType type) const
 	case VET_Color:
 	case VET_Normal:
 		return (uint32_t)Positions.size() * sizeof(Vector3f);
+	case VET_Tangent:
+		return (uint32_t)Positions.size() * sizeof(Vector4f);
 	case VET_Texcoord:
 		return (uint32_t)Texcoords.size() * sizeof(Vector2f);
 	default:
@@ -59,6 +63,8 @@ uint32_t FSubMeshData::GetVertexStride(VertexElementType type) const
 	case VET_Color:
 	case VET_Normal:
 		return sizeof(Vector3f);
+	case VET_Tangent:
+		return sizeof(Vector4f);
 	case VET_Texcoord:
 		return sizeof(Vector2f);
 	default:
@@ -78,6 +84,8 @@ const float* FSubMeshData::GetVertexData(VertexElementType type)
 		return (float*)&Texcoords[0];
 	case VET_Normal:
 		return (float*)&Normals[0];
+	case VET_Tangent:
+		return (float*)&Tangets[0];
 	default:
 		return nullptr;
 	}
@@ -160,6 +168,11 @@ void FAiMeshData::TraverserNodes(const aiScene* scene)
 		aiMaterial* pAiMat = scene->mMaterials[SubMeshData.MaterialIndex];
 		FMaterialData& MaterialData = m_Materials[SubMeshData.MaterialIndex];
 
+		if (!SubMeshData.HasVertexElement(VET_Tangent))
+		{
+			CalcTangents(SubMeshData.Positions, SubMeshData.Texcoords, SubMeshData.Normals, SubMeshData.Indices, SubMeshData.Tangets);
+		}
+
 		//test
 		//for (int32_t typeIndex = aiTextureType_DIFFUSE; typeIndex < aiTextureType_UNKNOWN; ++typeIndex)
 		//{
@@ -177,10 +190,10 @@ void FAiMeshData::TraverserNodes(const aiScene* scene)
 
 		LoadTextureFromMaterial(aiTextureType_DIFFUSE, pAiMat, MaterialData.DiffuseTexPath);
 		LoadTextureFromMaterial(aiTextureType_HEIGHT, pAiMat, MaterialData.NormalTexPath);
-		LoadTextureFromMaterial(aiTextureType_SHININESS, pAiMat, MaterialData.SpecularTexPath);
+		LoadTextureFromMaterial(aiTextureType_SHININESS, pAiMat, MaterialData.RoughnessPath);
 		LoadTextureFromMaterial(aiTextureType_EMISSIVE, pAiMat, MaterialData.EmissiveTexPath);
 		LoadTextureFromMaterial(aiTextureType_AMBIENT, pAiMat, MaterialData.AmbientTexPath);
-		LoadTextureFromMaterial(aiTextureType_OPACITY, pAiMat, MaterialData.AlphaTexPath);
+		LoadTextureFromMaterial(aiTextureType_OPACITY, pAiMat, MaterialData.OpacityTexPath);
 
 		for (int i = 0; i < VET_Max; ++i)
 		{
@@ -219,7 +232,10 @@ void FAiMeshData::ProcessVertex(const aiMesh* vAiMesh, FSubMeshData& meshData)
 			meshData.Texcoords.push_back({ vAiMesh->mTextureCoords[0][i].x, vAiMesh->mTextureCoords[0][i].y });
 		}
 
-		/*if (vAiMesh->mTangents)*/
+		if (vAiMesh->mTangents)
+		{
+			meshData.Tangets.push_back({ vAiMesh->mTangents[i].x, vAiMesh->mTangents[i].y, vAiMesh->mTangents[i].z,0 });
+		}
 	}
 }
 
@@ -271,4 +287,72 @@ void FAiMeshData::LoadTextureFromMaterial(int32_t vTextureType, const aiMaterial
 		texPath = m_Directory + L"/" + TextureName;
 	}
 
+}
+
+void FAiMeshData::CalcTangents(const std::vector<Vector3f>& final_positions, const std::vector<Vector2f>& final_texcoords, 
+	                          const std::vector<Vector3f>& final_normals, const std::vector<uint32_t>& final_indices, 
+	                          std::vector<Vector4f>& final_tangents)
+{
+	//Assert(ENABLE_TANGENT);
+	Assert(final_indices.size() % 3 == 0);
+	uint32_t TriangleCount = (uint32_t)final_indices.size() / 3;
+	uint32_t VertexCount = (uint32_t)final_positions.size();
+
+	std::vector<Vector3f> tan1;
+	tan1.resize(VertexCount);
+	std::vector<Vector3f> tan2;
+	tan2.resize(VertexCount);
+	for (uint32_t a = 0; a < TriangleCount; ++a)
+	{
+		uint32_t i1 = final_indices[3 * a];
+		uint32_t i2 = final_indices[3 * a + 1];
+		uint32_t i3 = final_indices[3 * a + 2];
+
+		const Vector3f& v1 = final_positions[i1];
+		const Vector3f& v2 = final_positions[i2];
+		const Vector3f& v3 = final_positions[i3];
+		const Vector2f& w1 = final_texcoords[i1];
+		const Vector2f& w2 = final_texcoords[i2];
+		const Vector2f& w3 = final_texcoords[i3];
+
+		float x1 = v2.x - v1.x;
+		float x2 = v3.x - v1.x;
+		float y1 = v2.y - v1.y;
+		float y2 = v3.y - v1.y;
+		float z1 = v2.z - v1.z;
+		float z2 = v3.z - v1.z;
+		float s1 = w2.x - w1.x;
+		float s2 = w3.x - w1.x;
+		float t1 = w2.y - w1.y;
+		float t2 = w3.y - w1.y;
+
+		float div = s1 * t2 - s2 * t1;
+		float r = div == 0.f ? 0.f : 1.f / div;
+
+		Vector3f sdir((t2 * x1 - t1 * x2) * r, (t2 * y1 - t1 * y2) * r, (t2 * z1 - t1 * z2) * r);
+		Vector3f tdir((s1 * x2 - s2 * x1) * r, (s1 * y2 - s2 * y1) * r, (s1 * z2 - s2 * z1) * r);
+
+		tan1[i1] += sdir;
+		tan1[i2] += sdir;
+		tan1[i3] += sdir;
+		tan2[i1] += tdir;
+		tan2[i2] += tdir;
+		tan2[i3] += tdir;
+	}
+	for (uint32_t a = 0; a < VertexCount; a++)
+	{
+		// position(3), tex(2), normal(3), tangent(3)
+		const Vector3f& n = final_normals[a];
+		const Vector3f& t = tan1[a];
+		// Gram-Schmidt orthogonalize.
+		Vector4f tangent;
+		tangent = (t - n * n.Dot(t)).SafeNormalize();
+		// Calculate handedness.
+		tangent.w = (Cross(n, t).Dot(tan2[a]) < 0.0f) ? -1.0f : 1.0f;
+		final_tangents.push_back(tangent);
+		if (isnan(tangent.x) || isnan(tangent.y) || isnan(tangent.z))
+		{
+			std::cout << "degenerated tangent, vertex index: %d" << a << std::endl;
+		}
+	}
 }

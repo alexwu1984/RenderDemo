@@ -5,28 +5,30 @@
 #include "RenderWindow.h"
 #include "RenderPipelineInfo.h"
 #include "Camera.h"
+#include "EnvironmentCommon.h"
 
-NormalRenderPass::NormalRenderPass()
+PBRRenderPass::PBRRenderPass()
 {
 
 }
 
-NormalRenderPass::~NormalRenderPass()
+PBRRenderPass::~PBRRenderPass()
 {
 
 }
 
-void NormalRenderPass::Init(const std::vector < std::shared_ptr<FRenderItem>>& ItemList, int Width, int Height)
+void PBRRenderPass::Init(const std::vector < std::shared_ptr<FRenderItem>>& ItemList, int Width, int Height,
+	const std::wstring& ShaderFile, const std::string& entryVSPoint, const std::string& entryPSPoint)
 {
 	m_ItemList = ItemList;
 	m_GameWndSize = { Width,Height };
 	SetupRootSignature();
-	SetupPipelineState();
+	SetupPipelineState(ShaderFile,entryVSPoint,entryPSPoint);
 }
 
-void NormalRenderPass::Render(FCommandContext& CommandContext)
+void PBRRenderPass::Render(FCommandContext& CommandContext)
 {
-	CommandContext.SetRootSignature(m_RootSignature);
+	CommandContext.SetRootSignature(m_MeshSignature);
 	CommandContext.SetViewportAndScissor(0, 0, m_GameWndSize.x, m_GameWndSize.y);
 
 
@@ -43,70 +45,55 @@ void NormalRenderPass::Render(FCommandContext& CommandContext)
 	CommandContext.ClearDepth(DepthBuffer);
 	CommandContext.SetPrimitiveTopology(D3D_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
 
-	CommandContext.SetPipelineState(m_TexutreRenderState->GetPipelineState());
+	CommandContext.SetPipelineState(m_RenderState->GetPipelineState());
 
 	for (auto Item : m_ItemList)
 	{
 		auto Model = Item->Model;
 		if (Model)
 		{
+			Model->CustomDrawParam = [this](FCommandContext& GfxContext, std::shared_ptr< FMaterial> material, std::shared_ptr<FRenderItem::BasePassInfoWrapper> InfoWrapper)
+			{
+				g_EVSConstants.ModelMatrix = InfoWrapper->BasePassInfo.modelMatrix;
+				g_EVSConstants.ViewProjMatrix = InfoWrapper->BasePassInfo.viewMatrix * InfoWrapper->BasePassInfo.projectionMatrix;
+				GfxContext.SetDynamicConstantBufferView(0, sizeof(g_EVSConstants), &g_EVSConstants);
+
+				//g_EPSConstants.Exposure = 1;
+				//g_EPSConstants.CameraPos = m_Camera.GetPosition();
+				//GfxContext.SetDynamicConstantBufferView(1, sizeof(g_EPSConstants), &g_EPSConstants);
+
+				//GfxContext.SetDynamicDescriptor(2, 7, m_IrradianceCube.GetCubeSRV());
+				//GfxContext.SetDynamicDescriptor(2, 8, m_PrefilteredCube.GetCubeSRV());
+				//GfxContext.SetDynamicDescriptor(2, 9, m_PreintegratedGF.GetSRV());
+			};
+
 			Model->Draw(CommandContext, Item.get());
+
+			Model->CustomDrawParam = nullptr;
 		}
 	}
 
 	CommandContext.TransitionResource(BackBuffer, D3D12_RESOURCE_STATE_PRESENT);
 }
 
-void NormalRenderPass::Update(const Vector3f& LightDir, const FMatrix& View, const FMatrix& Proj, FCamera& MainCamera)
+void PBRRenderPass::SetupRootSignature()
 {
-	for (auto Item : m_ItemList)
-	{
-		auto Model = Item->Model;
-		if (Model)
-		{
-			Model->SetLightDir(LightDir);
-			Model->SetLightMVP(Model->GetModelMatrix(), View, Proj);
+	FSamplerDesc DefaultSamplerDesc(D3D12_FILTER_MIN_MAG_MIP_LINEAR, D3D12_TEXTURE_ADDRESS_MODE_CLAMP);
 
-			for (auto& PassInfo : Item->MapBasePassInfos)
-			{
-				PassInfo.second->BasePassInfo.modelMatrix = Model->GetModelMatrix();
-				PassInfo.second->BasePassInfo.viewMatrix = MainCamera.GetViewMatrix();
-				const float FovVertical = MATH_PI / 4.f;
-				PassInfo.second->BasePassInfo.projectionMatrix = FMatrix::MatrixPerspectiveFovLH(FovVertical, (float)m_GameWndSize.x / m_GameWndSize.y, 0.1f, 100.f);
-
-				memcpy(PassInfo.second->BasePassConstBuf.Map(), &PassInfo.second->BasePassInfo, sizeof(PassInfo.second->BasePassInfo));
-			}
-		}
-	}
+	m_MeshSignature.Reset(3, 1);
+	m_MeshSignature[0].InitAsBufferCBV(0, D3D12_SHADER_VISIBILITY_VERTEX);
+	m_MeshSignature[1].InitAsBufferCBV(0, D3D12_SHADER_VISIBILITY_PIXEL);
+	m_MeshSignature[2].InitAsDescriptorRange(D3D12_DESCRIPTOR_RANGE_TYPE_SRV, 0, 10); //pbr 7, irradiance, prefiltered, preintegratedGF
+	m_MeshSignature.InitStaticSampler(0, DefaultSamplerDesc, D3D12_SHADER_VISIBILITY_PIXEL);
+	m_MeshSignature.Finalize(L"Mesh RootSignature", D3D12_ROOT_SIGNATURE_FLAG_ALLOW_INPUT_ASSEMBLER_INPUT_LAYOUT);
 }
 
-void NormalRenderPass::SetupRootSignature()
+void PBRRenderPass::SetupPipelineState(const std::wstring& ShaderFile, const std::string& entryVSPoint, const std::string& entryPSPoint)
 {
-	FSamplerDesc DefaultSamplerDesc;
-	FSamplerDesc ShadowSamplerDesc;
-	ShadowSamplerDesc.Filter = D3D12_FILTER_COMPARISON_MIN_MAG_LINEAR_MIP_POINT;
-	ShadowSamplerDesc.ComparisonFunc = D3D12_COMPARISON_FUNC_LESS_EQUAL;
-	ShadowSamplerDesc.AddressU = D3D12_TEXTURE_ADDRESS_MODE_BORDER;
-	ShadowSamplerDesc.AddressV = D3D12_TEXTURE_ADDRESS_MODE_BORDER;
-	ShadowSamplerDesc.AddressW = D3D12_TEXTURE_ADDRESS_MODE_BORDER;
-
-	m_RootSignature.Reset(4, 3);
-	m_RootSignature[0].InitAsDescriptorRange(D3D12_DESCRIPTOR_RANGE_TYPE_CBV, 0, 1, D3D12_SHADER_VISIBILITY_ALL);
-	m_RootSignature[1].InitAsDescriptorRange(D3D12_DESCRIPTOR_RANGE_TYPE_CBV, 1, 1, D3D12_SHADER_VISIBILITY_ALL);
-	m_RootSignature[2].InitAsDescriptorRange(D3D12_DESCRIPTOR_RANGE_TYPE_SRV, 0, 1, D3D12_SHADER_VISIBILITY_PIXEL);
-	m_RootSignature[3].InitAsDescriptorRange(D3D12_DESCRIPTOR_RANGE_TYPE_SRV, 1, 1, D3D12_SHADER_VISIBILITY_PIXEL);
-	m_RootSignature.InitStaticSampler(0, DefaultSamplerDesc, D3D12_SHADER_VISIBILITY_PIXEL);
-	m_RootSignature.InitStaticSampler(1, ShadowSamplerDesc, D3D12_SHADER_VISIBILITY_PIXEL);
-	m_RootSignature.InitStaticSampler(2, ShadowSamplerDesc, D3D12_SHADER_VISIBILITY_PIXEL);
-	m_RootSignature.Finalize(L"RootSignature", D3D12_ROOT_SIGNATURE_FLAG_ALLOW_INPUT_ASSEMBLER_INPUT_LAYOUT);
-}
-
-void NormalRenderPass::SetupPipelineState()
-{
-	std::shared_ptr<FShader> shader = FShaderMgr::Get().CreateShader("phongFragment", L"../Resources/Shaders/phongFragment.hlsl");
-	m_TexutreRenderState = std::make_shared<RenderPipelineInfo>(shader);
-	m_TexutreRenderState->SetupRenderTargetFormat(1, &RenderWindow::Get().GetColorFormat(), RenderWindow::Get().GetDepthFormat());
-	m_TexutreRenderState->SetRasterizerState(FGraphicsPipelineState::RasterizerFront);
+	std::shared_ptr<FShader> shader = FShaderMgr::Get().CreateShaderDirect(ShaderFile,entryVSPoint,entryPSPoint);
+	m_RenderState = std::make_shared<RenderPipelineInfo>(shader);
+	m_RenderState->SetupRenderTargetFormat(1, &RenderWindow::Get().GetColorFormat(), RenderWindow::Get().GetDepthFormat());
+	m_RenderState->SetRasterizerState(FGraphicsPipelineState::RasterizerFront);
 
 	bool InitLayout = false;
 	for (auto Item: m_ItemList)
@@ -114,12 +101,12 @@ void NormalRenderPass::SetupPipelineState()
 		auto Model = Item->Model;
 		std::vector<D3D12_INPUT_ELEMENT_DESC> MeshLayout;
 		Model->GetMeshLayout(MeshLayout);
-		m_TexutreRenderState->SetupPipeline(m_RootSignature, MeshLayout);
+		m_RenderState->SetupPipeline(m_MeshSignature, MeshLayout);
 		InitLayout = true;
 		break;
 	}
 
 	Assert(InitLayout);
 
-	m_TexutreRenderState->PipelineFinalize();
+	m_RenderState->PipelineFinalize();
 }

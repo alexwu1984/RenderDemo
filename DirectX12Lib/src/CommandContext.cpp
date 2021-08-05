@@ -398,7 +398,7 @@ void FCommandContext::SetViewport(const D3D12_VIEWPORT& vp)
 void FCommandContext::SetViewportAndScissor(UINT x, UINT y, UINT w, UINT h)
 {
 	SetViewport((float)x, (float)y, (float)w, (float)h);
-	SetScissor(x, y, x+w, h+h);
+	SetScissor(x, y, x + w, y + h);
 }
 
 void FCommandContext::SetViewportAndScissor(const D3D12_VIEWPORT& Viewport, const D3D12_RECT& Scissor)

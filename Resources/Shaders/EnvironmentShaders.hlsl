@@ -67,8 +67,10 @@ cbuffer PSContant : register(b0)
     int MaxMipLevel;
     int NumSamplesPerDir;
     int Degree;
-    float3 Padding;
-    float3 Coeffs[16];
+    float3	CameraPos;
+    int		bSHDiffuse;
+    float3	pad;
+    float4	Coeffs[16];
 };
 
 TextureCube CubeEnvironment : register(t0);
@@ -232,12 +234,10 @@ float4 PS_GenPrefiltered(VertexOutput In) : SV_Target
 float2 PS_PreIntegrateBRDF(in VertexOutput_Texture2D In) : SV_Target0
 {
     int2 PixelPos = int2(In.Pos.xy);
-    uint2 Random = Rand3DPCG16(uint3(PixelPos, In.Pos.x * 128)).xy;
+    //uint2 Random = Rand3DPCG16(uint3(PixelPos, In.Pos.x * 128)).xy;
 
     float Roughness = In.Tex.y;
-    float m = Roughness * Roughness;
-    float m2 = m * m;
     float NoV = In.Tex.x;
     
-    return IntegrateBRDF(Random, m2, NoV);
+    return IntegrateBRDF(uint2(0,0),Roughness, NoV);
 }

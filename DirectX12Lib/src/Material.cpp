@@ -27,9 +27,9 @@ void FMaterial::LoadNormalTexture(const std::wstring& file)
 	m_NormalTex.LoadFromFile(file);
 }
 
-void FMaterial::LoadSpecularTexture(const std::wstring& file)
+void FMaterial::LoadRoughnessPath(const std::wstring& file)
 {
-	m_SpecularTex.LoadFromFile(file);
+	m_RoughnessTex.LoadFromFile(file);
 }
 
 void FMaterial::LoadEmissiveTexture(const std::wstring& file)
@@ -42,7 +42,12 @@ void FMaterial::LoadAmbientTexture(const std::wstring& file)
 	m_AmbientTex.LoadFromFile(file);
 }
 
-void FMaterial::LoadAlphaTexture(const std::wstring& file)
+void FMaterial::LoadOpacityTexture(const std::wstring& file)
 {
-	m_AlphaTex.LoadFromFile(file);
+	m_OpacityTex.LoadFromFile(file);
+}
+
+void FMaterial::LoadMetallicTexture(const std::wstring& file)
+{
+	m_MetallicTex.LoadFromFile(file);
 }

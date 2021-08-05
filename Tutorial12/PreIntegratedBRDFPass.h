@@ -10,11 +10,11 @@ class FCommandContext;
 class RenderPipelineInfo;
 class FTexture;
 
-class PreIntegrateBRDFPass
+class PreIntegratedBRDFPass
 {
 public:
-	PreIntegrateBRDFPass();
-	~PreIntegrateBRDFPass();
+	PreIntegratedBRDFPass();
+	~PreIntegratedBRDFPass();
 
 	void Init();
 	void IntegrateBRDF(FColorBuffer& target);

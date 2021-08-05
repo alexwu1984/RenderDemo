@@ -47,7 +47,6 @@ public:
 
 		//m_Camera = FCamera(Vector3f(0, -2.03285, -3.00298), Vector3f(-0.305803, 0.190466, -0.932849), Vector3f(0.f, 1.f, 0.f));
 		m_Camera = FCamera(Vector3f(0, 0, -5.00298), Vector3f(0, 0, 0), Vector3f(0.f, 1.f, 0.f));
-		m_Camera.ProcessMouseMovement(0, 0);
 		std::vector< std::shared_ptr<FRenderItem> > DiffiusePassList;
 
 		std::shared_ptr<FRenderItem> ActorItem = std::make_shared<FRenderItem>();

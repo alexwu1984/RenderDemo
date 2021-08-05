@@ -28,6 +28,7 @@ struct FSubMeshData
 	std::vector<Vector3f> Colors;
 	std::vector<Vector2f> Texcoords;
 	std::vector<Vector3f> Normals;
+	std::vector<Vector4f> Tangets;
 	std::vector<uint32_t> Indices;
 
 	FGpuBuffer VertexBuffer[VertexElementType::VET_Max];
@@ -39,11 +40,12 @@ struct FMaterialData
 {
 	std::string Name;
 	std::wstring DiffuseTexPath;
-	std::wstring SpecularTexPath;
+	std::wstring RoughnessPath;
 	std::wstring NormalTexPath;
 	std::wstring EmissiveTexPath;
 	std::wstring AmbientTexPath;
-	std::wstring AlphaTexPath;
+	std::wstring OpacityTexPath;
+	std::wstring MetallicPath;
 	//ambient color
 	Vector3f Ka;
 	// Diffuse Color
@@ -80,6 +82,14 @@ private:
 	uint32_t ProcessIndices(const aiMesh* vAiMesh, FSubMeshData& MeshData);
 	void ProcessMaterialData(const aiScene* scene, const aiMesh* vAiMesh);
 	void LoadTextureFromMaterial(int32_t vTextureType, const aiMaterial* vMat, std::wstring& texPath);
+
+	void CalcTangents(
+		const std::vector<Vector3f>& final_positions,
+		const std::vector<Vector2f>& final_texcoords,
+		const std::vector<Vector3f>& final_normals,
+		const std::vector<uint32_t>& final_indices,
+		std::vector<Vector4f>& final_tangents
+	);
 
 	friend FObjLoader;
 

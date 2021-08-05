@@ -8,23 +8,23 @@ class FCommandContext;
 class RenderPipelineInfo;
 class FCamera;
 
-class NormalRenderPass
+class PBRRenderPass
 {
 public:
-	NormalRenderPass();
-	~NormalRenderPass();
+	PBRRenderPass();
+	~PBRRenderPass();
 
-	void Init(const std::vector < std::shared_ptr<FRenderItem>>& ItemList, int Width, int Height);
+	void Init(const std::vector < std::shared_ptr<FRenderItem>>& ItemList, int Width, int Height,
+		const std::wstring& ShaderFile, const std::string& entryVSPoint, const std::string& entryPSPoint);
 	void Render(FCommandContext& CommandContext);
-	void Update(const Vector3f& LightDir, const FMatrix& View, const FMatrix& Proj, FCamera& MainCamera);
 
 private:
 	void SetupRootSignature();
-	void SetupPipelineState();
+	void SetupPipelineState(const std::wstring& ShaderFile, const std::string& entryVSPoint, const std::string& entryPSPoint);
 
 private:
 	std::vector < std::shared_ptr<FRenderItem>> m_ItemList;
-	std::shared_ptr< RenderPipelineInfo> m_TexutreRenderState;
-	FRootSignature m_RootSignature;
+	std::shared_ptr< RenderPipelineInfo> m_RenderState;
+	FRootSignature m_MeshSignature;
 	Vector2<int> m_GameWndSize;
 };

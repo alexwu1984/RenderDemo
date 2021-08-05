@@ -269,8 +269,13 @@ float G_Smith(float NoL, float NoV, float roughness)
     return G1(k, NoL) * G1(k, NoV);
 }
 
+
+
 float2 IntegrateBRDF(uint2 Random,float Roughness, float NoV)
 {
+	float m = Roughness * Roughness;
+	float m2 = m * m;
+
     float3 V;
     V.x = sqrt(1.0f - NoV * NoV); // sin
     V.y = 0;
@@ -281,7 +286,7 @@ float2 IntegrateBRDF(uint2 Random,float Roughness, float NoV)
     for (uint i = 0; i < NumSamples; i++)
     {
         float2 Xi = Hammersley(i, NumSamples, Random);
-        float3 H = ImportanceSampleGGX(Xi, Roughness);
+        float3 H = ImportanceSampleGGX(Xi, m2);
         float3 L = 2 * dot(V, H) * H - V;
         float NoL = saturate(L.z);
         float NoH = saturate(H.z);
@@ -295,7 +300,6 @@ float2 IntegrateBRDF(uint2 Random,float Roughness, float NoV)
             B += Fc * G_Vis;
         }
     }
-    //return float2(A, B) / NumSamples;
-    return float2(1, 0.5);
 
+    return float2(A, B) / NumSamples;
 }

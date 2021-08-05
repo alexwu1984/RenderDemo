@@ -124,6 +124,17 @@ struct Vector3
 		T inv = T(1) / length;
 		return Vector3(x * inv, y * inv, z *inv);
 	}
+
+	Vector3 SafeNormalize(float Epsilon = 1e-4) const
+	{
+		T length = Length();
+		if (length < Epsilon)
+		{
+			return Vector3(T(0));
+		}
+		T inv = T(1) / length;
+		return Vector3(x * inv, y * inv, z * inv);
+	}
 };
 
 template<typename T, typename scalar>

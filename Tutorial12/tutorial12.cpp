@@ -32,7 +32,8 @@
 #include "SkyBox.h"
 #include "GenCubePass.h"
 #include "CubeMapCross.h"
-#include "PreIntegrateBRDFPass.h"
+#include "PreIntegratedBRDFPass.h"
+#include "pbrrenderpass.h"
 
 extern FCommandListManager g_CommandListManager;
 
@@ -52,7 +53,7 @@ enum EShowMode
 	SM_Irradiance,
 	SM_Prefiltered,
 	//SM_SphericalHarmonics,
-	SM_PreintegratedGF,
+	SM_PreintegratedBRDF,
 	SM_PBR,
 };
 
@@ -107,7 +108,7 @@ public:
 			ImGui::RadioButton("Irradiance", &m_ShowMode, SM_Irradiance);
 			ImGui::RadioButton("Prefiltered", &m_ShowMode, SM_Prefiltered);
 			//ImGui::RadioButton("SphericalHarmonics", &m_ShowMode, SM_SphericalHarmonics);
-			ImGui::RadioButton("PreintegratedGF", &m_ShowMode, SM_PreintegratedGF);
+			ImGui::RadioButton("PreintegratedBRDF", &m_ShowMode, SM_PreintegratedBRDF);
 			ImGui::RadioButton("PBR Mesh", &m_ShowMode, SM_PBR);
 			ImGui::EndGroup();
 
@@ -169,8 +170,8 @@ public:
 		case SM_Prefiltered:
 			m_CubeMapCrossDebug.ShowCubeMapDebugView(GfxContext, m_PrefilteredCube, 1.0, m_MipLevel);
 			break;
-		case SM_PreintegratedGF:
-			ShowTexture2D(GfxContext, m_PreintegrateBRDF);
+		case SM_PreintegratedBRDF:
+			ShowTexture2D(GfxContext, m_PreintegratedBRDF);
 			break;
 		};
 
@@ -182,7 +183,7 @@ public:
 		std::vector< std::shared_ptr<FRenderItem> > DiffiusePassList;
 
 		std::shared_ptr<FRenderItem> ActorItem = std::make_shared<FRenderItem>();
-		ActorItem->Init(L"../Resources/Models/harley/harley.obj");
+		ActorItem->Init(L"../Resources/Models/harley/harley.obj",true,false);
 		ActorItem->Model->SetLightDir(m_LightInfo.LightDir);
 		ActorItem->Model->SetLightIntensity(0.5);
 		DiffiusePassList.push_back(ActorItem);
@@ -204,7 +205,8 @@ public:
 		m_GenPrefilterEnvMapPass.Init(m_SkyBox, PREFILTERED_SIZE, PREFILTERED_SIZE, L"../Resources/Shaders/EnvironmentShaders.hlsl", "VS_SkyCube", "PS_GenPrefiltered", GenCubePass::CubePass_PreFilterEnvMap);
 		m_CubeMapCrossDebug.Init(m_CubeMapCross, m_GameDesc.Width, m_GameDesc.Height, L"../Resources/Shaders/EnvironmentShaders.hlsl", "VS_CubeMapCross", "PS_CubeMapCross");
 
-		m_PreintegrateBRDF.Create(L"PreintegratedGF", 128, 32, 1, DXGI_FORMAT_R32G32_FLOAT);
+		m_PreintegratedBRDF.Create(L"PreintegratedGF", 128, 32, 1, DXGI_FORMAT_R32G32_FLOAT);
+		m_PBRRenderPass.Init(DiffiusePassList, m_GameDesc.Width, m_GameDesc.Height, L"../Resources/Shaders/PBR.hlsl", "VS_PBR", "PS_PBR");
 		
 	}
 
@@ -221,6 +223,8 @@ public:
 
 	void ShowTexture2D(FCommandContext& GfxContext, FColorBuffer& Texture2D)
 	{
+		GfxContext.TransitionResource(Texture2D, D3D12_RESOURCE_STATE_PIXEL_SHADER_RESOURCE);
+
 		float AspectRatio = Texture2D.GetWidth() * 1.f / Texture2D.GetHeight();
 		int Width = std::min((uint32_t)m_GameDesc.Width, Texture2D.GetWidth());
 		int Height = std::min((uint32_t)m_GameDesc.Height, Texture2D.GetHeight());
@@ -247,7 +251,7 @@ public:
 
 	void PreIntegrateBRDF()
 	{
-		m_PreintergrateBRDFPass.IntegrateBRDF(m_PreintegrateBRDF);
+		m_PreintergrateBRDFPass.IntegrateBRDF(m_PreintegratedBRDF);
 	}
 
 	void SkyPass(FCommandContext& GfxContext,FCubeBuffer& CubeBuffer)
@@ -258,7 +262,7 @@ public:
 private:
 
 	FTexture m_TextureLongLat;
-	FColorBuffer m_PreintegrateBRDF;
+	FColorBuffer m_PreintegratedBRDF;
 	FCubeBuffer m_CubeBuffer, m_IrradianceCube, m_PrefilteredCube;
 	int m_ShowMode = SM_PBR;
 	Vector3f m_ClearColor = Vector3f(0.2f);
@@ -268,7 +272,9 @@ private:
 	bool m_RotateMesh = false;
 	float m_RotateY = 0.f;
 	Show2DTexturePass m_LongLatPass;
-	PreIntegrateBRDFPass m_PreintergrateBRDFPass;
+	PreIntegratedBRDFPass m_PreintergrateBRDFPass;
+	PBRRenderPass m_PBRRenderPass;
+
 	SkyBoxPass m_SkyPass;
 	SkyBoxPass m_CubeMapCrossDebug;
 	GenCubePass m_GenCubePass;
