@@ -76,39 +76,38 @@ PixelInput VS_PBR(VertexInput In)
 
 float4 PS_PBR(PixelInput In) : SV_Target
 {
-	float Opacity = OpacityMap.Sample(LinearSampler, In.Tex).r;
-	clip(Opacity < 0.1f ? -1 : 1);
+    float Opacity = OpacityMap.Sample(LinearSampler, In.Tex).r;
+    clip(Opacity < 0.1f ? -1 : 1);
 
-	float3 Albedo = BaseMap.Sample(LinearSampler, In.Tex).xyz;
-	float Metallic = MetallicMap.Sample(LinearSampler, In.Tex).x;
-	float Roughness = RoughnessMap.Sample(LinearSampler, In.Tex).x;
+    float3 Albedo = BaseMap.Sample(LinearSampler, In.Tex).xyz;
+    float Metallic = MetallicMap.Sample(LinearSampler, In.Tex).x;
+    float Roughness = RoughnessMap.Sample(LinearSampler, In.Tex).x;
 
-	float3x3 TBN = float3x3(normalize(In.T), normalize(In.B), normalize(In.N));
-	float3 tNormal = NormalMap.Sample(LinearSampler, In.Tex).xyz;
-	tNormal = 2 * tNormal - 1.0; // [0,1] -> [-1, 1]
-	float3 N = mul(tNormal, TBN);
+    float3x3 TBN = float3x3(normalize(In.T), normalize(In.B), normalize(In.N));
+    float3 tNormal = NormalMap.Sample(LinearSampler, In.Tex).xyz;
+    tNormal = 2 * tNormal - 1.0; // [0,1] -> [-1, 1]
+    float3 N = mul(tNormal, TBN);
 
-	float3 V = normalize(CameraPos - In.WorldPos);
-	float3 R = reflect(-V, N); //incident ray, surface normal
-	float NoV = saturate(dot(N, V));
+    float3 V = normalize(CameraPos - In.WorldPos);
+    float3 R = reflect(-V, N); //incident ray, surface normal
 
-	float3 F0 = lerp(0.04, Albedo.rgb, Metallic);
-	float3 F = F_schlickR(NoV, F0, Roughness);
+    float NoV = saturate(dot(N, V));
+    float3 F0 = lerp(0.04, Albedo.rgb, Metallic);
+    float3 F = F_schlickR(NoV, F0, Roughness);
 
-	float3 kD = (1.0 - F) * (1.0 - Metallic);
+    float3 kD = (1.0 - F) * (1.0 - Metallic);
+    float3 Irradiance = IrradianceCubeMap.SampleLevel(LinearSampler, N, 0).xyz;
+    float3 Diffuse = Albedo * kD * Irradiance;
 
-	float3 Irradiance = IrradianceCubeMap.SampleLevel(LinearSampler, N, 0).xyz;
+    float Mip = ComputeReflectionCaptureMipFromRoughness(Roughness, MaxMipLevel - 1);
+    float2 BRDF = PreintegratedGF.Sample(LinearSampler, float2(NoV, Roughness)).rg;
 
-	float3 Diffuse = Albedo * kD * Irradiance;
+	
+    float3 PrefilteredColor = PrefilteredCubeMap.SampleLevel(LinearSampler, R, Mip).rgb;
+    float3 Specular = PrefilteredColor * (F * BRDF.x + BRDF.y);
 
-	float Mip = ComputeReflectionCaptureMipFromRoughness(Roughness, MaxMipLevel - 1);
-	float2 BRDF = PreintegratedGF.Sample(LinearSampler, float2(NoV, Roughness)).rg;
+    float3 Emissive = EmissiveMap.Sample(LinearSampler, In.Tex).xyz;
+    float3 FinalColor = Emissive + Diffuse + Specular;
 
-	float3 PrefilteredColor = PrefilteredCubeMap.SampleLevel(LinearSampler, R, Mip).rgb;
-	float3 Specular = PrefilteredColor * (F * BRDF.x + BRDF.y);
-
-	float3 Emissive = EmissiveMap.Sample(LinearSampler, In.Tex).xyz;
-	float3 FinalColor = Emissive + Diffuse + Specular;
-
-	return float4(FinalColor, 1);
+    return float4(ToneMapping(FinalColor * Exposure), Opacity);
 }

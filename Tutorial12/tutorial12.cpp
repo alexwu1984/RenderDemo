@@ -144,6 +144,12 @@ public:
 		FDirectLightGameMode::OnUpdate();
 		m_PBRRenderPass.Update(m_Camera);
 
+		if (m_RotateMesh)
+		{
+			m_RotateY += m_Delta * 0.0005f;
+			m_RotateY = fmodf(m_RotateY, MATH_2PI);
+			m_PBRRenderPass.Rotate(m_RotateY);
+		}
 	}
 
 	virtual void DoRender(FCommandContext& GfxContext)
@@ -175,7 +181,9 @@ public:
 			ShowTexture2D(GfxContext, m_PreintegratedBRDF);
 			break;
 		case SM_PBR:
+			SkyPass(GfxContext, m_CubeBuffer);
 			RenderMesh(GfxContext);
+			
 			break;
 		};
 

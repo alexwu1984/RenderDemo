@@ -61,9 +61,9 @@ void FDirectLightGameMode::OnKeyDown(uint8_t Key)
 void FDirectLightGameMode::OnRender()
 {
 	m_TEnd = std::chrono::high_resolution_clock::now();
-	float delta = std::chrono::duration<float, std::milli>(m_TEnd - m_TStart).count();
-	m_Camera.Update(delta);
-	if (delta < (1000.0f / 400.0f))
+	m_Delta = std::chrono::duration<float, std::milli>(m_TEnd - m_TStart).count();
+	m_Camera.Update(m_Delta);
+	if (m_Delta < (1000.0f / 400.0f))
 	{
 		return;
 	}
@@ -71,7 +71,7 @@ void FDirectLightGameMode::OnRender()
 	m_TStart = std::chrono::high_resolution_clock::now();
 
 	// Update Uniforms
-	m_DeltaTime = 0.001f * delta;
+	m_DeltaTime = 0.001f * m_Delta;
 	m_ElapsedTime += m_DeltaTime;
 	m_ElapsedTime = fmodf(m_ElapsedTime, 6.283185307179586f);
 

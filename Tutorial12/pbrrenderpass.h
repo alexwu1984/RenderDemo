@@ -21,6 +21,7 @@ public:
 	void Render(FCommandContext& CommandContext, FCamera& MainCamera,
 		FCubeBuffer& IrradianceCube, FCubeBuffer& PrefilteredCube, FColorBuffer& PreintegratedGF);
 	void Update(FCamera& MainCamera);
+	void Rotate(float RotateY);
 
 private:
 	void SetupRootSignature();

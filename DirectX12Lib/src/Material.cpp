@@ -19,7 +19,7 @@ void FMaterial::SetColor(const Vector3f& kd, const Vector3f& ks)
 
 void FMaterial::LoadDiffuseTexture(const std::wstring& file)
 {
-	m_DiffuseTex.LoadFromFile(file);
+	m_DiffuseTex.LoadFromFile(file,true);
 }
 
 void FMaterial::LoadNormalTexture(const std::wstring& file)
@@ -34,7 +34,7 @@ void FMaterial::LoadRoughnessPath(const std::wstring& file)
 
 void FMaterial::LoadEmissiveTexture(const std::wstring& file)
 {
-	m_EmissiveTex.LoadFromFile(file);
+	m_EmissiveTex.LoadFromFile(file,true);
 }
 
 void FMaterial::LoadAmbientTexture(const std::wstring& file)

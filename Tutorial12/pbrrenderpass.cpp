@@ -48,8 +48,8 @@ void PBRRenderPass::Render(FCommandContext& CommandContext, FCamera& MainCamera,
 	CommandContext.SetRenderTargets(1, &BackBuffer.GetRTV(), DepthBuffer.GetDSV());
 	
 	// Record commands.
-	CommandContext.ClearColor(BackBuffer);
-	CommandContext.ClearDepth(DepthBuffer);
+	//CommandContext.ClearColor(BackBuffer);
+	//CommandContext.ClearDepth(DepthBuffer);
 	CommandContext.SetPrimitiveTopology(D3D_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
 
 	CommandContext.SetPipelineState(m_RenderState->GetPipelineState());
@@ -105,6 +105,18 @@ void PBRRenderPass::Update(FCamera& MainCamera)
 	}
 }
 
+void PBRRenderPass::Rotate(float RotateY)
+{
+	for (auto Item : m_ItemList)
+	{
+		auto Model = Item->Model;
+		if (Model)
+		{
+			Model->SetRotation(FMatrix::RotateY(RotateY));
+		}
+	}
+}
+
 void PBRRenderPass::SetupRootSignature()
 {
 	FSamplerDesc DefaultSamplerDesc(D3D12_FILTER_MIN_MAG_MIP_LINEAR, D3D12_TEXTURE_ADDRESS_MODE_CLAMP);
@@ -122,7 +134,7 @@ void PBRRenderPass::SetupPipelineState(const std::wstring& ShaderFile, const std
 	std::shared_ptr<FShader> shader = FShaderMgr::Get().CreateShaderDirect(ShaderFile,entryVSPoint,entryPSPoint);
 	m_RenderState = std::make_shared<RenderPipelineInfo>(shader);
 	m_RenderState->SetupRenderTargetFormat(1, &RenderWindow::Get().GetColorFormat(), RenderWindow::Get().GetDepthFormat());
-	m_RenderState->SetRasterizerState(FGraphicsPipelineState::RasterizerFront);
+	m_RenderState->SetRasterizerState(FGraphicsPipelineState::RasterizerTwoSided);
 
 	bool InitLayout = false;
 	for (auto Item: m_ItemList)

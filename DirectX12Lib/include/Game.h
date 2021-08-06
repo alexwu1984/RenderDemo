@@ -73,5 +73,7 @@ protected:
 	float m_ElapsedTime = 0;
 	float m_MainRadius = 10;
 	std::chrono::high_resolution_clock::time_point m_TStart, m_TEnd;
+
+	float m_Delta = 0;
 };
 
