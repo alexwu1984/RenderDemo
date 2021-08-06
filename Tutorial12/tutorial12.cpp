@@ -142,6 +142,7 @@ public:
 	virtual void OnUpdate()
 	{
 		FDirectLightGameMode::OnUpdate();
+		m_PBRRenderPass.Update(m_Camera);
 
 	}
 
@@ -172,6 +173,9 @@ public:
 			break;
 		case SM_PreintegratedBRDF:
 			ShowTexture2D(GfxContext, m_PreintegratedBRDF);
+			break;
+		case SM_PBR:
+			RenderMesh(GfxContext);
 			break;
 		};
 
@@ -257,6 +261,11 @@ public:
 	void SkyPass(FCommandContext& GfxContext,FCubeBuffer& CubeBuffer)
 	{
 		m_SkyPass.Render(GfxContext,m_Camera, CubeBuffer);
+	}
+
+	void RenderMesh(FCommandContext& GfxContext)
+	{
+		m_PBRRenderPass.Render(GfxContext, m_Camera, m_IrradianceCube, m_PrefilteredCube, m_PreintegratedBRDF);
 	}
 
 private:

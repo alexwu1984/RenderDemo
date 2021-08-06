@@ -7,6 +7,8 @@ struct FRenderItem;
 class FCommandContext;
 class RenderPipelineInfo;
 class FCamera;
+class FCubeBuffer;
+class FColorBuffer;
 
 class PBRRenderPass
 {
@@ -16,7 +18,9 @@ public:
 
 	void Init(const std::vector < std::shared_ptr<FRenderItem>>& ItemList, int Width, int Height,
 		const std::wstring& ShaderFile, const std::string& entryVSPoint, const std::string& entryPSPoint);
-	void Render(FCommandContext& CommandContext);
+	void Render(FCommandContext& CommandContext, FCamera& MainCamera,
+		FCubeBuffer& IrradianceCube, FCubeBuffer& PrefilteredCube, FColorBuffer& PreintegratedGF);
+	void Update(FCamera& MainCamera);
 
 private:
 	void SetupRootSignature();

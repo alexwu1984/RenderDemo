@@ -6,6 +6,9 @@
 #include "RenderPipelineInfo.h"
 #include "Camera.h"
 #include "EnvironmentCommon.h"
+#include "CubeBuffer.h"
+#include "ColorBuffer.h"
+#include "Material.h"
 
 PBRRenderPass::PBRRenderPass()
 {
@@ -26,7 +29,8 @@ void PBRRenderPass::Init(const std::vector < std::shared_ptr<FRenderItem>>& Item
 	SetupPipelineState(ShaderFile,entryVSPoint,entryPSPoint);
 }
 
-void PBRRenderPass::Render(FCommandContext& CommandContext)
+void PBRRenderPass::Render(FCommandContext& CommandContext, FCamera& MainCamera, 
+	FCubeBuffer& IrradianceCube, FCubeBuffer& PrefilteredCube, FColorBuffer& PreintegratedGF)
 {
 	CommandContext.SetRootSignature(m_MeshSignature);
 	CommandContext.SetViewportAndScissor(0, 0, m_GameWndSize.x, m_GameWndSize.y);
@@ -36,10 +40,13 @@ void PBRRenderPass::Render(FCommandContext& CommandContext)
 	FColorBuffer& BackBuffer = renderWindow.GetBackBuffer();
 	FDepthBuffer& DepthBuffer = renderWindow.GetDepthBuffer();
 	// Indicate that the back buffer will be used as a render target.
+	CommandContext.TransitionResource(IrradianceCube, D3D12_RESOURCE_STATE_PIXEL_SHADER_RESOURCE);
+	CommandContext.TransitionResource(PrefilteredCube, D3D12_RESOURCE_STATE_PIXEL_SHADER_RESOURCE);
+	CommandContext.TransitionResource(PreintegratedGF, D3D12_RESOURCE_STATE_PIXEL_SHADER_RESOURCE);
 	CommandContext.TransitionResource(BackBuffer, D3D12_RESOURCE_STATE_RENDER_TARGET);
 	CommandContext.TransitionResource(DepthBuffer, D3D12_RESOURCE_STATE_DEPTH_WRITE, true);
 	CommandContext.SetRenderTargets(1, &BackBuffer.GetRTV(), DepthBuffer.GetDSV());
-
+	
 	// Record commands.
 	CommandContext.ClearColor(BackBuffer);
 	CommandContext.ClearDepth(DepthBuffer);
@@ -52,19 +59,26 @@ void PBRRenderPass::Render(FCommandContext& CommandContext)
 		auto Model = Item->Model;
 		if (Model)
 		{
-			Model->CustomDrawParam = [this](FCommandContext& GfxContext, std::shared_ptr< FMaterial> material, std::shared_ptr<FRenderItem::BasePassInfoWrapper> InfoWrapper)
+			Model->CustomDrawParam = [this,&MainCamera,&IrradianceCube,&PrefilteredCube,&PreintegratedGF](FCommandContext& GfxContext, std::shared_ptr< FMaterial> Material, std::shared_ptr<FRenderItem::BasePassInfoWrapper> InfoWrapper)
 			{
 				g_EVSConstants.ModelMatrix = InfoWrapper->BasePassInfo.modelMatrix;
 				g_EVSConstants.ViewProjMatrix = InfoWrapper->BasePassInfo.viewMatrix * InfoWrapper->BasePassInfo.projectionMatrix;
 				GfxContext.SetDynamicConstantBufferView(0, sizeof(g_EVSConstants), &g_EVSConstants);
 
-				//g_EPSConstants.Exposure = 1;
-				//g_EPSConstants.CameraPos = m_Camera.GetPosition();
-				//GfxContext.SetDynamicConstantBufferView(1, sizeof(g_EPSConstants), &g_EPSConstants);
+				g_EPSConstants.Exposure = 1;
+				g_EPSConstants.CameraPos = MainCamera.GetPosition();
+				GfxContext.SetDynamicConstantBufferView(1, sizeof(g_EPSConstants), &g_EPSConstants);
 
-				//GfxContext.SetDynamicDescriptor(2, 7, m_IrradianceCube.GetCubeSRV());
-				//GfxContext.SetDynamicDescriptor(2, 8, m_PrefilteredCube.GetCubeSRV());
-				//GfxContext.SetDynamicDescriptor(2, 9, m_PreintegratedGF.GetSRV());
+				GfxContext.SetDynamicDescriptor(2, 0, Material->GetDiffuseTexture().GetSRV());
+				GfxContext.SetDynamicDescriptor(2, 1, Material->GetOpacityTexture().GetSRV());
+				GfxContext.SetDynamicDescriptor(2, 2, Material->GetEmissiveTexture().GetSRV());
+				GfxContext.SetDynamicDescriptor(2, 3, Material->GetMetallicTexture().GetSRV());
+				GfxContext.SetDynamicDescriptor(2, 4, Material->GetRoughnessTexture().GetSRV());
+				GfxContext.SetDynamicDescriptor(2, 5, Material->GetAmbientTexture().GetSRV());
+				GfxContext.SetDynamicDescriptor(2, 6, Material->GetNormalTexture().GetSRV());
+				GfxContext.SetDynamicDescriptor(2, 7, IrradianceCube.GetCubeSRV());
+				GfxContext.SetDynamicDescriptor(2, 8, PrefilteredCube.GetCubeSRV());
+				GfxContext.SetDynamicDescriptor(2, 9, PreintegratedGF.GetSRV());
 			};
 
 			Model->Draw(CommandContext, Item.get());
@@ -72,8 +86,23 @@ void PBRRenderPass::Render(FCommandContext& CommandContext)
 			Model->CustomDrawParam = nullptr;
 		}
 	}
+}
 
-	CommandContext.TransitionResource(BackBuffer, D3D12_RESOURCE_STATE_PRESENT);
+void PBRRenderPass::Update(FCamera& MainCamera)
+{
+	for (auto Item : m_ItemList)
+	{
+		auto Model = Item->Model;
+		if (Model)
+		{
+			for (auto& PassInfo : Item->MapBasePassInfos)
+			{
+				PassInfo.second->BasePassInfo.modelMatrix = Model->GetModelMatrix();
+				PassInfo.second->BasePassInfo.viewMatrix = MainCamera.GetViewMatrix();
+				PassInfo.second->BasePassInfo.projectionMatrix = MainCamera.GetProjectionMatrix();
+			}
+		}
+	}
 }
 
 void PBRRenderPass::SetupRootSignature()
