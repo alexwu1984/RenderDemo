@@ -129,6 +129,15 @@ public:
 				ImGui::Checkbox("Rotate Mesh", &m_RotateMesh);
 				ImGui::SameLine();
 				ImGui::Text("%.3f", m_RotateY);
+
+				ImGui::Checkbox("Enable Light", &m_EnableLight);
+				ImGui::SameLine();
+				ImGui::SliderFloat("LightDir.x", &g_EPSConstants.LightDir.x, -1, 1);
+				g_EPSConstants.EnableLight = m_EnableLight;
+				if (m_EnableLight)
+				{
+					m_RotateMesh = true;
+				}
 			}
 
 			ImGui::Separator();
@@ -299,6 +308,9 @@ private:
 	GenCubePass m_GenPrefilterEnvMapPass;
 	std::shared_ptr< FSkyBox> m_SkyBox;
 	std::shared_ptr< FCubeMapCross > m_CubeMapCross;
+
+	// LightInfo
+	bool	m_EnableLight = false;
 };
 
 int main()

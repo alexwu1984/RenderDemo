@@ -104,6 +104,7 @@ add_executable(Tutorial12 Tutorial12/tutorial12.cpp
 						  Tutorial12/GenCubePass.cpp
 						  Tutorial12/PreIntegratedBRDFPass.cpp
 						  Tutorial12/PreIntegratedBRDFPass.h
+						  Tutorial12/EnvironmentCommon.h
 )
 target_link_libraries(Tutorial12 LINK_PUBLIC DirectX12Lib 
                       ../ThirdParty/Assimp/lib/x64/assimp-vc140-mt)

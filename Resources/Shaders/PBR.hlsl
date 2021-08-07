@@ -1,6 +1,6 @@
 #pragma pack_matrix(row_major)
 
-#include "ShaderUtils.hlsl"
+#include "brdf.hlsl"
 
 cbuffer VSContant : register(b0)
 {
@@ -19,6 +19,8 @@ cbuffer PSContant : register(b0)
     int		bSHDiffuse;
     float3	pad;
     float4	Coeffs[16];
+    float3 LightDir;
+    int EnableLight;
 };
 
 Texture2D BaseMap 			: register(t0);
@@ -52,6 +54,14 @@ struct PixelInput
 	float3 N		: TEXCOORD3;
 	float3 WorldPos	: TEXCOORD4;
 };
+
+struct FDirectLighting
+{
+    float3 Diffuse;
+    float3 Specular;
+    float3 Transmission;
+};
+
 
 float3 F_schlickR(float cosTheta, float3 F0, float roughness)
 {
@@ -97,7 +107,33 @@ float4 PS_PBR(PixelInput In) : SV_Target
 
     float3 kD = (1.0 - F) * (1.0 - Metallic);
     float3 Irradiance = IrradianceCubeMap.SampleLevel(LinearSampler, N, 0).xyz;
-    float3 Diffuse = Albedo * kD * Irradiance;
+    float3 Diffuse = Albedo * kD ;
+    
+    FDirectLighting Lighting;
+    Lighting.Diffuse = 0;
+    Lighting.Specular = 0;
+    if (EnableLight == 1)
+    {
+        float3 L = -LightDir;
+        BxDFContext Context;
+        Init(Context, N, V, L);
+        Context.NoL = saturate(Context.NoL);
+        Context.NoV = saturate(abs(Context.NoV) + 1e-5);
+        
+        float3 Color = 0;
+
+	// Diffuse
+        Lighting.Diffuse = Context.NoL * Diffuse_Burley(Diffuse, Roughness, Context.NoV, Context.NoL, Context.VoH);
+        Lighting.Specular = Context.NoL * SpecularGGX(Roughness, F0, Context, Context.NoL);
+        
+        Diffuse = Lighting.Diffuse;
+
+    }
+    else
+    {
+        Diffuse *= Irradiance;
+        Diffuse = Diffuse_Lambert(Diffuse);
+    }
 
     float Mip = ComputeReflectionCaptureMipFromRoughness(Roughness, MaxMipLevel - 1);
     float2 BRDF = PreintegratedGF.Sample(LinearSampler, float2(NoV, Roughness)).rg;
@@ -107,7 +143,7 @@ float4 PS_PBR(PixelInput In) : SV_Target
     float3 Specular = PrefilteredColor * (F * BRDF.x + BRDF.y);
 
     float3 Emissive = EmissiveMap.Sample(LinearSampler, In.Tex).xyz;
-    float3 FinalColor = Emissive + Diffuse + Specular;
+    float3 FinalColor = Emissive + Diffuse + Specular + Lighting.Specular;
 
     return float4(ToneMapping(FinalColor * Exposure), Opacity);
 }

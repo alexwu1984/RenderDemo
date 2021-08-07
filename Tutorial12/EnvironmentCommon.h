@@ -19,5 +19,7 @@ __declspec(align(16)) struct EPSConstants
 	int			bSHDiffuse;
 	Vector3f	pad;
 	Vector4f	Coeffs[16];
+	Vector3f	LightDir;
+	int			EnableLight;
 } ;
 extern EPSConstants g_EPSConstants;
