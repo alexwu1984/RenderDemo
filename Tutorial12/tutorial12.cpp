@@ -133,6 +133,7 @@ public:
 				ImGui::Checkbox("Enable Light", &m_EnableLight);
 				ImGui::SameLine();
 				ImGui::SliderFloat("LightDir.x", &g_EPSConstants.LightDir.x, -1, 1);
+				ImGui::SliderFloat("LightDir.y", &g_EPSConstants.LightDir.y, -1, 1);
 				g_EPSConstants.EnableLight = m_EnableLight;
 				if (m_EnableLight)
 				{

@@ -131,8 +131,9 @@ float4 PS_PBR(PixelInput In) : SV_Target
     }
     else
     {
-        Diffuse *= Irradiance;
+ 
         Diffuse = Diffuse_Lambert(Diffuse);
+        Diffuse *= Irradiance;
     }
 
     float Mip = ComputeReflectionCaptureMipFromRoughness(Roughness, MaxMipLevel - 1);
