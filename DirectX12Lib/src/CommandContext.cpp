@@ -533,3 +533,10 @@ void FComputeContext::Dispatch(size_t GroupCountX, size_t GroupCountY, size_t Gr
 	m_DynamicSamplerDescriptorHeap.CommitComputeRootDescriptorTables(m_CommandList);
 	m_CommandList->Dispatch((UINT)GroupCountX, (UINT)GroupCountY, (UINT)GroupCountZ);
 }
+
+void FComputeContext::Dispatch2D(size_t ThreadCountX, size_t ThreadCountY, size_t GroupSizeX /*= 8*/, size_t GroupSizeY /*= 8*/)
+{
+	Dispatch(
+		DivideByMultiple(ThreadCountX, GroupSizeX),
+		DivideByMultiple(ThreadCountY, GroupSizeY), 1);
+}

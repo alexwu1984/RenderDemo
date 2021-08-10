@@ -48,6 +48,8 @@ set(HEADER_FILES
 	include/SkyBox.h
 	include/CubeBuffer.h
 	include/GenerateMips.h
+    include/PostProcessing.h
+	include/BufferManager.h
 )
 
 set(SOURCES
@@ -93,6 +95,8 @@ set(SOURCES
 	src/SkyBox.cpp
 	src/CubeBuffer.cpp
 	src/GenerateMips.cpp
+	src/PostProcessing.cpp
+	src/BufferManager.cpp
 )
 
 set( IMGUI_HEADERS

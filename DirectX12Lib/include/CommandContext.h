@@ -153,4 +153,5 @@ public:
 	void SetDynamicDescriptors(UINT RootIndex, UINT Offset, UINT Count, const D3D12_CPU_DESCRIPTOR_HANDLE Handles[]);
 
 	void Dispatch(size_t GroupCountX, size_t GroupCountY, size_t GroupCountZ);
+	void Dispatch2D(size_t ThreadCountX, size_t ThreadCountY, size_t GroupSizeX = 8, size_t GroupSizeY = 8);
 };

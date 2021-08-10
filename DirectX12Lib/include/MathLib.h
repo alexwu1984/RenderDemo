@@ -391,3 +391,71 @@ Vector3<T> Vector3Max(const Vector3<T>& lhs, const Vector3<T>& rhs)
 {
 	return Vector3<T>(std::max(lhs.x, rhs.x), std::max(lhs.y, rhs.y), std::max(lhs.z, rhs.z));
 }
+
+struct CubeUV
+{
+	int index;
+	float u, v;
+};
+
+inline Vector3f CubeUV2XYZ(const CubeUV& c)
+{
+	float u = c.u * 2.f - 1.f;
+	float v = c.v * 2.f - 1.f;
+	switch (c.index)
+	{
+	case 0: return { 1,  v, -u }; 	// +x
+	case 1: return { -1,  v,  u }; 	// -x
+	case 2: return { u,  1, -v };  // +y
+	case 3: return { u, -1,  v };	// -y
+	case 4: return { u,  v,  1 };  // +z
+	case 5: return { -u,  v, -1 };	// -z
+	}
+	return Vector3f();
+}
+
+inline CubeUV XYZ2CubeUV(const Vector3f& p)
+{
+	float ax = std::abs(p.x);
+	float ay = std::abs(p.y);
+	float az = std::abs(p.z);
+	CubeUV c;
+	if (ax >= ay && ax >= az)	// x face
+	{
+		c = { p.x >= 0 ? 0 : 1, -p.z / p.x, p.y / ax };
+	}
+	else if (ay >= az)	// y face
+	{
+		c = { p.y >= 0 ? 2 : 3, p.x / ay, -p.z / p.y };
+	}
+	else // z face
+	{
+		c = { p.z >= 0 ? 4 : 5, p.x / p.z, p.y / az };
+	}
+	c.u = c.u * 0.5f + 0.5f;
+	c.v = c.v * 0.5f + 0.5f;
+	return c;
+}
+
+inline float NormalRandom(float mu = 0.f, float sigma = 1.f)
+{
+	static std::default_random_engine generator;
+	static std::normal_distribution<float> distribution(mu, sigma);
+	return distribution(generator);
+}
+
+inline uint32_t ReverseBits(uint32_t Bits)
+{
+	Bits = (Bits << 16) | (Bits >> 16);
+	Bits = ((Bits & 0x00ff00ff) << 8) | ((Bits & 0xff00ff00) >> 8);
+	Bits = ((Bits & 0x0f0f0f0f) << 4) | ((Bits & 0xf0f0f0f0) >> 4);
+	Bits = ((Bits & 0x33333333) << 2) | ((Bits & 0xcccccccc) >> 2);
+	Bits = ((Bits & 0x55555555) << 1) | ((Bits & 0xaaaaaaaa) >> 1);
+	return Bits;
+}
+
+
+template <typename T> __forceinline T DivideByMultiple(T value, size_t alignment)
+{
+	return (T)((value + alignment - 1) / alignment);
+}
