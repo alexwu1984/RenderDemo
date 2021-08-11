@@ -82,10 +82,10 @@ namespace PostProcessing
 		m_CSExtractBloomPSO.SetComputeShader(CD3DX12_SHADER_BYTECODE(m_ExtractBloomCS.Get()));
 		m_CSExtractBloomPSO.Finalize();
 
-		m_BuildHZBCS = D3D12RHI::Get().CreateShader(L"../Resources/Shaders/HZB.hlsl", "CS_BuildHZB", "cs_5_1");
-		m_CSBuildHZBPSO.SetRootSignature(m_CSSignature);
-		m_CSBuildHZBPSO.SetComputeShader(CD3DX12_SHADER_BYTECODE(m_BuildHZBCS.Get()));
-		m_CSBuildHZBPSO.Finalize();
+		//m_BuildHZBCS = D3D12RHI::Get().CreateShader(L"../Resources/Shaders/HZB.hlsl", "CS_BuildHZB", "cs_5_1");
+		//m_CSBuildHZBPSO.SetRootSignature(m_CSSignature);
+		//m_CSBuildHZBPSO.SetComputeShader(CD3DX12_SHADER_BYTECODE(m_BuildHZBCS.Get()));
+		//m_CSBuildHZBPSO.Finalize();
 
 		uint32_t Width = WindowWin32::Get().GetWidth();
 		uint32_t Height = WindowWin32::Get().GetHeight();
@@ -195,7 +195,37 @@ namespace PostProcessing
 
 	void ToneMapping(FCommandContext& GfxContext)
 	{
+		GfxContext.SetRootSignature(m_PostProcessSignature);
+		GfxContext.SetPipelineState(m_ToneMapWithBloomPSO);
+		GfxContext.SetPrimitiveTopology(D3D_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
+		GfxContext.SetViewportAndScissor(0, 0, WindowWin32::Get().GetWidth(), WindowWin32::Get().GetHeight());
 
+		RenderWindow& renderWindow = RenderWindow::Get();
+		FColorBuffer& BackBuffer = renderWindow.GetBackBuffer();
+
+		if (g_EnableBloom)
+		{
+			GfxContext.TransitionResource(g_BloomBuffers[0], D3D12_RESOURCE_STATE_PIXEL_SHADER_RESOURCE);
+		}
+		GfxContext.TransitionResource(BackBuffer, D3D12_RESOURCE_STATE_RENDER_TARGET, true);
+		GfxContext.SetRenderTargets(1, &BackBuffer.GetRTV());
+		GfxContext.ClearColor(BackBuffer);
+
+		m_Constants.BloomIntensity = g_BloomIntensity;
+		m_Constants.BloomThreshold = g_BloomThreshold;
+		GfxContext.SetDynamicConstantBufferView(0, sizeof(m_Constants), &m_Constants);
+
+		if (g_EnableBloom)
+		{
+			GfxContext.SetDynamicDescriptor(1, 0, g_BloomBuffers[0].GetSRV());
+		}
+		else
+		{
+			GfxContext.SetDynamicDescriptor(1, 1, m_BlackTexture.GetSRV());
+		}
+
+		GfxContext.Draw(3);
+		GfxContext.TransitionResource(g_BloomBuffers[0], D3D12_RESOURCE_STATE_COMMON, true);
 	}
 
 	void BuildHZB(FCommandContext& GfxContext)
