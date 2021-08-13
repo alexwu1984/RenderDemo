@@ -57,8 +57,8 @@ namespace PostProcessing
 	void Initialize()
 	{
 		FSamplerDesc DefaultSamplerDesc(D3D12_FILTER_MIN_MAG_MIP_LINEAR, D3D12_TEXTURE_ADDRESS_MODE_CLAMP);
-		FSamplerDesc PointSampler(D3D12_FILTER_MIN_MAG_MIP_POINT, D3D12_TEXTURE_ADDRESS_MODE_CLAMP);
-
+		FSamplerDesc PointSampler(D3D12_FILTER_MIN_MAG_MIP_POINT, D3D12_TEXTURE_ADDRESS_MODE_BORDER);
+		PointSampler.SetPointBorderDesc(Vector4f(0.f, 0.f, 0.f, 0.f));
 		m_CSSignature.Reset(3, 2);
 		m_CSSignature[0].InitAsBufferCBV(0, D3D12_SHADER_VISIBILITY_ALL); // compute shader need 'all'
 		m_CSSignature[1].InitAsDescriptorRange(D3D12_DESCRIPTOR_RANGE_TYPE_SRV, 0, 1);
@@ -91,21 +91,20 @@ namespace PostProcessing
 		uint32_t Height = WindowWin32::Get().GetHeight();
 		for (int i = 0; i < _countof(g_BloomBuffers); ++i)
 		{
-			wchar_t Name[256] = { 0 };
+			wchar_t Name[256];
 			wsprintf(Name, L"Bloom_%d_1/%d", i, 1 << i);
-			g_BloomBuffers[i].Create(Name, Width, Height, 1,DXGI_FORMAT_R11G11B10_FLOAT);
+			g_BloomBuffers[i].Create(Name, Width, Height, 1, DXGI_FORMAT_R11G11B10_FLOAT);
 
 			Width >>= 1;
 			Height >>= 1;
 		}
 
-		FSamplerDesc SSRSampler;
-		SSRSampler.SetLinearBorderDesc(Vector4f(0.f, 0.f, 0.f, 0.f));
+		// post Process
 		m_PostProcessSignature.Reset(2, 2);
 		m_PostProcessSignature[0].InitAsBufferCBV(0, D3D12_SHADER_VISIBILITY_PIXEL);
 		m_PostProcessSignature[1].InitAsDescriptorRange(D3D12_DESCRIPTOR_RANGE_TYPE_SRV, 0, 10);
 		m_PostProcessSignature.InitStaticSampler(0, DefaultSamplerDesc, D3D12_SHADER_VISIBILITY_PIXEL);
-		m_PostProcessSignature.InitStaticSampler(1, SSRSampler, D3D12_SHADER_VISIBILITY_PIXEL);
+		m_PostProcessSignature.InitStaticSampler(1, PointSampler, D3D12_SHADER_VISIBILITY_PIXEL);
 		m_PostProcessSignature.Finalize(L"PostProcess");
 
 		m_ScreenQuadVS = D3D12RHI::Get().CreateShader(L"../Resources/Shaders/PostProcess.hlsl", "VS_ScreenQuad", "vs_5_1");
@@ -151,12 +150,12 @@ namespace PostProcessing
 
 		ComputeContext.TransitionResource(g_BloomBuffers[0], D3D12_RESOURCE_STATE_UNORDERED_ACCESS, true);
 
-		ComputeContext.SetDynamicDescriptor(1, 0, g_SceneColorBuffer.GetSRV());
-		ComputeContext.SetDynamicDescriptor(2, 0, g_BloomBuffers[0].GetUAV());
-
 		m_Constants.BloomIntensity = g_BloomIntensity;
 		m_Constants.BloomThreshold = g_BloomThreshold;
 		ComputeContext.SetDynamicConstantBufferView(0, sizeof(m_Constants), &m_Constants);
+
+		ComputeContext.SetDynamicDescriptor(1, 0, g_SceneColorBuffer.GetSRV());
+		ComputeContext.SetDynamicDescriptor(2, 0, g_BloomBuffers[0].GetUAV());
 
 		ComputeContext.Dispatch2D(g_BloomBuffers[0].GetWidth(), g_BloomBuffers[0].GetHeight());
 		ComputeContext.TransitionResource(g_BloomBuffers[0], D3D12_RESOURCE_STATE_COMMON, true);
@@ -203,6 +202,7 @@ namespace PostProcessing
 		RenderWindow& renderWindow = RenderWindow::Get();
 		FColorBuffer& BackBuffer = renderWindow.GetBackBuffer();
 
+		GfxContext.TransitionResource(g_SceneColorBuffer, D3D12_RESOURCE_STATE_PIXEL_SHADER_RESOURCE);
 		if (g_EnableBloom)
 		{
 			GfxContext.TransitionResource(g_BloomBuffers[0], D3D12_RESOURCE_STATE_PIXEL_SHADER_RESOURCE);
@@ -215,9 +215,10 @@ namespace PostProcessing
 		m_Constants.BloomThreshold = g_BloomThreshold;
 		GfxContext.SetDynamicConstantBufferView(0, sizeof(m_Constants), &m_Constants);
 
+		GfxContext.SetDynamicDescriptor(1, 0, g_SceneColorBuffer.GetSRV());
 		if (g_EnableBloom)
 		{
-			GfxContext.SetDynamicDescriptor(1, 0, g_BloomBuffers[0].GetSRV());
+			GfxContext.SetDynamicDescriptor(1, 1, g_BloomBuffers[0].GetSRV());
 		}
 		else
 		{

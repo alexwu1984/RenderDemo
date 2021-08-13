@@ -55,7 +55,7 @@ void GenCubePass::GenerateCubeMap(FCubeBuffer& CubeBuffer, FTexture& inputTex)
 		m_Cube->Draw(GfxContext);
 	}
 	GfxContext.Flush(true);
-	FGenerateMips::Generate(CubeBuffer, GfxContext);
+	FGenerateMips::GenerateForCube(CubeBuffer, GfxContext);
 	GfxContext.Finish(true);
 }
 

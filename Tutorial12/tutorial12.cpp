@@ -34,6 +34,7 @@
 #include "CubeMapCross.h"
 #include "PreIntegratedBRDFPass.h"
 #include "pbrrenderpass.h"
+#include "PostProcessing.h"
 
 extern FCommandListManager g_CommandListManager;
 
@@ -139,6 +140,15 @@ public:
 				{
 					m_RotateMesh = true;
 				}
+
+				ImGui::Checkbox("Enable Bloom", &PostProcessing::g_EnableBloom);
+				if (PostProcessing::g_EnableBloom)
+				{
+					ImGui::Indent(20);
+					ImGui::SliderFloat("Bloom Intensity", &PostProcessing::g_BloomIntensity, 0.f, 5.f);
+					ImGui::SliderFloat("Bloom Threshold", &PostProcessing::g_BloomThreshold, 0.f, 10.f);
+					ImGui::Indent(-20);
+				}
 			}
 
 			ImGui::Separator();
@@ -177,15 +187,19 @@ public:
 			break;
 		case SM_SkyBox:
 			SkyPass(GfxContext, m_CubeBuffer);
+			PostProcessing::Render(GfxContext);
 			break;
 		case SM_CubeMapCross:
 			m_CubeMapCrossDebug.ShowCubeMapDebugView(GfxContext, m_CubeBuffer, 1.0, m_MipLevel);
+			PostProcessing::Render(GfxContext);
 			break;
 		case SM_Irradiance:
 			m_CubeMapCrossDebug.ShowCubeMapDebugView(GfxContext, m_IrradianceCube, 1.0, m_MipLevel);
+			PostProcessing::Render(GfxContext);
 			break;
 		case SM_Prefiltered:
 			m_CubeMapCrossDebug.ShowCubeMapDebugView(GfxContext, m_PrefilteredCube, 1.0, m_MipLevel);
+			PostProcessing::Render(GfxContext);
 			break;
 		case SM_PreintegratedBRDF:
 			ShowTexture2D(GfxContext, m_PreintegratedBRDF);
@@ -193,7 +207,7 @@ public:
 		case SM_PBR:
 			SkyPass(GfxContext, m_CubeBuffer);
 			RenderMesh(GfxContext);
-			
+			PostProcessing::Render(GfxContext);
 			break;
 		};
 

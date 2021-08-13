@@ -237,9 +237,18 @@ void FCommandContext::CopySubresource(FD3D12Resource& Dest, UINT DestSubIndex, F
 
 void FCommandContext::TransitionResource(FD3D12Resource& Resource, D3D12_RESOURCE_STATES NewState, bool Flush /*= false*/)
 {
-	D3D12_RESOURCE_STATES OldState = Resource.m_CurrentState;
+	bool NeedTransition = false;
+	for (size_t i = 0; i < Resource.m_AllCurrentState.size(); ++i)
+	{
+		D3D12_RESOURCE_STATES OldState = Resource.m_AllCurrentState[i];
+		if (NewState != Resource.m_AllCurrentState[i])
+		{
+			NeedTransition = true;
+			break;
+		}
+	}
 
-	if (OldState != NewState)
+	if (NeedTransition)
 	{
 		Assert(m_NumBarriersToFlush < 16);
 		D3D12_RESOURCE_BARRIER& BarrierDesc = m_ResourceBarrierBuffer[m_NumBarriersToFlush++];
@@ -247,11 +256,11 @@ void FCommandContext::TransitionResource(FD3D12Resource& Resource, D3D12_RESOURC
 		BarrierDesc.Type = D3D12_RESOURCE_BARRIER_TYPE_TRANSITION;
 		BarrierDesc.Flags = D3D12_RESOURCE_BARRIER_FLAG_NONE;
 		BarrierDesc.Transition.pResource = Resource.GetResource();
-		BarrierDesc.Transition.StateBefore = OldState;
+		BarrierDesc.Transition.StateBefore = Resource.m_AllCurrentState[0];
 		BarrierDesc.Transition.StateAfter = NewState;
 		BarrierDesc.Transition.Subresource = D3D12_RESOURCE_BARRIER_ALL_SUBRESOURCES;
-		
-		Resource.m_CurrentState = NewState;
+
+		std::fill(Resource.m_AllCurrentState.begin(), Resource.m_AllCurrentState.end(), NewState);
 	}
 
 	if (Flush || m_NumBarriersToFlush == 16)
@@ -260,11 +269,11 @@ void FCommandContext::TransitionResource(FD3D12Resource& Resource, D3D12_RESOURC
 	}
 }
 
-void FCommandContext::TransitionSubResource(FD3D12Resource& Resource, D3D12_RESOURCE_STATES OldState, D3D12_RESOURCE_STATES NewState, uint32_t Subresource)
+void FCommandContext::TransitionSubResource(FD3D12Resource& Resource, D3D12_RESOURCE_STATES NewState, uint32_t Subresource, bool Flush)
 {
-	//@todo: more control on subresource state
-//D3D12_RESOURCE_STATES OldState = Resource.m_CurrentState;
-//if (OldState != NewState)
+	Assert(Subresource < Resource.m_AllCurrentState.size());
+	D3D12_RESOURCE_STATES OldState = Resource.m_AllCurrentState[Subresource];
+	if (OldState != NewState)
 	{
 		Assert(m_NumBarriersToFlush < 16);
 		D3D12_RESOURCE_BARRIER& BarrierDesc = m_ResourceBarrierBuffer[m_NumBarriersToFlush++];
@@ -276,11 +285,10 @@ void FCommandContext::TransitionSubResource(FD3D12Resource& Resource, D3D12_RESO
 		BarrierDesc.Transition.StateAfter = NewState;
 		BarrierDesc.Transition.Subresource = Subresource;
 
-		Resource.m_CurrentState = NewState;
+		Resource.m_AllCurrentState[Subresource] = NewState;
 	}
 
-	//@todo
-	//if (Flush || m_NumBarriersToFlush == 16)
+	if (Flush || m_NumBarriersToFlush == 16)
 	{
 		FlushResourceBarriers();
 	}
@@ -522,6 +530,25 @@ void FComputeContext::SetDynamicDescriptor(UINT RootIndex, UINT Offset, D3D12_CP
 void FComputeContext::SetDynamicDescriptors(UINT RootIndex, UINT Offset, UINT Count, const D3D12_CPU_DESCRIPTOR_HANDLE Handles[])
 {
 	m_DynamicViewDescriptorHeap.SetComputeDescriptorHandles(RootIndex, Offset, Count, Handles);
+}
+
+void FComputeContext::SetConstantArray(UINT RootIndex, UINT NumConstants, const void* Contents)
+{
+	m_CommandList->SetComputeRoot32BitConstants(RootIndex, NumConstants, Contents, 0);
+}
+
+void FComputeContext::SetDynamicConstantBufferView(UINT RootIndex, size_t BufferSize, const void* BufferData)
+{
+	Assert(BufferData != nullptr && MathLib::IsAligned(BufferSize, 16));
+	FAllocation Alloc = m_CpuLinearAllocator.Allocate(BufferSize);
+	memcpy(Alloc.CPU, BufferData, BufferSize);
+	m_CommandList->SetComputeRootConstantBufferView(RootIndex, Alloc.GpuAddress);
+}
+
+void FComputeContext::ClearUAV(FColorBuffer& Target, int Mip)
+{
+	D3D12_GPU_DESCRIPTOR_HANDLE GpuVisibleHandle = m_DynamicViewDescriptorHeap.UploadDirect(Target.GetMipUAV(Mip));
+	m_CommandList->ClearUnorderedAccessViewFloat(GpuVisibleHandle, Target.GetMipUAV(Mip), Target.GetResource(), Target.GetClearColor().data, 0, nullptr);
 }
 
 void FComputeContext::Dispatch(size_t GroupCountX, size_t GroupCountY, size_t GroupCountZ)

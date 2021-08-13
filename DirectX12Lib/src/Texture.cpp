@@ -8,7 +8,6 @@ void FTexture::Create(uint32_t Width, uint32_t Height, DXGI_FORMAT Format, const
 {
 	m_Width = Width;
 	m_Height = Height;
-	m_CurrentState = D3D12_RESOURCE_STATE_COPY_DEST;
 
 	D3D12_RESOURCE_DESC TexDesc = {};
 	TexDesc.Dimension = D3D12_RESOURCE_DIMENSION_TEXTURE2D;
@@ -30,7 +29,8 @@ void FTexture::Create(uint32_t Width, uint32_t Height, DXGI_FORMAT Format, const
 	HeapProps.CreationNodeMask = 1;
 
 	ThrowIfFailed(D3D12RHI::Get().GetD3D12Device()->CreateCommittedResource(&HeapProps,
-		D3D12_HEAP_FLAG_NONE, &TexDesc, m_CurrentState, nullptr, IID_PPV_ARGS(&m_Resource)));
+		D3D12_HEAP_FLAG_NONE, &TexDesc, D3D12_RESOURCE_STATE_COPY_DEST, nullptr, IID_PPV_ARGS(&m_Resource)));
+	InitializeState(D3D12_RESOURCE_STATE_COPY_DEST);
 
 	m_Resource->SetName(L"Texture2D");
 
@@ -51,7 +51,6 @@ void FTexture::Create(uint32_t Width, uint32_t Height, DXGI_FORMAT Format, const
 
 void FTexture::LoadFromFile(const std::wstring& FileName,bool IsSRGB )
 {
-	m_CurrentState = D3D12_RESOURCE_STATE_COPY_DEST;
 
 	DirectX::ScratchImage image;
 	HRESULT hr;
@@ -78,7 +77,7 @@ void FTexture::LoadFromFile(const std::wstring& FileName,bool IsSRGB )
 	ThrowIfFailed(hr);
 	ID3D12Device* Device = D3D12RHI::Get().GetD3D12Device().Get();
 	ThrowIfFailed(DirectX::CreateTextureEx(Device, image.GetMetadata(), D3D12_RESOURCE_FLAG_NONE, IsSRGB, m_Resource.ReleaseAndGetAddressOf()));
-
+	InitializeState(D3D12_RESOURCE_STATE_COPY_DEST);
 	m_Resource->SetName(FileName.c_str());
 
 	std::vector<D3D12_SUBRESOURCE_DATA> subresources;
@@ -100,7 +99,6 @@ void FTexture::LoadFromFileForCube(const std::array<std::wstring, 6>& FileNames)
 		return;
 	}
 
-	m_CurrentState = D3D12_RESOURCE_STATE_COPY_DEST;
 
 	std::array<DirectX::Image, 6> rawImages;
 	std::array<DirectX::ScratchImage,6> iamges;
@@ -136,7 +134,7 @@ void FTexture::LoadFromFileForCube(const std::array<std::wstring, 6>& FileNames)
 
 	ID3D12Device* Device = D3D12RHI::Get().GetD3D12Device().Get();
 	ThrowIfFailed(DirectX::CreateTextureEx(Device, cubImage.GetMetadata(), D3D12_RESOURCE_FLAG_NONE, true, m_Resource.ReleaseAndGetAddressOf()));
-
+	InitializeState(D3D12_RESOURCE_STATE_COPY_DEST);
 	m_Resource->SetName(FileNames[0].c_str());
 
 	std::vector<D3D12_SUBRESOURCE_DATA> subresources;

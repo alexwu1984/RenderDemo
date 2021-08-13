@@ -24,8 +24,6 @@ void FGpuBuffer::Create(const std::wstring& Name, uint32_t NumElements, uint32_t
 
 	D3D12_RESOURCE_DESC ResDesc = DescribeBuffer();
 
-	m_CurrentState = D3D12_RESOURCE_STATE_COMMON;
-
 	D3D12_HEAP_PROPERTIES HeapProps;
 	HeapProps.Type = D3D12_HEAP_TYPE_DEFAULT;
 	HeapProps.CPUPageProperty = D3D12_CPU_PAGE_PROPERTY_UNKNOWN;
@@ -35,8 +33,10 @@ void FGpuBuffer::Create(const std::wstring& Name, uint32_t NumElements, uint32_t
 
 	ThrowIfFailed(D3D12RHI::Get().GetD3D12Device()->CreateCommittedResource(
 		&HeapProps, D3D12_HEAP_FLAG_NONE,
-		&ResDesc, m_CurrentState, nullptr, IID_PPV_ARGS(&m_Resource)
+		&ResDesc, D3D12_RESOURCE_STATE_COMMON, nullptr, IID_PPV_ARGS(&m_Resource)
 	));
+
+	InitializeState(D3D12_RESOURCE_STATE_COMMON);
 
 	m_GpuAddress = m_Resource->GetGPUVirtualAddress();
 	if (InitData)
@@ -96,8 +96,6 @@ void FConstBuffer::CreateUpload(const std::wstring& Name, uint32_t Size)
 
 	D3D12_RESOURCE_DESC ResDesc = DescribeBuffer();
 
-	m_CurrentState = D3D12_RESOURCE_STATE_GENERIC_READ;
-
 	D3D12_HEAP_PROPERTIES HeapProps;
 	HeapProps.Type = D3D12_HEAP_TYPE_UPLOAD;
 	HeapProps.CPUPageProperty = D3D12_CPU_PAGE_PROPERTY_UNKNOWN;
@@ -107,8 +105,10 @@ void FConstBuffer::CreateUpload(const std::wstring& Name, uint32_t Size)
 
 	ThrowIfFailed(D3D12RHI::Get().GetD3D12Device()->CreateCommittedResource(
 		&HeapProps, D3D12_HEAP_FLAG_NONE,
-		&ResDesc, m_CurrentState, nullptr, IID_PPV_ARGS(&m_Resource)
+		&ResDesc, D3D12_RESOURCE_STATE_GENERIC_READ, nullptr, IID_PPV_ARGS(&m_Resource)
 	));
+
+	InitializeState(D3D12_RESOURCE_STATE_GENERIC_READ);
 
 	m_GpuAddress = m_Resource->GetGPUVirtualAddress();
 

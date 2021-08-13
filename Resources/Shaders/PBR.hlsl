@@ -146,5 +146,6 @@ float4 PS_PBR(PixelInput In) : SV_Target
     float3 Emissive = EmissiveMap.Sample(LinearSampler, In.Tex).xyz;
     float3 FinalColor = Emissive + Diffuse + Specular + Lighting.Specular;
 
-    return float4(ToneMapping(FinalColor * Exposure), Opacity);
+    return float4(FinalColor * Exposure, Opacity);
+    //return float4(ToneMapping(FinalColor * Exposure), Opacity);
 }

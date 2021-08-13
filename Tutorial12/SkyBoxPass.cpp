@@ -7,6 +7,9 @@
 #include "StringUnit.h"
 #include "Shader.h"
 #include "CubeBuffer.h"
+#include "BufferManager.h"
+
+using namespace BufferManager;
 
 SkyBoxPass::SkyBoxPass()
 {
@@ -34,19 +37,17 @@ void SkyBoxPass::Render(FCommandContext& GfxContext, FCamera& MainCamera,FCubeBu
 	GfxContext.SetViewportAndScissor(0, 0, m_Size.x, m_Size.y);
 
 	RenderWindow& renderWindow = RenderWindow::Get();
-	FColorBuffer& BackBuffer = renderWindow.GetBackBuffer();
-	FDepthBuffer& DepthBuffer = renderWindow.GetDepthBuffer();
 
 	// Indicate that the back buffer will be used as a render target.
 	GfxContext.TransitionResource(CubeBuffer, D3D12_RESOURCE_STATE_PIXEL_SHADER_RESOURCE);
-	GfxContext.TransitionResource(BackBuffer, D3D12_RESOURCE_STATE_RENDER_TARGET);
-	GfxContext.TransitionResource(DepthBuffer, D3D12_RESOURCE_STATE_DEPTH_WRITE, true);
+	GfxContext.TransitionResource(g_SceneColorBuffer, D3D12_RESOURCE_STATE_RENDER_TARGET);
+	GfxContext.TransitionResource(g_SceneDepthZ, D3D12_RESOURCE_STATE_DEPTH_WRITE, true);
 
-	GfxContext.SetRenderTargets(1, &BackBuffer.GetRTV());
-	GfxContext.SetRenderTargets(1, &BackBuffer.GetRTV(), DepthBuffer.GetDSV());
+	GfxContext.SetRenderTargets(1, &g_SceneColorBuffer.GetRTV());
+	GfxContext.SetRenderTargets(1, &g_SceneColorBuffer.GetRTV(), g_SceneDepthZ.GetDSV());
 
-	GfxContext.ClearColor(BackBuffer);
-	GfxContext.ClearDepth(DepthBuffer);
+	GfxContext.ClearColor(g_SceneColorBuffer);
+	GfxContext.ClearDepth(g_SceneDepthZ);
 
 	g_EVSConstants.ModelMatrix = FMatrix::TranslateMatrix(MainCamera.GetPosition()); // move with camera
 	g_EVSConstants.ViewProjMatrix = MainCamera.GetViewMatrix() * MainCamera.GetProjectionMatrix();
@@ -70,16 +71,14 @@ void SkyBoxPass::ShowCubeMapDebugView(FCommandContext& GfxContext, FCubeBuffer& 
 	//Size = std::min(Size, CubeBuffer.GetWidth());
 	GfxContext.SetViewportAndScissor((m_Size.x - Size) / 2, (m_Size.y - Size) / 2, Size, Size);
 
-	RenderWindow& renderWindow = RenderWindow::Get();
-	FColorBuffer& BackBuffer = renderWindow.GetBackBuffer();
 
 	// Indicate that the back buffer will be used as a render target.
 	GfxContext.TransitionResource(CubeBuffer, D3D12_RESOURCE_STATE_PIXEL_SHADER_RESOURCE);
-	GfxContext.TransitionResource(BackBuffer, D3D12_RESOURCE_STATE_RENDER_TARGET, true);
+	GfxContext.TransitionResource(g_SceneColorBuffer, D3D12_RESOURCE_STATE_RENDER_TARGET, true);
 
-	GfxContext.SetRenderTargets(1, &BackBuffer.GetRTV());
+	GfxContext.SetRenderTargets(1, &g_SceneColorBuffer.GetRTV());
 
-	GfxContext.ClearColor(BackBuffer);
+	GfxContext.ClearColor(g_SceneColorBuffer);
 
 	g_EVSConstants.ModelMatrix = FMatrix(); // identity
 	g_EVSConstants.ViewProjMatrix = FMatrix::MatrixOrthoLH(1.f, 1.f, -1.f, 1.f);
@@ -92,6 +91,7 @@ void SkyBoxPass::ShowCubeMapDebugView(FCommandContext& GfxContext, FCubeBuffer& 
 	GfxContext.SetDynamicDescriptor(2, 0, CubeBuffer.GetCubeSRV());
 
 	m_SkyBox->Draw(GfxContext);
+
 }
 
 void SkyBoxPass::SetupRootSignature()
@@ -110,7 +110,7 @@ void SkyBoxPass::SetupPipelineState(const std::wstring& ShaderFile, const std::s
 	std::shared_ptr<FShader> Shader = FShaderMgr::Get().CreateShaderDirect(ShaderFile, entryVSPoint, entryPSPoint);
 	m_RenderState = std::make_shared<RenderPipelineInfo>(Shader);
 
-	m_RenderState->SetupRenderTargetFormat(1, &RenderWindow::Get().GetColorFormat(), RenderWindow::Get().GetDepthFormat());
+	m_RenderState->SetupRenderTargetFormat(1, &g_SceneColorBuffer.GetFormat(), g_SceneDepthZ.GetFormat());
 	m_RenderState->SetRasterizerState(FPipelineState::RasterizerTwoSided);
 	m_RenderState->SetDepthStencilState(FPipelineState::DepthStateDisabled);
 	m_RenderState->SetBlendState(FPipelineState::BlendDisable);

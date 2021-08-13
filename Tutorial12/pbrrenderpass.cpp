@@ -9,6 +9,9 @@
 #include "CubeBuffer.h"
 #include "ColorBuffer.h"
 #include "Material.h"
+#include "BufferManager.h"
+
+using namespace BufferManager;
 
 PBRRenderPass::PBRRenderPass()
 {
@@ -37,15 +40,15 @@ void PBRRenderPass::Render(FCommandContext& CommandContext, FCamera& MainCamera,
 
 
 	RenderWindow& renderWindow = RenderWindow::Get();
-	FColorBuffer& BackBuffer = renderWindow.GetBackBuffer();
-	FDepthBuffer& DepthBuffer = renderWindow.GetDepthBuffer();
+	//FColorBuffer& BackBuffer = renderWindow.GetBackBuffer();
+	//FDepthBuffer& DepthBuffer = renderWindow.GetDepthBuffer();
 	// Indicate that the back buffer will be used as a render target.
 	CommandContext.TransitionResource(IrradianceCube, D3D12_RESOURCE_STATE_PIXEL_SHADER_RESOURCE);
 	CommandContext.TransitionResource(PrefilteredCube, D3D12_RESOURCE_STATE_PIXEL_SHADER_RESOURCE);
 	CommandContext.TransitionResource(PreintegratedGF, D3D12_RESOURCE_STATE_PIXEL_SHADER_RESOURCE);
-	CommandContext.TransitionResource(BackBuffer, D3D12_RESOURCE_STATE_RENDER_TARGET);
-	CommandContext.TransitionResource(DepthBuffer, D3D12_RESOURCE_STATE_DEPTH_WRITE, true);
-	CommandContext.SetRenderTargets(1, &BackBuffer.GetRTV(), DepthBuffer.GetDSV());
+	CommandContext.TransitionResource(g_SceneColorBuffer, D3D12_RESOURCE_STATE_RENDER_TARGET);
+	CommandContext.TransitionResource(g_SceneDepthZ, D3D12_RESOURCE_STATE_DEPTH_WRITE, true);
+	CommandContext.SetRenderTargets(1, &g_SceneColorBuffer.GetRTV(), g_SceneDepthZ.GetDSV());
 	
 	// Record commands.
 	//CommandContext.ClearColor(BackBuffer);
@@ -133,7 +136,7 @@ void PBRRenderPass::SetupPipelineState(const std::wstring& ShaderFile, const std
 {
 	std::shared_ptr<FShader> shader = FShaderMgr::Get().CreateShaderDirect(ShaderFile,entryVSPoint,entryPSPoint);
 	m_RenderState = std::make_shared<RenderPipelineInfo>(shader);
-	m_RenderState->SetupRenderTargetFormat(1, &RenderWindow::Get().GetColorFormat(), RenderWindow::Get().GetDepthFormat());
+	m_RenderState->SetupRenderTargetFormat(1, &g_SceneColorBuffer.GetFormat(), g_SceneDepthZ.GetFormat());
 	m_RenderState->SetRasterizerState(FGraphicsPipelineState::RasterizerTwoSided);
 
 	bool InitLayout = false;

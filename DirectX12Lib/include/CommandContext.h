@@ -76,7 +76,7 @@ public:
 	void CopySubresource(FD3D12Resource& Dest, UINT DestSubIndex, FD3D12Resource& Src, UINT SrcSubIndex);
 
 	void TransitionResource(FD3D12Resource& Resource, D3D12_RESOURCE_STATES NewState, bool Flush = false);
-	void TransitionSubResource(FD3D12Resource& Resource, D3D12_RESOURCE_STATES OldState, D3D12_RESOURCE_STATES NewState, uint32_t Subresource);
+	void TransitionSubResource(FD3D12Resource& Resource, D3D12_RESOURCE_STATES NewState, uint32_t Subresource, bool Flush = false);
 
 	void SetDescriptorHeap(D3D12_DESCRIPTOR_HEAP_TYPE Type, ID3D12DescriptorHeap* HeapPtr);
 	void SetDescriptorHeaps(UINT HeapCount, D3D12_DESCRIPTOR_HEAP_TYPE Type[], ID3D12DescriptorHeap* HeapPtrs[]);
@@ -151,6 +151,11 @@ public:
 
 	void SetDynamicDescriptor(UINT RootIndex, UINT Offset, D3D12_CPU_DESCRIPTOR_HANDLE Handle);
 	void SetDynamicDescriptors(UINT RootIndex, UINT Offset, UINT Count, const D3D12_CPU_DESCRIPTOR_HANDLE Handles[]);
+
+	void SetConstantArray(UINT RootIndex, UINT NumConstants, const void* Contents);
+	void SetDynamicConstantBufferView(UINT RootIndex, size_t BufferSize, const void* BufferData);
+
+	void ClearUAV(FColorBuffer& Target, int Mip);
 
 	void Dispatch(size_t GroupCountX, size_t GroupCountY, size_t GroupCountZ);
 	void Dispatch2D(size_t ThreadCountX, size_t ThreadCountY, size_t GroupSizeX = 8, size_t GroupSizeY = 8);
