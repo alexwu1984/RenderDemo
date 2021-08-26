@@ -18,9 +18,9 @@ cbuffer PSContant : register(b0)
     float3	CameraPos;
     int		bSHDiffuse;
     float3	pad;
-    float4	Coeffs[16];
     float3 LightDir;
     int EnableLight;
+    float3	Coeffs[16];
 };
 
 Texture2D BaseMap 			: register(t0);
@@ -106,7 +106,16 @@ float4 PS_PBR(PixelInput In) : SV_Target
     float3 F = F_schlickR(NoV, F0, Roughness);
 
     float3 kD = (1.0 - F) * (1.0 - Metallic);
-    float3 Irradiance = IrradianceCubeMap.SampleLevel(LinearSampler, N, 0).xyz;
+    float3 Irradiance = 0;
+    if (bSHDiffuse)
+    {
+		// SH Irradiance
+        Irradiance = GetSHIrradiance(N, Degree, Coeffs);
+    }
+    else
+    {
+        Irradiance = IrradianceCubeMap.SampleLevel(LinearSampler, N, 0).xyz;
+    }
     float3 Diffuse = Albedo * kD ;
     
     FDirectLighting Lighting;

@@ -53,7 +53,7 @@ enum EShowMode
 	SM_CubeMapCross,
 	SM_Irradiance,
 	SM_Prefiltered,
-	//SM_SphericalHarmonics,
+	SM_SphericalHarmonics,
 	SM_PreintegratedBRDF,
 	SM_PBR,
 };
@@ -82,6 +82,7 @@ public:
 		GenerateIrradianceMap();
 		GeneratePrefilterEnvironmentMap();
 		PreIntegrateBRDF();
+		GenerateSHCoeffs();
 	}
 
 	void OnGUI(FCommandContext& CommandContext)
@@ -108,7 +109,7 @@ public:
 			ImGui::RadioButton("Cube Cross", &m_ShowMode, SM_CubeMapCross);
 			ImGui::RadioButton("Irradiance", &m_ShowMode, SM_Irradiance);
 			ImGui::RadioButton("Prefiltered", &m_ShowMode, SM_Prefiltered);
-			//ImGui::RadioButton("SphericalHarmonics", &m_ShowMode, SM_SphericalHarmonics);
+			ImGui::RadioButton("SphericalHarmonics", &m_ShowMode, SM_SphericalHarmonics);
 			ImGui::RadioButton("PreintegratedBRDF", &m_ShowMode, SM_PreintegratedBRDF);
 			ImGui::RadioButton("PBR Mesh", &m_ShowMode, SM_PBR);
 			ImGui::EndGroup();
@@ -121,12 +122,13 @@ public:
 			{
 				ImGui::SliderInt("Mip Level", &m_MipLevel, 0, m_PrefilteredCube.GetNumMips() - 1);
 			}
-			//else if (m_ShowMode == SM_SphericalHarmonics)
-			//{
-			//	ImGui::SliderInt("SH Degree", &m_SHDegree, 1, 4);
-			//}
+			else if (m_ShowMode == SM_SphericalHarmonics)
+			{
+				ImGui::SliderInt("SH Degree", &m_SHDegree, 1, 4);
+			}
 			else if (m_ShowMode == SM_PBR)
 			{
+				ImGui::Checkbox("SHDiffuse", &m_bSHDiffuse);
 				ImGui::Checkbox("Rotate Mesh", &m_RotateMesh);
 				ImGui::SameLine();
 				ImGui::Text("%.3f", m_RotateY);
@@ -190,19 +192,23 @@ public:
 			PostProcessing::Render(GfxContext);
 			break;
 		case SM_CubeMapCross:
-			m_CubeMapCrossDebug.ShowCubeMapDebugView(GfxContext, m_CubeBuffer, 1.0, m_MipLevel);
+			m_CubeMapCrossDebug.ShowCubeMapDebugView(GfxContext, m_CubeBuffer, 1.0, m_MipLevel,m_SHCoeffs,m_SHDegree);
 			PostProcessing::Render(GfxContext);
 			break;
 		case SM_Irradiance:
-			m_CubeMapCrossDebug.ShowCubeMapDebugView(GfxContext, m_IrradianceCube, 1.0, m_MipLevel);
+			m_CubeMapCrossDebug.ShowCubeMapDebugView(GfxContext, m_IrradianceCube, 1.0, m_MipLevel, m_SHCoeffs, m_SHDegree);
 			PostProcessing::Render(GfxContext);
 			break;
 		case SM_Prefiltered:
-			m_CubeMapCrossDebug.ShowCubeMapDebugView(GfxContext, m_PrefilteredCube, 1.0, m_MipLevel);
+			m_CubeMapCrossDebug.ShowCubeMapDebugView(GfxContext, m_PrefilteredCube, 1.0, m_MipLevel, m_SHCoeffs, m_SHDegree);
 			PostProcessing::Render(GfxContext);
 			break;
 		case SM_PreintegratedBRDF:
 			ShowTexture2D(GfxContext, m_PreintegratedBRDF);
+			break;
+		case SM_SphericalHarmonics:
+			m_CubeMapCrossDebug.ShowCubeMapDebugView(GfxContext, m_CubeBuffer, 1.0, m_MipLevel, m_SHCoeffs, m_SHDegree);
+			PostProcessing::Render(GfxContext);
 			break;
 		case SM_PBR:
 			SkyPass(GfxContext, m_CubeBuffer);
@@ -240,6 +246,7 @@ public:
 		m_GenIrradiancePass.Init(m_SkyBox, IRRADIANCE_SIZE, IRRADIANCE_SIZE, L"../Resources/Shaders/EnvironmentShaders.hlsl", "VS_SkyCube", "PS_GenIrradiance",GenCubePass::CubePass_IrradianceMap);
 		m_GenPrefilterEnvMapPass.Init(m_SkyBox, PREFILTERED_SIZE, PREFILTERED_SIZE, L"../Resources/Shaders/EnvironmentShaders.hlsl", "VS_SkyCube", "PS_GenPrefiltered", GenCubePass::CubePass_PreFilterEnvMap);
 		m_CubeMapCrossDebug.Init(m_CubeMapCross, m_GameDesc.Width, m_GameDesc.Height, L"../Resources/Shaders/EnvironmentShaders.hlsl", "VS_CubeMapCross", "PS_CubeMapCross");
+		m_SHCubeMapDebug.Init(m_CubeMapCross, m_GameDesc.Width, m_GameDesc.Height, L"../Resources/Shaders/EnvironmentShaders.hlsl", "VS_CubeMapCross", "PS_SphericalHarmonics");
 
 		m_PreintegratedBRDF.Create(L"PreintegratedGF", 128, 32, 1, DXGI_FORMAT_R32G32_FLOAT);
 		m_PBRRenderPass.Init(DiffiusePassList, m_GameDesc.Width, m_GameDesc.Height, L"../Resources/Shaders/PBR.hlsl", "VS_PBR", "PS_PBR");
@@ -300,6 +307,11 @@ public:
 		m_PBRRenderPass.Render(GfxContext, m_Camera, m_IrradianceCube, m_PrefilteredCube, m_PreintegratedBRDF);
 	}
 
+	void GenerateSHCoeffs()
+	{
+		m_SHCoeffs = m_CubeBuffer.GenerateSHcoeffs(4, m_SHSampleNum);
+	}
+
 private:
 
 	FTexture m_TextureLongLat;
@@ -318,6 +330,8 @@ private:
 
 	SkyBoxPass m_SkyPass;
 	SkyBoxPass m_CubeMapCrossDebug;
+	SkyBoxPass m_SHCubeMapDebug;
+
 	GenCubePass m_GenCubePass;
 	GenCubePass m_GenIrradiancePass;
 	GenCubePass m_GenPrefilterEnvMapPass;
@@ -326,6 +340,10 @@ private:
 
 	// LightInfo
 	bool	m_EnableLight = false;
+	bool    m_bSHDiffuse = false;
+	int	m_SHDegree = 4;
+	int m_SHSampleNum = 10000;
+	std::vector<Vector3f> m_SHCoeffs;
 };
 
 int main()

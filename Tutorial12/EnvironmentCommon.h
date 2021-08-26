@@ -18,8 +18,9 @@ __declspec(align(16)) struct EPSConstants
 	Vector3f	CameraPos;
 	int			bSHDiffuse;
 	Vector3f	pad;
-	Vector4f	Coeffs[16];
 	Vector3f	LightDir;
 	int			EnableLight;
+	Vector3f	Coeffs[16];
+
 } ;
 extern EPSConstants g_EPSConstants;

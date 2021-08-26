@@ -61,7 +61,7 @@ void SkyBoxPass::Render(FCommandContext& GfxContext, FCamera& MainCamera,FCubeBu
 	m_SkyBox->Draw(GfxContext);
 }
 
-void SkyBoxPass::ShowCubeMapDebugView(FCommandContext& GfxContext, FCubeBuffer& CubeBuffer, float Exposure, int MipLevel)
+void SkyBoxPass::ShowCubeMapDebugView(FCommandContext& GfxContext, FCubeBuffer& CubeBuffer, float Exposure, int MipLevel, const std::vector<Vector3f>& SHCoeffs, int SHDegree)
 {
 	// Set necessary state.
 	GfxContext.SetRootSignature(m_SkySignature);
@@ -86,6 +86,12 @@ void SkyBoxPass::ShowCubeMapDebugView(FCommandContext& GfxContext, FCubeBuffer& 
 
 	g_EPSConstants.Exposure = Exposure;
 	g_EPSConstants.MipLevel = MipLevel;
+	g_EPSConstants.Degree = SHDegree;
+	for (int i = 0; i < SHCoeffs.size(); ++i)
+	{
+		g_EPSConstants.Coeffs[i] = SHCoeffs[i];
+	}
+	
 	GfxContext.SetDynamicConstantBufferView(1, sizeof(g_EPSConstants), &g_EPSConstants);
 
 	GfxContext.SetDynamicDescriptor(2, 0, CubeBuffer.GetCubeSRV());
