@@ -50,6 +50,7 @@ set(HEADER_FILES
 	include/GenerateMips.h
     include/PostProcessing.h
 	include/BufferManager.h
+	include/MotionBlur.h
 )
 
 set(SOURCES
@@ -97,6 +98,8 @@ set(SOURCES
 	src/GenerateMips.cpp
 	src/PostProcessing.cpp
 	src/BufferManager.cpp
+	src/MotionBlur.cpp
+						  
 )
 
 set( IMGUI_HEADERS

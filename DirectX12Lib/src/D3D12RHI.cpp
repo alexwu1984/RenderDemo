@@ -16,6 +16,7 @@
 #include "PipelineState.h"
 #include "GenerateMips.h"
 #include "BufferManager.h"
+#include "MotionBlur.h"
 
 #pragma comment(lib, "dxgi.lib")
 #pragma comment(lib, "d3d12.lib")
@@ -173,6 +174,8 @@ bool D3D12RHI::Initialize()
 	BufferManager::InitializeRenderingBuffers(WindowWin32::Get().GetWidth(), WindowWin32::Get().GetHeight());
 	FGenerateMips::Initialize();
 
+	MotionBlur::Initialize();
+
 	return true;
 }
 
@@ -184,6 +187,7 @@ void D3D12RHI::Destroy()
 	FDescriptorAllocator::DestroyAll();
 	RenderWindow::Get().Destroy();
 	FGenerateMips::Destroy();
+	MotionBlur::Destroy();
 }
 
 ComPtr<ID3DBlob> D3D12RHI::CreateShader(const std::wstring& ShaderFile, const std::string& EntryPoint, const std::string& TargetModel)
