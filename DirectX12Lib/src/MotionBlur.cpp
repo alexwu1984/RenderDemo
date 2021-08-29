@@ -40,6 +40,60 @@ void MotionBlur::Initialize(void)
 	s_CameraVelocityPSO.Finalize();
 }
 
+void MotionBlur::ClearVelocityBuffer(FCommandContext& Context)
+{
+	Context.TransitionResource(g_VelocityBuffer, D3D12_RESOURCE_STATE_RENDER_TARGET);
+	Context.ClearColor(g_VelocityBuffer);
+}
+
+void MotionBlur::GenerateCameraVelocityBuffer(FCommandContext& Context, const FCamera& camera)
+{
+	MotionBlur::GenerateCameraVelocityBuffer(Context, camera.GetClipToPrevClip(), camera.GetNearClip(), camera.GetFarClip());
+}
+
+
+void MotionBlur::GenerateCameraVelocityBuffer(FCommandContext& BaseContext, const FMatrix& reprojectionMatrix, float nearClip, float farClip)
+{
+	FComputeContext& Context = BaseContext.GetComputeContext();
+
+	uint32_t Width = g_SceneColorBuffer.GetWidth();
+	uint32_t Height = g_SceneColorBuffer.GetHeight();
+
+	float RcpHalfDimX = 2.0f / Width;
+	float RcpHalfDimY = 2.0f / Height;
+	float RcpZMagic = nearClip / (farClip - nearClip);
+
+	// sreen space -> ndc
+	FMatrix preMult = FMatrix(
+		Vector4f(RcpHalfDimX, 0, 0, 0),
+		Vector4f(0, -RcpHalfDimY, 0, 0),
+		Vector4f(0, 0, 1, 0),
+		Vector4f(-1, 1, 0, 1)
+	);
+
+	// ndc -> screen space without perspectiveDivide
+	FMatrix postMult = FMatrix(
+		Vector4f(1.0f / RcpHalfDimX, 0.0f, 0.0f, 0.0f),
+		Vector4f(0.0f, -1.0f / RcpHalfDimY, 0.0f, 0.0f),
+		Vector4f(0.0f, 0.0f, 1.0f, 0.0f),
+		Vector4f(1.0f / RcpHalfDimX, 1.0f / RcpHalfDimY, 0.0f, 1.0f));
+
+	FMatrix CurToPrevXForm = preMult * reprojectionMatrix * postMult;
+
+	Context.SetRootSignature(s_RootSignature);
+	Context.SetPipelineState(s_CameraVelocityPSO);
+
+	Context.SetDynamicConstantBufferView(0, sizeof(CurToPrevXForm), &CurToPrevXForm);
+	Context.TransitionResource(g_SceneDepthZ, D3D12_RESOURCE_STATE_NON_PIXEL_SHADER_RESOURCE);
+	Context.TransitionResource(g_VelocityBuffer, D3D12_RESOURCE_STATE_UNORDERED_ACCESS);
+
+	// srv
+	Context.SetDynamicDescriptor(1, 0, g_SceneDepthZ.GetDepthSRV());
+	// uav
+	Context.SetDynamicDescriptor(2, 0, g_VelocityBuffer.GetUAV());
+
+	Context.Dispatch2D(Width, Height);
+}
 
 void MotionBlur::Destroy(void)
 {
