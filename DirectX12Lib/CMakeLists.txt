@@ -51,6 +51,7 @@ set(HEADER_FILES
     include/PostProcessing.h
 	include/BufferManager.h
 	include/MotionBlur.h
+	include/TemporalEffects.h
 )
 
 set(SOURCES
@@ -99,6 +100,7 @@ set(SOURCES
 	src/PostProcessing.cpp
 	src/BufferManager.cpp
 	src/MotionBlur.cpp
+	src/TemporalEffects.cpp
 						  
 )
 
