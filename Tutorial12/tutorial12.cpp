@@ -35,6 +35,8 @@
 #include "PreIntegratedBRDFPass.h"
 #include "pbrrenderpass.h"
 #include "PostProcessing.h"
+#include "TemporalEffects.h"
+#include "BufferManager.h"
 
 extern FCommandListManager g_CommandListManager;
 
@@ -44,7 +46,7 @@ const int PREFILTERED_SIZE = 256;
 const bool CUBEMAP_DEBUG_VIEW = true;
 
 EVSConstants g_EVSConstants;
-EPSConstants g_EPSConstants;
+EPSConstants g_PBRPSConstants;
 
 enum EShowMode
 {
@@ -128,6 +130,8 @@ public:
 			}
 			else if (m_ShowMode == SM_PBR)
 			{
+				ImGui::Checkbox("TAA", &TemporalEffects::g_EnableTAA);
+
 				ImGui::Checkbox("SHDiffuse", &m_bSHDiffuse);
 				ImGui::Checkbox("Rotate Mesh", &m_RotateMesh);
 				ImGui::SameLine();
@@ -135,9 +139,9 @@ public:
 
 				ImGui::Checkbox("Enable Light", &m_EnableLight);
 				ImGui::SameLine();
-				ImGui::SliderFloat("LightDir.x", &g_EPSConstants.LightDir.x, -1, 1);
-				ImGui::SliderFloat("LightDir.y", &g_EPSConstants.LightDir.y, -1, 1);
-				g_EPSConstants.EnableLight = m_EnableLight;
+				ImGui::SliderFloat("LightDir.x", &g_PBRPSConstants.LightDir.x, -1, 1);
+				ImGui::SliderFloat("LightDir.y", &g_PBRPSConstants.LightDir.y, -1, 1);
+				g_PBRPSConstants.EnableLight = m_EnableLight;
 				if (m_EnableLight)
 				{
 					m_RotateMesh = true;
@@ -172,6 +176,8 @@ public:
 			m_RotateY = fmodf(m_RotateY, MATH_2PI);
 			m_PBRRenderPass.Rotate(m_RotateY);
 		}
+
+		TemporalEffects::Update();
 	}
 
 	virtual void DoRender(FCommandContext& GfxContext)
@@ -213,6 +219,7 @@ public:
 		case SM_PBR:
 			SkyPass(GfxContext, m_CubeBuffer);
 			RenderMesh(GfxContext);
+			TemporalEffects::ResolveImage(GfxContext, BufferManager::g_SceneColorBuffer);
 			PostProcessing::Render(GfxContext);
 			break;
 		};
@@ -304,7 +311,7 @@ public:
 
 	void RenderMesh(FCommandContext& GfxContext)
 	{
-		m_PBRRenderPass.Render(GfxContext, m_Camera, m_IrradianceCube, m_PrefilteredCube, m_PreintegratedBRDF);
+		m_PBRRenderPass.RenderBasePass(GfxContext, m_Camera, m_IrradianceCube, m_PrefilteredCube, m_PreintegratedBRDF);
 	}
 
 	void GenerateSHCoeffs()

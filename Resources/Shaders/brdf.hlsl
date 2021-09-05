@@ -92,7 +92,7 @@ float2 IntegrateBRDF(uint2 Random, float Roughness, float NoV)
     for (uint i = 0; i < NumSamples; i++)
     {
         float2 Xi = Hammersley(i, NumSamples, Random);
-        float3 H = ImportanceSampleGGX(Xi, m2);
+        float3 H = ImportanceSampleGGX(Xi, m2).xyz;
         float3 L = 2 * dot(V, H) * H - V;
         float NoL = saturate(L.z);
         float NoH = saturate(H.z);

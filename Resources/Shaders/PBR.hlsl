@@ -10,17 +10,23 @@ cbuffer VSContant : register(b0)
 
 cbuffer PSContant : register(b0)
 {
-    float Exposure;
-    int MipLevel;
-    int MaxMipLevel;
-    int NumSamplesPerDir;
-    int Degree;
+    float	Exposure;
     float3	CameraPos;
+
+    float3	BaseColor;
+    float	Metallic;
+
+    float	Roughness;
+    int		MaxMipLevel;
     int		bSHDiffuse;
-    float3	pad;
-    float3 LightDir;
-    int EnableLight;
+    int		Degree;
+
+    float4x4 InvViewProj;
+    float4	TemporalAAJitter;
+
     float3	Coeffs[16];
+    float3	LightDir;
+    int		EnableLight;
 };
 
 Texture2D BaseMap 			: register(t0);
@@ -53,6 +59,19 @@ struct PixelInput
 	float3 B		: TEXCOORD2;
 	float3 N		: TEXCOORD3;
 	float3 WorldPos	: TEXCOORD4;
+
+    // ClipSpace
+    float4 VelocityPrevScreenPosition	: TEXCOORD5;
+    float4 VelocityScreenPosition		: TEXCOORD6;
+};
+
+struct PixelOutput
+{
+    float4 Target0 : SV_Target0;
+    float4 Target1 : SV_Target1;
+    float4 Target2 : SV_Target2;
+    float4 Target3 : SV_Target3;
+    float4 Target4 : SV_Target4;
 };
 
 struct FDirectLighting
@@ -66,6 +85,73 @@ struct FDirectLighting
 float3 F_schlickR(float cosTheta, float3 F0, float roughness)
 {
 	return F0 + (max(1.0 - roughness, F0) - F0) * pow(1.0 - cosTheta, 5.0);
+}
+
+//Moving Frostbite to PBR
+float GetSpecularOcclusion(float NoV, float AO, float roughness)
+{
+    return saturate(pow(NoV + AO, exp2(-16.0 * roughness - 1.0)) - 1.0 + AO);
+}
+
+float3 CalcIBL(float3 N, float3 V, float3 Albedo, float Metallic, float Roughness, float AO, float4 SSR)
+{
+    float3 R = reflect(-V, N); //incident ray, surface normal
+
+    float NoV = saturate(dot(N, V));
+    float3 F0 = lerp(0.04, Albedo.rgb, Metallic);
+    float3 F = F_schlickR(NoV, F0, Roughness);
+
+    float3 Irradiance = 0;
+    if (bSHDiffuse)
+    {
+        // SH Irradiance
+        Irradiance = GetSHIrradiance(N, Degree, Coeffs);
+    }
+    else
+    {
+        Irradiance = IrradianceCubeMap.SampleLevel(LinearSampler, N, 0).xyz;
+    }
+
+    float3 DiffuseColor = (1.0 - Metallic) * Albedo;
+    float3 Diffuse = DiffuseColor;
+
+    FDirectLighting Lighting;
+    Lighting.Diffuse = 0;
+    Lighting.Specular = 0;
+    if (EnableLight == 1)
+    {
+        float3 L = -LightDir;
+        BxDFContext Context;
+        Init(Context, N, V, L);
+        Context.NoL = saturate(Context.NoL);
+        Context.NoV = saturate(abs(Context.NoV) + 1e-5);
+
+        float3 Color = 0;
+
+        // Diffuse
+        Lighting.Diffuse = Context.NoL * Diffuse_Burley(Diffuse, Roughness, Context.NoV, Context.NoL, Context.VoH);
+        Lighting.Specular = Context.NoL * SpecularGGX(Roughness, F0, Context, Context.NoL);
+
+        Diffuse = Lighting.Diffuse;
+
+    }
+    else
+    {
+
+       // Diffuse = Diffuse_Lambert(Diffuse);
+        Diffuse *= Irradiance;
+    }
+
+
+    float Mip = ComputeReflectionCaptureMipFromRoughness(Roughness, MaxMipLevel - 1);
+    float2 BRDF = PreintegratedGF.SampleLevel(LinearSampler, float2(NoV, Roughness), 0).rg;
+
+    float3 PrefilteredColor = PrefilteredCubeMap.SampleLevel(LinearSampler, R, Mip).rgb;
+    float3 Specular = PrefilteredColor * (F * BRDF.x + BRDF.y);
+
+    float SpecAO = GetSpecularOcclusion(NoV, AO, Roughness);
+    float3 Final = (Diffuse * AO + Specular * SpecAO) * (1 - SSR.a) + SSR.rgb;
+    return Final;
 }
 
 PixelInput VS_PBR(VertexInput In)
@@ -92,6 +178,7 @@ float4 PS_PBR(PixelInput In) : SV_Target
     float3 Albedo = BaseMap.Sample(LinearSampler, In.Tex).xyz;
     float Metallic = MetallicMap.Sample(LinearSampler, In.Tex).x;
     float Roughness = RoughnessMap.Sample(LinearSampler, In.Tex).x;
+    float AO = AOMap.Sample(LinearSampler, In.Tex).x;
 
     float3x3 TBN = float3x3(normalize(In.T), normalize(In.B), normalize(In.N));
     float3 tNormal = NormalMap.Sample(LinearSampler, In.Tex).xyz;
@@ -101,60 +188,5 @@ float4 PS_PBR(PixelInput In) : SV_Target
     float3 V = normalize(CameraPos - In.WorldPos);
     float3 R = reflect(-V, N); //incident ray, surface normal
 
-    float NoV = saturate(dot(N, V));
-    float3 F0 = lerp(0.04, Albedo.rgb, Metallic);
-    float3 F = F_schlickR(NoV, F0, Roughness);
-
-    float3 kD = (1.0 - F) * (1.0 - Metallic);
-    float3 Irradiance = 0;
-    if (bSHDiffuse)
-    {
-		// SH Irradiance
-        Irradiance = GetSHIrradiance(N, Degree, Coeffs);
-    }
-    else
-    {
-        Irradiance = IrradianceCubeMap.SampleLevel(LinearSampler, N, 0).xyz;
-    }
-    float3 Diffuse = Albedo * kD ;
-    
-    FDirectLighting Lighting;
-    Lighting.Diffuse = 0;
-    Lighting.Specular = 0;
-    if (EnableLight == 1)
-    {
-        float3 L = -LightDir;
-        BxDFContext Context;
-        Init(Context, N, V, L);
-        Context.NoL = saturate(Context.NoL);
-        Context.NoV = saturate(abs(Context.NoV) + 1e-5);
-        
-        float3 Color = 0;
-
-	// Diffuse
-        Lighting.Diffuse = Context.NoL * Diffuse_Burley(Diffuse, Roughness, Context.NoV, Context.NoL, Context.VoH);
-        Lighting.Specular = Context.NoL * SpecularGGX(Roughness, F0, Context, Context.NoL);
-        
-        Diffuse = Lighting.Diffuse;
-
-    }
-    else
-    {
- 
-        Diffuse = Diffuse_Lambert(Diffuse);
-        Diffuse *= Irradiance;
-    }
-
-    float Mip = ComputeReflectionCaptureMipFromRoughness(Roughness, MaxMipLevel - 1);
-    float2 BRDF = PreintegratedGF.Sample(LinearSampler, float2(NoV, Roughness)).rg;
-
-	
-    float3 PrefilteredColor = PrefilteredCubeMap.SampleLevel(LinearSampler, R, Mip).rgb;
-    float3 Specular = PrefilteredColor * (F * BRDF.x + BRDF.y);
-
-    float3 Emissive = EmissiveMap.Sample(LinearSampler, In.Tex).xyz;
-    float3 FinalColor = Emissive + Diffuse + Specular + Lighting.Specular;
-
-    return float4(FinalColor * Exposure, Opacity);
-    //return float4(ToneMapping(FinalColor * Exposure), Opacity);
+    return float4(CalcIBL(N, V, Albedo, Metallic, Roughness, AO, 0), 1.0);
 }

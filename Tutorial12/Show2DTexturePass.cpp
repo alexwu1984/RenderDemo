@@ -48,8 +48,8 @@ void Show2DTexturePass::ShowTexture2D(FCommandContext& GfxContext, D3D12_CPU_DES
 	g_EVSConstants.ViewProjMatrix = FMatrix::MatrixOrthoLH(1.f, 1.f, -1.f, 1.f);
 	GfxContext.SetDynamicConstantBufferView(0, sizeof(EVSConstants), &g_EVSConstants);
 
-	g_EPSConstants.Exposure = 1.0;
-	GfxContext.SetDynamicConstantBufferView(1, sizeof(EPSConstants), &g_EPSConstants);
+	g_PBRPSConstants.Exposure = 1.0;
+	GfxContext.SetDynamicConstantBufferView(1, sizeof(EPSConstants), &g_PBRPSConstants);
 
 	GfxContext.SetDynamicDescriptor(2, 0, inputTex);
 

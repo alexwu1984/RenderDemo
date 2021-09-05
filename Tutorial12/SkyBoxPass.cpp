@@ -53,8 +53,8 @@ void SkyBoxPass::Render(FCommandContext& GfxContext, FCamera& MainCamera,FCubeBu
 	g_EVSConstants.ViewProjMatrix = MainCamera.GetViewMatrix() * MainCamera.GetProjectionMatrix();
 	GfxContext.SetDynamicConstantBufferView(0, sizeof(g_EVSConstants), &g_EVSConstants);
 
-	g_EPSConstants.Exposure = 1.0;
-	GfxContext.SetDynamicConstantBufferView(1, sizeof(g_EPSConstants), &g_EPSConstants);
+	PBR_Constants.Exposure = 1.0;
+	GfxContext.SetDynamicConstantBufferView(1, sizeof(PBR_Constants), &PBR_Constants);
 
 	GfxContext.SetDynamicDescriptor(2, 0, CubeBuffer.GetCubeSRV());
 
@@ -84,15 +84,15 @@ void SkyBoxPass::ShowCubeMapDebugView(FCommandContext& GfxContext, FCubeBuffer& 
 	g_EVSConstants.ViewProjMatrix = FMatrix::MatrixOrthoLH(1.f, 1.f, -1.f, 1.f);
 	GfxContext.SetDynamicConstantBufferView(0, sizeof(g_EVSConstants), &g_EVSConstants);
 
-	g_EPSConstants.Exposure = Exposure;
-	g_EPSConstants.MipLevel = MipLevel;
-	g_EPSConstants.Degree = SHDegree;
+	PBR_Constants.MipLevel = MipLevel;
+	PBR_Constants.Exposure = Exposure;
+	PBR_Constants.Degree = SHDegree;
 	for (int i = 0; i < SHCoeffs.size(); ++i)
 	{
-		g_EPSConstants.Coeffs[i] = SHCoeffs[i];
+		PBR_Constants.Coeffs[i] = SHCoeffs[i];
 	}
 	
-	GfxContext.SetDynamicConstantBufferView(1, sizeof(g_EPSConstants), &g_EPSConstants);
+	GfxContext.SetDynamicConstantBufferView(1, sizeof(PBR_Constants), &PBR_Constants);
 
 	GfxContext.SetDynamicDescriptor(2, 0, CubeBuffer.GetCubeSRV());
 

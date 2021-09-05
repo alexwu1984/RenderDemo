@@ -32,6 +32,20 @@ public:
 	void GeneratePrefilteredMap(FCubeBuffer& CubeBuffer, FCubeBuffer& PrefilteredCube);
 
 private:
+
+	__declspec(align(16)) struct
+	{
+		float Exposure;
+		int MipLevel;
+		int MaxMipLevel;
+		int NumSamplesPerDir;
+		int Degree;
+		Vector3f	CameraPos;
+		int		bSHDiffuse;
+		Vector3f	pad;
+		Vector4f	Coeffs[16];
+	} PBR_Constants;
+
 	void SetupRootSignature();
 	void SetupPipelineState(const std::wstring& ShaderFile, const std::string& entryVSPoint, const std::string& entryPSPoint);
 

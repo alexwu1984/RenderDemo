@@ -17,6 +17,8 @@
 #include "GenerateMips.h"
 #include "BufferManager.h"
 #include "MotionBlur.h"
+#include "TemporalEffects.h"
+#include "PostProcessing.h"
 
 #pragma comment(lib, "dxgi.lib")
 #pragma comment(lib, "d3d12.lib")
@@ -175,6 +177,8 @@ bool D3D12RHI::Initialize()
 	FGenerateMips::Initialize();
 
 	MotionBlur::Initialize();
+	TemporalEffects::Initialize();
+	PostProcessing::Initialize();
 
 	return true;
 }
@@ -188,6 +192,8 @@ void D3D12RHI::Destroy()
 	RenderWindow::Get().Destroy();
 	FGenerateMips::Destroy();
 	MotionBlur::Destroy();
+	TemporalEffects::Destroy();
+	PostProcessing::Destroy();
 }
 
 ComPtr<ID3DBlob> D3D12RHI::CreateShader(const std::wstring& ShaderFile, const std::string& EntryPoint, const std::string& TargetModel)

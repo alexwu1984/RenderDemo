@@ -10,17 +10,19 @@ extern EVSConstants g_EVSConstants;
 
 __declspec(align(16)) struct EPSConstants
 {
-	float		Exposure = 1;
-	int			MipLevel = 0;
-	int			MaxMipLevel = 1;
-	int			NumSamplesPerDir = 0;
-	int			Degree = 1;
+	float		Exposure;
 	Vector3f	CameraPos;
+	Vector3f	BaseColor;
+	float		Metallic;
+	float		Roughness;
+	int			MaxMipLevel;
 	int			bSHDiffuse;
-	Vector3f	pad;
+	int			Degree;
+	FMatrix		InvViewProj;
+	Vector4f	TemporalAAJitter;
+	Vector4f	Coeffs[16];
 	Vector3f	LightDir;
 	int			EnableLight;
-	Vector3f	Coeffs[16];
 
 } ;
-extern EPSConstants g_EPSConstants;
+extern EPSConstants g_PBRPSConstants;

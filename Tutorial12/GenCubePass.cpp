@@ -73,8 +73,8 @@ void GenCubePass::GenerateIrradianceMap(FCubeBuffer& CubeBuffer, FCubeBuffer& Ir
 
 	GfxContext.SetDynamicDescriptor(2, 0, CubeBuffer.GetCubeSRV());
 
-	g_EPSConstants.NumSamplesPerDir = NumSamplesPerDir;
-	GfxContext.SetDynamicConstantBufferView(1, sizeof(g_EPSConstants), &g_EPSConstants);
+	PBR_Constants.NumSamplesPerDir = NumSamplesPerDir;
+	GfxContext.SetDynamicConstantBufferView(1, sizeof(PBR_Constants), &PBR_Constants);
 
 	g_EVSConstants.ModelMatrix = FMatrix(); // identity
 	for (int i = 0; i < 6; ++i)
@@ -105,14 +105,13 @@ void GenCubePass::GeneratePrefilteredMap(FCubeBuffer& CubeBuffer, FCubeBuffer& P
 
 	g_EVSConstants.ModelMatrix = FMatrix(); // identity
 	uint32_t NumMips = PrefilteredCube.GetNumMips();
-	g_EPSConstants.MaxMipLevel = NumMips;
+	PBR_Constants.MaxMipLevel = NumMips;
 	for (uint32_t MipLevel = 0; MipLevel < NumMips; ++MipLevel)
 	{
 		uint32_t Size = m_Size.x >> MipLevel;
 		GfxContext.SetViewportAndScissor(0, 0, Size, Size);
-
-		g_EPSConstants.MipLevel = MipLevel;
-		GfxContext.SetDynamicConstantBufferView(1, sizeof(g_EPSConstants), &g_EPSConstants);
+		PBR_Constants.MipLevel = MipLevel;
+		GfxContext.SetDynamicConstantBufferView(1, sizeof(PBR_Constants), &PBR_Constants);
 
 		for (int i = 0; i < 6; ++i)
 		{

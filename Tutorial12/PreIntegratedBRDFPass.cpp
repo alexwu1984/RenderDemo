@@ -47,7 +47,7 @@ void PreIntegratedBRDFPass::IntegrateBRDF(FColorBuffer& target)
 	g_EVSConstants.ModelMatrix = FMatrix(); // identity
 	g_EVSConstants.ViewProjMatrix = FMatrix::MatrixOrthoLH(1.f, 1.f, -1.f, 1.f);
 	GfxContext.SetDynamicConstantBufferView(0, sizeof(EVSConstants), &g_EVSConstants);
-	GfxContext.SetDynamicConstantBufferView(1, sizeof(EPSConstants), &g_EPSConstants);
+	GfxContext.SetDynamicConstantBufferView(1, sizeof(EPSConstants), &g_PBRPSConstants);
 
 	GfxContext.Draw(3);
 	GfxContext.Finish(true);

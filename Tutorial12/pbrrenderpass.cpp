@@ -10,6 +10,7 @@
 #include "ColorBuffer.h"
 #include "Material.h"
 #include "BufferManager.h"
+#include "TemporalEffects.h"
 
 using namespace BufferManager;
 
@@ -32,7 +33,7 @@ void PBRRenderPass::Init(const std::vector < std::shared_ptr<FRenderItem>>& Item
 	SetupPipelineState(ShaderFile,entryVSPoint,entryPSPoint);
 }
 
-void PBRRenderPass::Render(FCommandContext& CommandContext, FCamera& MainCamera, 
+void PBRRenderPass::RenderBasePass(FCommandContext& CommandContext, FCamera& MainCamera, 
 	FCubeBuffer& IrradianceCube, FCubeBuffer& PrefilteredCube, FColorBuffer& PreintegratedGF)
 {
 	CommandContext.SetRootSignature(m_MeshSignature);
@@ -68,9 +69,9 @@ void PBRRenderPass::Render(FCommandContext& CommandContext, FCamera& MainCamera,
 				g_EVSConstants.ViewProjMatrix = InfoWrapper->BasePassInfo.viewMatrix * InfoWrapper->BasePassInfo.projectionMatrix;
 				GfxContext.SetDynamicConstantBufferView(0, sizeof(g_EVSConstants), &g_EVSConstants);
 
-				g_EPSConstants.Exposure = 1;
-				g_EPSConstants.CameraPos = MainCamera.GetPosition();
-				GfxContext.SetDynamicConstantBufferView(1, sizeof(g_EPSConstants), &g_EPSConstants);
+				g_PBRPSConstants.Exposure = 1;
+				g_PBRPSConstants.CameraPos = MainCamera.GetPosition();
+				GfxContext.SetDynamicConstantBufferView(1, sizeof(g_PBRPSConstants), &g_PBRPSConstants);
 
 				GfxContext.SetDynamicDescriptor(2, 0, Material->GetDiffuseTexture().GetSRV());
 				GfxContext.SetDynamicDescriptor(2, 1, Material->GetOpacityTexture().GetSRV());
