@@ -1,4 +1,3 @@
-cmake_minimum_required(VERSION 3.15)
 project(Tutorial03)
 set(LIBRARY_NAME "Tutorial03")
 add_compile_options("/std:c++17")
