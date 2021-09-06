@@ -311,7 +311,7 @@ public:
 
 	void RenderMesh(FCommandContext& GfxContext)
 	{
-		m_PBRRenderPass.RenderBasePass(GfxContext, m_Camera, m_IrradianceCube, m_PrefilteredCube, m_PreintegratedBRDF);
+		m_PBRRenderPass.Render(GfxContext, m_Camera, m_IrradianceCube, m_PrefilteredCube, m_PreintegratedBRDF);
 	}
 
 	void GenerateSHCoeffs()

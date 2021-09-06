@@ -93,7 +93,20 @@ float GetSpecularOcclusion(float NoV, float AO, float roughness)
     return saturate(pow(NoV + AO, exp2(-16.0 * roughness - 1.0)) - 1.0 + AO);
 }
 
-float3 CalcIBL(float3 N, float3 V, float3 Albedo, float Metallic, float Roughness, float AO, float4 SSR)
+float3 Calculate3DVelocity(float4 CurrentVelocity, float4 PreVelocity)
+{
+    float2 ScreenPos = CurrentVelocity.xy / CurrentVelocity.w - TemporalAAJitter.xy;
+    float2 PrevScreenPos = PreVelocity.xy / PreVelocity.w - TemporalAAJitter.zw;
+
+    float DeviceZ = CurrentVelocity.z / CurrentVelocity.w;
+    float PreDeviceZ = PreVelocity.z / PreVelocity.w;
+
+    float3 Velocity = float3(ScreenPos - PrevScreenPos, DeviceZ - PreDeviceZ);
+
+    return Velocity;
+}
+
+float4 CalcIBL(float3 N, float3 V, float3 Albedo, float Metallic, float Roughness, float AO, float4 SSR)
 {
     float3 R = reflect(-V, N); //incident ray, surface normal
 
@@ -151,7 +164,7 @@ float3 CalcIBL(float3 N, float3 V, float3 Albedo, float Metallic, float Roughnes
 
     float SpecAO = GetSpecularOcclusion(NoV, AO, Roughness);
     float3 Final = (Diffuse * AO + Specular * SpecAO) * (1 - SSR.a) + SSR.rgb;
-    return Final;
+    return float4(Final,1.0);
 }
 
 PixelInput VS_PBR(VertexInput In)
@@ -179,6 +192,7 @@ float4 PS_PBR(PixelInput In) : SV_Target
     float Metallic = MetallicMap.Sample(LinearSampler, In.Tex).x;
     float Roughness = RoughnessMap.Sample(LinearSampler, In.Tex).x;
     float AO = AOMap.Sample(LinearSampler, In.Tex).x;
+    float3 Emissive = EmissiveMap.Sample(LinearSampler, In.Tex).xyz;
 
     float3x3 TBN = float3x3(normalize(In.T), normalize(In.B), normalize(In.N));
     float3 tNormal = NormalMap.Sample(LinearSampler, In.Tex).xyz;
@@ -188,5 +202,60 @@ float4 PS_PBR(PixelInput In) : SV_Target
     float3 V = normalize(CameraPos - In.WorldPos);
     float3 R = reflect(-V, N); //incident ray, surface normal
 
-    return float4(CalcIBL(N, V, Albedo, Metallic, Roughness, AO, 0), 1.0);
+    return CalcIBL(N, V, Albedo, Metallic, Roughness, AO, 0);
+}
+
+void PS_PBR_GBuffer(PixelInput In, out PixelOutput Out)
+{
+    float Opacity = OpacityMap.Sample(LinearSampler, In.Tex).r;
+    clip(Opacity < 0.1f ? -1 : 1);
+
+    float3 Albedo = BaseMap.Sample(LinearSampler, In.Tex).xyz;
+    float Metallic = MetallicMap.Sample(LinearSampler, In.Tex).x;
+    float Roughness = RoughnessMap.Sample(LinearSampler, In.Tex).x;
+    float AO = AOMap.Sample(LinearSampler, In.Tex).x;
+    float3 Emissive = EmissiveMap.Sample(LinearSampler, In.Tex).xyz;
+
+    float3x3 TBN = float3x3(normalize(In.T), normalize(In.B), normalize(In.N));
+    float3 tNormal = NormalMap.Sample(LinearSampler, In.Tex).xyz;
+    tNormal = 2 * tNormal - 1.0; // [0,1] -> [-1, 1]
+    float3 N = mul(tNormal, TBN);
+
+    Out.Target0 = float4(Emissive, 1.0);
+    Out.Target1 = float4(0.5 * N + 0.5, 1.0);
+    Out.Target2 = float4(Metallic, 0.5, Roughness, 1.0);
+    Out.Target3 = float4(Albedo, AO);
+    Out.Target4 = float4(Calculate3DVelocity(In.VelocityScreenPosition, In.VelocityPrevScreenPosition), 0);
+}
+
+Texture2D GBufferA		: register(t0); // normal
+Texture2D GBufferB		: register(t1); // metallSpecularRoughness
+Texture2D GBufferC		: register(t2); // AlbedoAO
+Texture2D SceneDepthZ	: register(t3); // Depth
+//Texture2D SSRBuffer		: register(t4); // SSR
+
+float4 PS_IBL(float2 Tex : TEXCOORD, float4 ScreenPos : SV_Position) : SV_Target
+{
+    float3 N = GBufferA.Sample(LinearSampler, Tex).xyz;
+    N = 2.0 * N - 1.0;
+
+    float3 PBRParameters = GBufferB.SampleLevel(LinearSampler, Tex, 0).xyz;
+    float Metallic = PBRParameters.x;
+    float Roughness = PBRParameters.z;
+
+    float4 AlbedoAo = GBufferC.SampleLevel(LinearSampler, Tex, 0);
+    float AO = AlbedoAo.w;
+
+    float Depth = SceneDepthZ.SampleLevel(LinearSampler, Tex, 0).x;
+    //float4 SSR = SSRBuffer.SampleLevel(LinearSampler, Tex, 0);
+    float4 SSR = 0;
+    float2 ScreenCoord = ViewportUVToScreenPos(Tex);
+
+    float4 NDCPos = float4(ScreenCoord, Depth, 1.0f);
+    float4 WorldPos = mul(NDCPos, InvViewProj);
+    WorldPos /= WorldPos.w;
+
+    float3 V = normalize(CameraPos - WorldPos.xyz);
+    float4 IBL = CalcIBL(N, V, AlbedoAo.xyz, Metallic, Roughness, AO, SSR);
+    return IBL;
 }

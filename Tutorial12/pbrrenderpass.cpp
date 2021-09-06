@@ -33,7 +33,7 @@ void PBRRenderPass::Init(const std::vector < std::shared_ptr<FRenderItem>>& Item
 	SetupPipelineState(ShaderFile,entryVSPoint,entryPSPoint);
 }
 
-void PBRRenderPass::RenderBasePass(FCommandContext& CommandContext, FCamera& MainCamera, 
+void PBRRenderPass::Render(FCommandContext& CommandContext, FCamera& MainCamera, 
 	FCubeBuffer& IrradianceCube, FCubeBuffer& PrefilteredCube, FColorBuffer& PreintegratedGF)
 {
 	CommandContext.SetRootSignature(m_MeshSignature);
@@ -90,6 +90,16 @@ void PBRRenderPass::RenderBasePass(FCommandContext& CommandContext, FCamera& Mai
 			Model->CustomDrawParam = nullptr;
 		}
 	}
+}
+
+void PBRRenderPass::RenderBasePass(FCommandContext& CommandContext, FCamera& MainCamera, FCubeBuffer& IrradianceCube, FCubeBuffer& PrefilteredCube, FColorBuffer& PreintegratedGF)
+{
+
+}
+
+void PBRRenderPass::RenderIBL(FCommandContext& CommandContext)
+{
+
 }
 
 void PBRRenderPass::Update(FCamera& MainCamera)
