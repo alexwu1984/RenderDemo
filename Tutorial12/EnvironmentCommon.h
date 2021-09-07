@@ -5,6 +5,9 @@ __declspec(align(16)) struct EVSConstants
 {
 	FMatrix ModelMatrix;
 	FMatrix ViewProjMatrix;
+	FMatrix PreviousModelMatrix;
+	FMatrix PreviousViewProjMatrix;
+	Vector2f ViewportSize;
 } ;
 extern EVSConstants g_EVSConstants;
 

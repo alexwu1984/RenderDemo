@@ -62,6 +62,7 @@ public:
 	void SetPosition(float x, float y, float z);
 	Vector3f GetPosition() const;
 	const FMatrix GetModelMatrix() { return m_ModelMatrix; }
+	const FMatrix GetPreviousModelMatrix() { return m_PreviousModelMatrix; }
 	uint32_t GetLightMaerialStride() { return sizeof(m_lightMaterial); }
 	void SetLightDir(const Vector3f& lightDir);
 	void SetLightColor(const Vector4f& lightColor);
@@ -74,6 +75,7 @@ public:
 	void InitRootIndex(int lightMaterialIndex, int textureIndex);
 	void SetColor(const Vector3f& color);
 	bool HasTexture() const;
+	void Update();
 
 	std::function<void(FCommandContext&, std::shared_ptr< FMaterial>,std::shared_ptr<FRenderItem::BasePassInfoWrapper>)> CustomDrawParam;
 
@@ -111,6 +113,7 @@ protected:
 	FMatrix m_RotationMatrix;
 	Vector3f m_Position;
 	FMatrix m_ModelMatrix;
+	FMatrix m_PreviousModelMatrix;
 
 	std::wstring m_FileName;
 

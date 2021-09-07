@@ -18,11 +18,12 @@ public:
 
 	void Init(const std::vector < std::shared_ptr<FRenderItem>>& ItemList, int Width, int Height,
 		const std::wstring& ShaderFile, const std::string& entryVSPoint, const std::string& entryPSPoint);
+	void InitIBL(const std::wstring& ShaderFile, const std::string& entryVSPoint, const std::string& entryPSPoint);
 	void Render(FCommandContext& CommandContext, FCamera& MainCamera,
 		FCubeBuffer& IrradianceCube, FCubeBuffer& PrefilteredCube, FColorBuffer& PreintegratedGF);
 	void RenderBasePass(FCommandContext& CommandContext, FCamera& MainCamera,
 		FCubeBuffer& IrradianceCube, FCubeBuffer& PrefilteredCube, FColorBuffer& PreintegratedGF);
-	void RenderIBL(FCommandContext& CommandContext);
+	void RenderIBL(FCommandContext& GfxContext, FCamera& MainCamera, FCubeBuffer& IrradianceCube, FCubeBuffer& PrefilteredCube, FColorBuffer& PreintegratedGF);
 	void Update(FCamera& MainCamera);
 	void Rotate(float RotateY);
 
@@ -33,6 +34,8 @@ private:
 private:
 	std::vector < std::shared_ptr<FRenderItem>> m_ItemList;
 	std::shared_ptr< RenderPipelineInfo> m_RenderState;
+	std::shared_ptr< RenderPipelineInfo> m_IBLRenderState;
 	FRootSignature m_MeshSignature;
+	FRootSignature m_IBLSignature;
 	Vector2<int> m_GameWndSize;
 };

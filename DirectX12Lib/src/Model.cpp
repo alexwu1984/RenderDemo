@@ -412,6 +412,12 @@ void FModel::InitializeResource()
 	 return false;
  }
 
+
+ void FModel::Update()
+ {
+	 m_PreviousModelMatrix = m_ModelMatrix;
+ }
+
  void FRenderItem::Init()
  {
 	 std::shared_ptr< BasePassInfoWrapper> InfoWrapper = std::make_shared<BasePassInfoWrapper>();

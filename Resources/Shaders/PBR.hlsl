@@ -6,6 +6,9 @@ cbuffer VSContant : register(b0)
 {
 	float4x4 ModelMatrix;
 	float4x4 ViewProjMatrix;
+    float4x4 PreviousModelMatrix;
+    float4x4 PreviousViewProjMatrix;
+    float2 ViewportSize;
 };
 
 cbuffer PSContant : register(b0)
@@ -171,10 +174,15 @@ PixelInput VS_PBR(VertexInput In)
 {
 	PixelInput Out;
 	Out.Tex = In.Tex;
-
+    
+    float4 PreviousWorldPos = mul(float4(In.Position, 1.0), PreviousModelMatrix);
+    float4 ClipPos = mul(PreviousWorldPos, PreviousViewProjMatrix);
+    Out.VelocityPrevScreenPosition = ClipPos;
+    
 	float4 WorldPos = mul(float4(In.Position, 1.0), ModelMatrix);
 	Out.WorldPos = WorldPos.xyz;
 	Out.Position = mul(WorldPos, ViewProjMatrix);
+    Out.VelocityScreenPosition = Out.Position;
 
 	Out.N = mul(In.Normal, (float3x3)ModelMatrix);
     Out.T = mul(In.Tangent.xyz, (float3x3) ModelMatrix);
