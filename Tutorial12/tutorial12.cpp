@@ -256,8 +256,8 @@ public:
 		m_SHCubeMapDebug.Init(m_CubeMapCross, m_GameDesc.Width, m_GameDesc.Height, L"../Resources/Shaders/EnvironmentShaders.hlsl", "VS_CubeMapCross", "PS_SphericalHarmonics");
 
 		m_PreintegratedBRDF.Create(L"PreintegratedGF", 128, 32, 1, DXGI_FORMAT_R32G32_FLOAT);
-		m_PBRRenderPass.Init(DiffiusePassList, m_GameDesc.Width, m_GameDesc.Height, L"../Resources/Shaders/PBR.hlsl", "VS_PBR", "PS_PBR");
-		
+		m_PBRRenderPass.Init(DiffiusePassList, m_GameDesc.Width, m_GameDesc.Height, L"../Resources/Shaders/PBR.hlsl", "VS_PBR", "PS_PBR_GBuffer");
+		m_PBRRenderPass.InitIBL(L"../Resources/Shaders/PBR.hlsl", "VS_IBL", "PS_IBL");
 	}
 
 	void ShowTexture2D(FCommandContext& GfxContext, FTexture& Texture2D)
@@ -311,7 +311,8 @@ public:
 
 	void RenderMesh(FCommandContext& GfxContext)
 	{
-		m_PBRRenderPass.Render(GfxContext, m_Camera, m_IrradianceCube, m_PrefilteredCube, m_PreintegratedBRDF);
+		m_PBRRenderPass.RenderBasePass(GfxContext, m_Camera, m_IrradianceCube, m_PrefilteredCube, m_PreintegratedBRDF);
+		m_PBRRenderPass.RenderIBL(GfxContext, m_Camera, m_IrradianceCube, m_PrefilteredCube, m_PreintegratedBRDF);
 	}
 
 	void GenerateSHCoeffs()

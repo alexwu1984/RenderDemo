@@ -22,12 +22,12 @@ void BufferManager::InitializeRenderingBuffers(uint32_t NativeWidth, uint32_t Na
 	g_GBufferA.Create(L"GBufferA", NativeWidth, NativeHeight, 1, DXGI_FORMAT_R10G10B10A2_UNORM);
 	g_GBufferB.Create(L"GBufferB", NativeWidth, NativeHeight, 1, DXGI_FORMAT_R8G8B8A8_UNORM);
 	g_GBufferC.Create(L"GBufferC", NativeWidth, NativeHeight, 1, DXGI_FORMAT_R8G8B8A8_UNORM);
-	g_SSRBuffer.Create(L"SSR", NativeWidth, NativeHeight, 1, DXGI_FORMAT_R16G16B16A16_FLOAT);
+	//g_SSRBuffer.Create(L"SSR", NativeWidth, NativeHeight, 1, DXGI_FORMAT_R16G16B16A16_FLOAT);
 }
 
 void BufferManager::DestroyRenderingBuffers()
 {
-	g_SSRBuffer.Destroy();
+	//g_SSRBuffer.Destroy();
 	g_SceneColorBuffer.Destroy();
 	g_SceneDepthZ.Destroy();
 	g_GBufferA.Destroy();

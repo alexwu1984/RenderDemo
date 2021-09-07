@@ -191,6 +191,7 @@ PixelInput VS_PBR(VertexInput In)
     return Out;
 }
 
+
 float4 PS_PBR(PixelInput In) : SV_Target
 {
     float Opacity = OpacityMap.Sample(LinearSampler, In.Tex).r;
@@ -235,6 +236,23 @@ void PS_PBR_GBuffer(PixelInput In, out PixelOutput Out)
     Out.Target3 = float4(Albedo, AO);
     Out.Target4 = float4(Calculate3DVelocity(In.VelocityScreenPosition, In.VelocityPrevScreenPosition), 0);
 }
+
+struct VertexOutput
+{
+    float2 Tex : TEXCOORD;
+    float4 ScreenPos : SV_Position;
+};
+
+VertexOutput VS_IBL(in uint VertID : SV_VertexID)
+{
+    VertexOutput Output;
+	// Texture coordinates range [0, 2], but only [0, 1] appears on screen.
+    float2 Tex = float2(uint2(VertID, VertID << 1) & 2);
+    Output.Tex = Tex;
+    Output.ScreenPos = float4(lerp(float2(-1, 1), float2(1, -1), Tex), 0, 1);
+    return Output;
+}
+
 
 Texture2D GBufferA		: register(t0); // normal
 Texture2D GBufferB		: register(t1); // metallSpecularRoughness

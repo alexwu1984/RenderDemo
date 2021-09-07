@@ -36,13 +36,7 @@ void PBRRenderPass::Init(const std::vector < std::shared_ptr<FRenderItem>>& Item
 
 
 void PBRRenderPass::InitIBL(const std::wstring& ShaderFile, const std::string& entryVSPoint, const std::string& entryPSPoint)
-{
-
-	std::shared_ptr<FShader> shader = FShaderMgr::Get().CreateShaderDirect(ShaderFile, entryVSPoint, entryPSPoint);
-	m_IBLRenderState = std::make_shared<RenderPipelineInfo>(shader);
-	m_IBLRenderState->SetupRenderTargetFormat(1, &g_SceneColorBuffer.GetFormat(), DXGI_FORMAT_UNKNOWN);
-	m_IBLRenderState->SetRasterizerState(FGraphicsPipelineState::RasterizerTwoSided);
-
+{	
 	FSamplerDesc DefaultSamplerDesc(D3D12_FILTER_MIN_MAG_MIP_LINEAR, D3D12_TEXTURE_ADDRESS_MODE_CLAMP);
 	m_IBLSignature.Reset(3, 1);
 	m_IBLSignature[0].InitAsBufferCBV(0, D3D12_SHADER_VISIBILITY_VERTEX);
@@ -50,6 +44,20 @@ void PBRRenderPass::InitIBL(const std::wstring& ShaderFile, const std::string& e
 	m_IBLSignature[2].InitAsDescriptorRange(D3D12_DESCRIPTOR_RANGE_TYPE_SRV, 0, 10); //scenecolor, normal, metallSpecularRoughness, AlbedoAO, velocity, irradiance, prefiltered, preintegratedGF
 	m_IBLSignature.InitStaticSampler(0, DefaultSamplerDesc, D3D12_SHADER_VISIBILITY_PIXEL);
 	m_IBLSignature.Finalize(L"IBL RootSignature", D3D12_ROOT_SIGNATURE_FLAG_ALLOW_INPUT_ASSEMBLER_INPUT_LAYOUT);
+
+	std::shared_ptr<FShader> shader = FShaderMgr::Get().CreateShaderDirect(ShaderFile, entryVSPoint, entryPSPoint);
+	m_IBLRenderState = std::make_shared<RenderPipelineInfo>(shader);
+	m_IBLRenderState->SetupRenderTargetFormat(1, &g_SceneColorBuffer.GetFormat(), DXGI_FORMAT_UNKNOWN);
+	m_IBLRenderState->SetRasterizerState(FGraphicsPipelineState::RasterizerTwoSided);
+	D3D12_BLEND_DESC BlendAdd = FPipelineState::BlendTraditional;
+	BlendAdd.RenderTarget[0].SrcBlend = D3D12_BLEND_ONE;
+	BlendAdd.RenderTarget[0].DestBlend = D3D12_BLEND_ONE;
+	BlendAdd.RenderTarget[0].SrcBlendAlpha = D3D12_BLEND_ONE;
+	BlendAdd.RenderTarget[0].DestBlendAlpha = D3D12_BLEND_ONE;
+	m_IBLRenderState->SetDepthStencilState(FPipelineState::DepthStateDisabled);
+	m_IBLRenderState->SetBlendState(BlendAdd);
+	m_IBLRenderState->SetupPipeline(m_IBLSignature);
+	m_IBLRenderState->PipelineFinalize();
 }
 
 void PBRRenderPass::Render(FCommandContext& CommandContext, FCamera& MainCamera, 
@@ -127,6 +135,7 @@ void PBRRenderPass::RenderBasePass(FCommandContext& CommandContext, FCamera& Mai
 	// Indicate that the back buffer will be used as a render target.
 	CommandContext.TransitionResource(IrradianceCube, D3D12_RESOURCE_STATE_PIXEL_SHADER_RESOURCE);
 	CommandContext.TransitionResource(PrefilteredCube, D3D12_RESOURCE_STATE_PIXEL_SHADER_RESOURCE);
+	CommandContext.TransitionResource(PreintegratedGF, D3D12_RESOURCE_STATE_PIXEL_SHADER_RESOURCE);
 
 	CommandContext.TransitionResource(SceneBuffer, D3D12_RESOURCE_STATE_RENDER_TARGET);
 	CommandContext.TransitionResource(g_GBufferA, D3D12_RESOURCE_STATE_RENDER_TARGET);
@@ -202,10 +211,13 @@ void PBRRenderPass::RenderIBL(FCommandContext& GfxContext, FCamera& MainCamera, 
 	// Indicate that the back buffer will be used as a render target.
 	GfxContext.TransitionResource(IrradianceCube, D3D12_RESOURCE_STATE_PIXEL_SHADER_RESOURCE);
 	GfxContext.TransitionResource(PrefilteredCube, D3D12_RESOURCE_STATE_PIXEL_SHADER_RESOURCE);
+	GfxContext.TransitionResource(PreintegratedGF, D3D12_RESOURCE_STATE_PIXEL_SHADER_RESOURCE);
+
 	GfxContext.TransitionResource(SceneBuffer, D3D12_RESOURCE_STATE_RENDER_TARGET);
 	GfxContext.TransitionResource(g_GBufferA, D3D12_RESOURCE_STATE_PIXEL_SHADER_RESOURCE);
 	GfxContext.TransitionResource(g_GBufferB, D3D12_RESOURCE_STATE_PIXEL_SHADER_RESOURCE);
 	GfxContext.TransitionResource(g_GBufferC, D3D12_RESOURCE_STATE_PIXEL_SHADER_RESOURCE);
+	//GfxContext.TransitionResource(BufferManager::g_SSRBuffer, D3D12_RESOURCE_STATE_PIXEL_SHADER_RESOURCE);
 	GfxContext.TransitionResource(g_SceneDepthZ, D3D12_RESOURCE_STATE_PIXEL_SHADER_RESOURCE, true);
 
 	GfxContext.SetRenderTargets(1, &SceneBuffer.GetRTV());
@@ -223,12 +235,12 @@ void PBRRenderPass::RenderIBL(FCommandContext& GfxContext, FCamera& MainCamera, 
 	g_PBRPSConstants.InvViewProj = MainCamera.GetViewProjMatrix().Inverse();
 	g_PBRPSConstants.MaxMipLevel = PrefilteredCube.GetNumMips();
 
-
 	GfxContext.SetDynamicConstantBufferView(1, sizeof(g_PBRPSConstants), &g_PBRPSConstants);
 	GfxContext.SetDynamicDescriptor(2, 0, g_GBufferA.GetSRV());
 	GfxContext.SetDynamicDescriptor(2, 1, g_GBufferB.GetSRV());
 	GfxContext.SetDynamicDescriptor(2, 2, g_GBufferC.GetSRV());
 	GfxContext.SetDynamicDescriptor(2, 3, g_SceneDepthZ.GetDepthSRV());
+	//GfxContext.SetDynamicDescriptor(2, 4, BufferManager::g_SSRBuffer.GetSRV());
 
 	GfxContext.SetDynamicDescriptor(2, 7, IrradianceCube.GetCubeSRV());
 	GfxContext.SetDynamicDescriptor(2, 8, PrefilteredCube.GetCubeSRV());
@@ -277,7 +289,12 @@ void PBRRenderPass::SetupPipelineState(const std::wstring& ShaderFile, const std
 {
 	std::shared_ptr<FShader> shader = FShaderMgr::Get().CreateShaderDirect(ShaderFile,entryVSPoint,entryPSPoint);
 	m_RenderState = std::make_shared<RenderPipelineInfo>(shader);
-	m_RenderState->SetupRenderTargetFormat(1, &g_SceneColorBuffer.GetFormat(), g_SceneDepthZ.GetFormat());
+	DXGI_FORMAT RTFormats[] = {
+			g_SceneColorBuffer.GetFormat(), g_GBufferA.GetFormat(), g_GBufferB.GetFormat(), g_GBufferC.GetFormat(), MotionBlur::g_VelocityBuffer.GetFormat(),
+	};
+	m_RenderState->SetupRenderTargetFormat(5, RTFormats, g_SceneDepthZ.GetFormat());
+	
+	//m_RenderState->SetupRenderTargetFormat(1, &g_SceneColorBuffer.GetFormat(), g_SceneDepthZ.GetFormat());
 	m_RenderState->SetRasterizerState(FGraphicsPipelineState::RasterizerTwoSided);
 
 	bool InitLayout = false;
