@@ -29,14 +29,12 @@ void SkyBoxPass::Init(std::shared_ptr< FModel> skyBox, int32_t width, int height
 	SetupPipelineState(ShaderFile, entryVSPoint, entryPSPoint);
 }
 
-void SkyBoxPass::Render(FCommandContext& GfxContext, FCamera& MainCamera,FCubeBuffer& CubeBuffer)
+void SkyBoxPass::Render(FCommandContext& GfxContext, FCamera& MainCamera,FCubeBuffer& CubeBuffer, bool clear)
 {
 	GfxContext.SetRootSignature(m_SkySignature);
 	GfxContext.SetPipelineState(m_RenderState->GetPipelineState());
 	GfxContext.SetPrimitiveTopology(D3D_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
 	GfxContext.SetViewportAndScissor(0, 0, m_Size.x, m_Size.y);
-
-	RenderWindow& renderWindow = RenderWindow::Get();
 
 	// Indicate that the back buffer will be used as a render target.
 	GfxContext.TransitionResource(CubeBuffer, D3D12_RESOURCE_STATE_PIXEL_SHADER_RESOURCE);
@@ -46,8 +44,11 @@ void SkyBoxPass::Render(FCommandContext& GfxContext, FCamera& MainCamera,FCubeBu
 	GfxContext.SetRenderTargets(1, &g_SceneColorBuffer.GetRTV());
 	GfxContext.SetRenderTargets(1, &g_SceneColorBuffer.GetRTV(), g_SceneDepthZ.GetDSV());
 
-	GfxContext.ClearColor(g_SceneColorBuffer);
-	GfxContext.ClearDepth(g_SceneDepthZ);
+	if (clear)
+	{
+		GfxContext.ClearColor(g_SceneColorBuffer);
+		GfxContext.ClearDepth(g_SceneDepthZ);
+	}
 
 	g_EVSConstants.ModelMatrix = FMatrix::TranslateMatrix(MainCamera.GetPosition()); // move with camera
 	g_EVSConstants.ViewProjMatrix = MainCamera.GetViewMatrix() * MainCamera.GetProjectionMatrix();

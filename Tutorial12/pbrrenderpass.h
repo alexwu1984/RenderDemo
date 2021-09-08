@@ -22,7 +22,7 @@ public:
 	void Render(FCommandContext& CommandContext, FCamera& MainCamera,
 		FCubeBuffer& IrradianceCube, FCubeBuffer& PrefilteredCube, FColorBuffer& PreintegratedGF);
 	void RenderBasePass(FCommandContext& CommandContext, FCamera& MainCamera,
-		FCubeBuffer& IrradianceCube, FCubeBuffer& PrefilteredCube, FColorBuffer& PreintegratedGF);
+		FCubeBuffer& IrradianceCube, FCubeBuffer& PrefilteredCube, FColorBuffer& PreintegratedGF,bool Clear);
 	void RenderIBL(FCommandContext& GfxContext, FCamera& MainCamera, FCubeBuffer& IrradianceCube, FCubeBuffer& PrefilteredCube, FColorBuffer& PreintegratedGF);
 	void Update(FCamera& MainCamera);
 	void Rotate(float RotateY);

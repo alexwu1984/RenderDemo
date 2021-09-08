@@ -122,22 +122,20 @@ void PBRRenderPass::Render(FCommandContext& CommandContext, FCamera& MainCamera,
 	}
 }
 
-void PBRRenderPass::RenderBasePass(FCommandContext& CommandContext, FCamera& MainCamera, FCubeBuffer& IrradianceCube, FCubeBuffer& PrefilteredCube, FColorBuffer& PreintegratedGF)
+void PBRRenderPass::RenderBasePass(FCommandContext& CommandContext, FCamera& MainCamera, FCubeBuffer& IrradianceCube, FCubeBuffer& PrefilteredCube, FColorBuffer& PreintegratedGF, bool Clear)
 {
 	CommandContext.SetRootSignature(m_MeshSignature);
 	CommandContext.SetPipelineState(m_RenderState->GetPipelineState());
 	CommandContext.SetPrimitiveTopology(D3D_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
 	CommandContext.SetViewportAndScissor(0, 0, m_GameWndSize.x, m_GameWndSize.y);
 
-	FColorBuffer& SceneBuffer = g_SceneColorBuffer;
-	FDepthBuffer& DepthBuffer = g_SceneDepthZ;
 
 	// Indicate that the back buffer will be used as a render target.
 	CommandContext.TransitionResource(IrradianceCube, D3D12_RESOURCE_STATE_PIXEL_SHADER_RESOURCE);
 	CommandContext.TransitionResource(PrefilteredCube, D3D12_RESOURCE_STATE_PIXEL_SHADER_RESOURCE);
 	CommandContext.TransitionResource(PreintegratedGF, D3D12_RESOURCE_STATE_PIXEL_SHADER_RESOURCE);
 
-	CommandContext.TransitionResource(SceneBuffer, D3D12_RESOURCE_STATE_RENDER_TARGET);
+	CommandContext.TransitionResource(g_SceneColorBuffer, D3D12_RESOURCE_STATE_RENDER_TARGET);
 	CommandContext.TransitionResource(g_GBufferA, D3D12_RESOURCE_STATE_RENDER_TARGET);
 	CommandContext.TransitionResource(g_GBufferB, D3D12_RESOURCE_STATE_RENDER_TARGET);
 	CommandContext.TransitionResource(g_GBufferC, D3D12_RESOURCE_STATE_RENDER_TARGET);
@@ -145,16 +143,19 @@ void PBRRenderPass::RenderBasePass(FCommandContext& CommandContext, FCamera& Mai
 	CommandContext.TransitionResource(g_SceneDepthZ, D3D12_RESOURCE_STATE_DEPTH_WRITE, true);
 
 	D3D12_CPU_DESCRIPTOR_HANDLE RTVs[] = {
-		SceneBuffer.GetRTV(), g_GBufferA.GetRTV(), g_GBufferB.GetRTV(), g_GBufferC.GetRTV(), MotionBlur::g_VelocityBuffer.GetRTV(),
+		g_SceneColorBuffer.GetRTV(), g_GBufferA.GetRTV(), g_GBufferB.GetRTV(), g_GBufferC.GetRTV(), MotionBlur::g_VelocityBuffer.GetRTV(),
 	};
 	CommandContext.SetRenderTargets(5, RTVs, g_SceneDepthZ.GetDSV());
 
-	CommandContext.ClearColor(SceneBuffer);
-	CommandContext.ClearColor(g_GBufferA);
-	CommandContext.ClearColor(g_GBufferB);
-	CommandContext.ClearColor(g_GBufferC);
-	CommandContext.ClearColor(MotionBlur::g_VelocityBuffer);
-	CommandContext.ClearDepth(DepthBuffer);
+	if (Clear)
+	{
+		//CommandContext.ClearColor(g_SceneColorBuffer);
+		CommandContext.ClearColor(g_GBufferA);
+		CommandContext.ClearColor(g_GBufferB);
+		CommandContext.ClearColor(g_GBufferC);
+		CommandContext.ClearColor(MotionBlur::g_VelocityBuffer);
+		CommandContext.ClearDepth(g_SceneDepthZ);
+	}
 
 	for (auto Item : m_ItemList)
 	{

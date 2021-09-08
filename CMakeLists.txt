@@ -1,6 +1,6 @@
 ﻿cmake_minimum_required(VERSION 3.10)
 
-project(DirectX12Tutorial)
+project(RenderDemo)
 
 if(WIN32)
 	add_compile_definitions(_UNICODE UNICODE)

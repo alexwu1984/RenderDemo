@@ -20,7 +20,7 @@ public:
 
 	void Init(std::shared_ptr< FModel> skyBox,int32_t width,int height,
 		const std::wstring& ShaderFile, const std::string& entryVSPoint, const std::string& entryPSPoint);
-	void Render(FCommandContext& GfxContext, FCamera& MainCamera, FCubeBuffer& CubeBuffer);
+	void Render(FCommandContext& GfxContext, FCamera& MainCamera, FCubeBuffer& CubeBuffer,bool clear);
 	void ShowCubeMapDebugView(FCommandContext& GfxContext, FCubeBuffer& CubeBuffer, float Exposure, int MipLevel, const std::vector<Vector3f>& SHCoeffs,int SHDegree);
 
 private:

@@ -219,6 +219,7 @@ public:
 		case SM_PBR:
 			SkyPass(GfxContext, m_CubeBuffer);
 			RenderMesh(GfxContext);
+
 			TemporalEffects::ResolveImage(GfxContext, BufferManager::g_SceneColorBuffer);
 			PostProcessing::Render(GfxContext);
 			break;
@@ -306,12 +307,12 @@ public:
 
 	void SkyPass(FCommandContext& GfxContext,FCubeBuffer& CubeBuffer)
 	{
-		m_SkyPass.Render(GfxContext,m_Camera, CubeBuffer);
+		m_SkyPass.Render(GfxContext,m_Camera, CubeBuffer,false);
 	}
 
 	void RenderMesh(FCommandContext& GfxContext)
 	{
-		m_PBRRenderPass.RenderBasePass(GfxContext, m_Camera, m_IrradianceCube, m_PrefilteredCube, m_PreintegratedBRDF);
+		m_PBRRenderPass.RenderBasePass(GfxContext, m_Camera, m_IrradianceCube, m_PrefilteredCube, m_PreintegratedBRDF,true);
 		m_PBRRenderPass.RenderIBL(GfxContext, m_Camera, m_IrradianceCube, m_PrefilteredCube, m_PreintegratedBRDF);
 	}
 
