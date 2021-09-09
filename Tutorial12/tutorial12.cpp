@@ -168,7 +168,8 @@ public:
 	virtual void OnUpdate()
 	{
 		FDirectLightGameMode::OnUpdate();
-		m_PBRRenderPass.Update(m_Camera);
+
+		m_PBRRenderPass.Update();
 
 		if (m_RotateMesh)
 		{
@@ -182,7 +183,7 @@ public:
 
 	virtual void DoRender(FCommandContext& GfxContext)
 	{
-
+		
 		RenderWindow& renderWindow = RenderWindow::Get();
 		FColorBuffer& BackBuffer = renderWindow.GetBackBuffer();
 		GfxContext.TransitionResource(BackBuffer, D3D12_RESOURCE_STATE_RENDER_TARGET,true);
@@ -194,7 +195,7 @@ public:
 			ShowTexture2D(GfxContext, m_TextureLongLat);
 			break;
 		case SM_SkyBox:
-			SkyPass(GfxContext, m_CubeBuffer);
+			m_SkyPass.Render(GfxContext, m_Camera, m_CubeBuffer, true);
 			PostProcessing::Render(GfxContext);
 			break;
 		case SM_CubeMapCross:
@@ -217,12 +218,15 @@ public:
 			PostProcessing::Render(GfxContext);
 			break;
 		case SM_PBR:
-			SkyPass(GfxContext, m_CubeBuffer);
-			RenderMesh(GfxContext);
+		{
+			m_PBRRenderPass.RenderBasePass(GfxContext, m_Camera, m_IrradianceCube, m_PrefilteredCube, m_PreintegratedBRDF, true);
+			m_SkyPass.Render(GfxContext, m_Camera, m_CubeBuffer, false);
+			m_PBRRenderPass.RenderIBL(GfxContext, m_Camera, m_IrradianceCube, m_PrefilteredCube, m_PreintegratedBRDF);
 
 			TemporalEffects::ResolveImage(GfxContext, BufferManager::g_SceneColorBuffer);
 			PostProcessing::Render(GfxContext);
 			break;
+		}
 		};
 
 		OnGUI(GfxContext);
@@ -305,16 +309,6 @@ public:
 		m_PreintergrateBRDFPass.IntegrateBRDF(m_PreintegratedBRDF);
 	}
 
-	void SkyPass(FCommandContext& GfxContext,FCubeBuffer& CubeBuffer)
-	{
-		m_SkyPass.Render(GfxContext,m_Camera, CubeBuffer,false);
-	}
-
-	void RenderMesh(FCommandContext& GfxContext)
-	{
-		m_PBRRenderPass.RenderBasePass(GfxContext, m_Camera, m_IrradianceCube, m_PrefilteredCube, m_PreintegratedBRDF,true);
-		m_PBRRenderPass.RenderIBL(GfxContext, m_Camera, m_IrradianceCube, m_PrefilteredCube, m_PreintegratedBRDF);
-	}
 
 	void GenerateSHCoeffs()
 	{

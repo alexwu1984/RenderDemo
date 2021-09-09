@@ -110,7 +110,9 @@ public:
 		{
 			m_ShaderMap = std::make_shared<FShadowMap>(SHADOW_BUFFER_SIZE, SHADOW_BUFFER_SIZE);
 			m_ShadowMapRenderState->SetupRenderTargetFormat(0, nullptr, DXGI_FORMAT_D24_UNORM_S8_UINT);
-			m_ShadowMapRenderState->SetRasterizerState(FGraphicsPipelineState::RasterizerShadow);
+			D3D12_RASTERIZER_DESC RasterizerShadow = FGraphicsPipelineState::RasterizerShadow;
+			RasterizerShadow.FrontCounterClockwise = TRUE;
+			m_ShadowMapRenderState->SetRasterizerState(RasterizerShadow);
 			m_ShadowMapRenderState->SetBlendState(FPipelineState::BlendNoColorWrite);
 		}
 

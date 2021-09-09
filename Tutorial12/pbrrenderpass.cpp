@@ -149,7 +149,7 @@ void PBRRenderPass::RenderBasePass(FCommandContext& CommandContext, FCamera& Mai
 
 	if (Clear)
 	{
-		//CommandContext.ClearColor(g_SceneColorBuffer);
+		CommandContext.ClearColor(g_SceneColorBuffer);
 		CommandContext.ClearColor(g_GBufferA);
 		CommandContext.ClearColor(g_GBufferB);
 		CommandContext.ClearColor(g_GBufferC);
@@ -164,12 +164,22 @@ void PBRRenderPass::RenderBasePass(FCommandContext& CommandContext, FCamera& Mai
 		{
 			Model->CustomDrawParam = [this, &MainCamera, &IrradianceCube, &PrefilteredCube, &PreintegratedGF, Model](FCommandContext& GfxContext, std::shared_ptr< FMaterial> Material, std::shared_ptr<FRenderItem::BasePassInfoWrapper> InfoWrapper)
 			{
-				g_EVSConstants.ModelMatrix = Model->GetModelMatrix();
-				g_EVSConstants.ViewProjMatrix = MainCamera.GetViewProjMatrix();
-				g_EVSConstants.PreviousModelMatrix = Model->GetPreviousModelMatrix();
-				g_EVSConstants.PreviousViewProjMatrix = MainCamera.GetPreviousViewProjMatrix();
-				g_EVSConstants.ViewportSize = Vector2f(m_GameWndSize.x, m_GameWndSize.y);
-
+				if (TemporalEffects::g_EnableTAA)
+				{
+					g_EVSConstants.ModelMatrix = Model->GetModelMatrix();
+					g_EVSConstants.ViewProjMatrix = MainCamera.GetViewMatrix() * TemporalEffects::HackAddTemporalAAProjectionJitter(MainCamera, m_GameWndSize.x, m_GameWndSize.y, false);
+					g_EVSConstants.PreviousModelMatrix = Model->GetPreviousModelMatrix();
+					g_EVSConstants.PreviousViewProjMatrix = MainCamera.GetPreviousViewMatrix() * TemporalEffects::HackAddTemporalAAProjectionJitter(MainCamera, m_GameWndSize.x, m_GameWndSize.y, true);
+					g_EVSConstants.ViewportSize = Vector2f(m_GameWndSize.x, m_GameWndSize.y);
+				}
+				else
+				{
+					g_EVSConstants.ModelMatrix = Model->GetModelMatrix();
+					g_EVSConstants.ViewProjMatrix = MainCamera.GetViewProjMatrix();
+					g_EVSConstants.PreviousModelMatrix = Model->GetPreviousModelMatrix();
+					g_EVSConstants.PreviousViewProjMatrix = MainCamera.GetPreviousViewProjMatrix();
+					g_EVSConstants.ViewportSize = Vector2f(m_GameWndSize.x, m_GameWndSize.y);
+				}
 
 				GfxContext.SetDynamicConstantBufferView(0, sizeof(g_EVSConstants), &g_EVSConstants);
 
@@ -177,6 +187,9 @@ void PBRRenderPass::RenderBasePass(FCommandContext& CommandContext, FCamera& Mai
 				g_PBRPSConstants.CameraPos = MainCamera.GetPosition();
 				g_PBRPSConstants.InvViewProj = MainCamera.GetViewProjMatrix().Inverse();
 				g_PBRPSConstants.MaxMipLevel = PrefilteredCube.GetNumMips();
+
+				TemporalEffects::GetJitterOffset(g_PBRPSConstants.TemporalAAJitter, m_GameWndSize.x, m_GameWndSize.y);
+
 				GfxContext.SetDynamicConstantBufferView(1, sizeof(g_PBRPSConstants), &g_PBRPSConstants);
 
 				GfxContext.SetDynamicDescriptor(2, 0, Material->GetDiffuseTexture().GetSRV());
@@ -223,13 +236,6 @@ void PBRRenderPass::RenderIBL(FCommandContext& GfxContext, FCamera& MainCamera, 
 
 	GfxContext.SetRenderTargets(1, &SceneBuffer.GetRTV());
 
-	//g_EVSConstants.ModelMatrix = g_EVSConstants
-	//g_EVSConstants.ViewProjMatrix = m_Camera.GetViewMatrix() * m_Camera.GetProjectionMatrix();
-	//g_EVSConstants.PreviousModelMatrix = m_Mesh->GetPreviousModelMatrix();
-	//g_EVSConstants.PreviousViewProjMatrix = m_Camera.GetPreviousViewProjMatrix();
-	//g_EVSConstants.ViewportSize = Vector2f(m_MainViewport.Width, m_MainViewport.Height);
-
-	//GfxContext.SetDynamicConstantBufferView(0, sizeof(m_VSConstants), &m_VSConstants);
 
 	g_PBRPSConstants.Exposure = 1;
 	g_PBRPSConstants.CameraPos = MainCamera.GetPosition();
@@ -250,7 +256,7 @@ void PBRRenderPass::RenderIBL(FCommandContext& GfxContext, FCamera& MainCamera, 
 	GfxContext.Draw(3);
 }
 
-void PBRRenderPass::Update(FCamera& MainCamera)
+void PBRRenderPass::Update()
 {
 	for (auto Item : m_ItemList)
 	{
@@ -295,8 +301,9 @@ void PBRRenderPass::SetupPipelineState(const std::wstring& ShaderFile, const std
 	};
 	m_RenderState->SetupRenderTargetFormat(5, RTFormats, g_SceneDepthZ.GetFormat());
 	
-	//m_RenderState->SetupRenderTargetFormat(1, &g_SceneColorBuffer.GetFormat(), g_SceneDepthZ.GetFormat());
-	m_RenderState->SetRasterizerState(FGraphicsPipelineState::RasterizerTwoSided);
+	m_RenderState->SetRasterizerState(FPipelineState::RasterizerTwoSided);
+	m_RenderState->SetBlendState(FPipelineState::BlendDisable);
+	m_RenderState->SetDepthStencilState(FPipelineState::DepthStateReadWrite);
 
 	bool InitLayout = false;
 	for (auto Item: m_ItemList)

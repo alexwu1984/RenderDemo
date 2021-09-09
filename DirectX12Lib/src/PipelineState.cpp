@@ -20,30 +20,29 @@ void FPipelineState::Initialize()
 	RasterizerDefault.ConservativeRaster = D3D12_CONSERVATIVE_RASTERIZATION_MODE_OFF;
 
 	RasterizerFront = RasterizerDefault;
-	RasterizerFront.FrontCounterClockwise = TRUE;
+	RasterizerFront.CullMode = D3D12_CULL_MODE_FRONT;
+	RasterizerDefault.FrontCounterClockwise = TRUE;
 
 	RasterizerTwoSided = RasterizerDefault;
 	RasterizerTwoSided.CullMode = D3D12_CULL_MODE_NONE;
 
 	RasterizerShadow = RasterizerDefault;
-	//RasterizerShadow.DepthBias = 10;
-	//RasterizerShadow.SlopeScaledDepthBias = 1.5;
-	RasterizerShadow.DepthBias = 100663;
-	RasterizerShadow.DepthBiasClamp = 0.0f;
-	RasterizerShadow.SlopeScaledDepthBias = 1.0f;
-	RasterizerShadow.FrontCounterClockwise = TRUE;
-	// Shadow map pass does not have a render target.
+	RasterizerShadow.DepthBias = 10;
+	RasterizerShadow.DepthBiasClamp = 0.f;
+	RasterizerShadow.SlopeScaledDepthBias = 2.f;
 
 	// blend state
 	D3D12_BLEND_DESC alphaBlend = {};
 	alphaBlend.IndependentBlendEnable = FALSE;
 	alphaBlend.RenderTarget[0].BlendEnable = FALSE;
+	alphaBlend.RenderTarget[0].LogicOpEnable = FALSE;
 	alphaBlend.RenderTarget[0].SrcBlend = D3D12_BLEND_SRC_ALPHA;
 	alphaBlend.RenderTarget[0].DestBlend = D3D12_BLEND_INV_SRC_ALPHA;
 	alphaBlend.RenderTarget[0].BlendOp = D3D12_BLEND_OP_ADD;
 	alphaBlend.RenderTarget[0].SrcBlendAlpha = D3D12_BLEND_ONE;
 	alphaBlend.RenderTarget[0].DestBlendAlpha = D3D12_BLEND_INV_SRC_ALPHA;
 	alphaBlend.RenderTarget[0].BlendOpAlpha = D3D12_BLEND_OP_ADD;
+	alphaBlend.RenderTarget[0].LogicOp = D3D12_LOGIC_OP_NOOP;
 	alphaBlend.RenderTarget[0].RenderTargetWriteMask = 0;
 	BlendNoColorWrite = alphaBlend;
 
@@ -69,10 +68,7 @@ void FPipelineState::Initialize()
 	DepthStateReadWrite = DepthStateDisabled;
 	DepthStateReadWrite.DepthEnable = TRUE;
 	DepthStateReadWrite.DepthWriteMask = D3D12_DEPTH_WRITE_MASK_ALL;
-	DepthStateReadWrite.DepthFunc = D3D12_COMPARISON_FUNC_LESS;
-
-	DepthStateTwoSided = DepthStateReadWrite;
-	DepthStateTwoSided.DepthFunc = D3D12_COMPARISON_FUNC_LESS_EQUAL;
+	DepthStateReadWrite.DepthFunc = D3D12_COMPARISON_FUNC_LESS_EQUAL;
 
 	DepthStateReadOnly = DepthStateReadWrite;
 	DepthStateReadOnly.DepthWriteMask = D3D12_DEPTH_WRITE_MASK_ZERO;

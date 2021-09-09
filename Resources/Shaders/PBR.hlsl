@@ -172,22 +172,23 @@ float4 CalcIBL(float3 N, float3 V, float3 Albedo, float Metallic, float Roughnes
 
 PixelInput VS_PBR(VertexInput In)
 {
-	PixelInput Out;
-	Out.Tex = In.Tex;
-    
+    PixelInput Out;
+    Out.Tex = In.Tex;
+
     float4 PreviousWorldPos = mul(float4(In.Position, 1.0), PreviousModelMatrix);
     float4 ClipPos = mul(PreviousWorldPos, PreviousViewProjMatrix);
     Out.VelocityPrevScreenPosition = ClipPos;
-    
-	float4 WorldPos = mul(float4(In.Position, 1.0), ModelMatrix);
-	Out.WorldPos = WorldPos.xyz;
-	Out.Position = mul(WorldPos, ViewProjMatrix);
-    Out.VelocityScreenPosition = Out.Position;
 
-	Out.N = mul(In.Normal, (float3x3)ModelMatrix);
-    Out.T = mul(In.Tangent.xyz, (float3x3) ModelMatrix);
-	Out.B = cross(In.Normal, In.Tangent.xyz) * In.Tangent.w;
-	Out.B = mul(Out.B, (float3x3)ModelMatrix);
+    float4 WorldPos = mul(float4(In.Position, 1.0), ModelMatrix);
+    ClipPos = mul(WorldPos, ViewProjMatrix);
+    Out.VelocityScreenPosition = ClipPos;
+
+    Out.Position = ClipPos;
+
+    Out.N = mul(In.Normal, (float3x3)ModelMatrix);
+    Out.T = mul(In.Tangent.xyz, (float3x3)ModelMatrix);
+    Out.B = cross(In.Normal, In.Tangent.xyz) * In.Tangent.w;
+    Out.B = mul(Out.B, (float3x3)ModelMatrix);
     return Out;
 }
 

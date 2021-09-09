@@ -25,7 +25,7 @@ public:
 
 private:
 	void SetupRootSignature();
-	void SetupPipelineState(const std::wstring& ShaderFile, const std::string& entryVSPoint, const std::string& entryPSPoint);
+	void SetupPipelineState(const D3D12_DEPTH_STENCIL_DESC& DepthStencilDesc);
 
 	__declspec(align(16)) struct
 	{
@@ -46,5 +46,10 @@ private:
 	Vector2<int> m_Size;
 	int32_t m_CBVRootIndex = 0;
 	int32_t m_SRVRootIndex = 1;
+
+
+	std::wstring m_ShaderFile;
+	std::string m_EntryVSPoint;
+	std::string m_EntryPSPoint;
 
 };

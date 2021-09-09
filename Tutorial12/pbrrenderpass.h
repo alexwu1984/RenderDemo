@@ -24,7 +24,7 @@ public:
 	void RenderBasePass(FCommandContext& CommandContext, FCamera& MainCamera,
 		FCubeBuffer& IrradianceCube, FCubeBuffer& PrefilteredCube, FColorBuffer& PreintegratedGF,bool Clear);
 	void RenderIBL(FCommandContext& GfxContext, FCamera& MainCamera, FCubeBuffer& IrradianceCube, FCubeBuffer& PrefilteredCube, FColorBuffer& PreintegratedGF);
-	void Update(FCamera& MainCamera);
+	void Update();
 	void Rotate(float RotateY);
 
 private:
