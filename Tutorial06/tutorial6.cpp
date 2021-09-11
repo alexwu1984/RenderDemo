@@ -180,7 +180,7 @@ public:
 		m_SkyRenderState = std::make_shared<RenderPipelineInfo>(shader);
 		m_SkyRenderState->SetupRenderTargetFormat(1, &RenderWindow::Get().GetColorFormat(), RenderWindow::Get().GetDepthFormat());
 		m_SkyRenderState->SetRasterizerState(FGraphicsPipelineState::RasterizerTwoSided);
-		m_SkyRenderState->SetDepthStencilState(FGraphicsPipelineState::DepthStateTwoSided);
+		m_SkyRenderState->SetDepthStencilState(FPipelineState::DepthStateReadOnly);
 
 		std::vector<D3D12_INPUT_ELEMENT_DESC> MeshLayout;
 		m_skyBox.CreateCube();
@@ -264,6 +264,7 @@ private:
 
 	void FinalPass(FCommandContext& CommandContext)
 	{
+
 		if (m_ShadowMode == SM_VSM)
 		{
 			g_CommandListManager.GetGraphicsQueue().StallForProducer(g_CommandListManager.GetComputeQueue());
@@ -289,7 +290,7 @@ private:
 		CommandContext.SetRenderTargets(1, &BackBuffer.GetRTV(), DepthBuffer.GetDSV());
 
 		// Record commands.
-		CommandContext.ClearColor(BackBuffer);
+		//CommandContext.ClearColor(BackBuffer);
 		CommandContext.ClearDepth(DepthBuffer);
 		CommandContext.SetPrimitiveTopology(D3D_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
 
@@ -442,6 +443,18 @@ private:
 
 	void RenderSky(FCommandContext& CommandContext)
 	{
+		RenderWindow& renderWindow = RenderWindow::Get();
+		FColorBuffer& BackBuffer = renderWindow.GetBackBuffer();
+		FDepthBuffer& DepthBuffer = renderWindow.GetDepthBuffer();
+		// Indicate that the back buffer will be used as a render target.
+		CommandContext.TransitionResource(BackBuffer, D3D12_RESOURCE_STATE_RENDER_TARGET);
+		CommandContext.TransitionResource(DepthBuffer, D3D12_RESOURCE_STATE_DEPTH_WRITE, true);
+		CommandContext.SetRenderTargets(1, &BackBuffer.GetRTV(), DepthBuffer.GetDSV());
+
+		// Record commands.
+
+		CommandContext.SetPrimitiveTopology(D3D_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
+
 		m_uboVS.modelMatrix = m_skyBox.GetModelMatrix();
 		m_uboVS.viewMatrix = m_Camera.GetViewMatrix();
 
@@ -456,6 +469,8 @@ private:
 
 		CommandContext.SetPipelineState(m_SkyRenderState->GetPipelineState());
 		m_skyBox.Draw(CommandContext);
+
+		CommandContext.TransitionResource(BackBuffer, D3D12_RESOURCE_STATE_PRESENT);
 	}
 
 	void ComputePass(FCommandContext& GfxContext)

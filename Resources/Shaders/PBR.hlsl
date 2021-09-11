@@ -98,14 +98,19 @@ float GetSpecularOcclusion(float NoV, float AO, float roughness)
 
 float3 Calculate3DVelocity(float4 CurrentVelocity, float4 PreVelocity)
 {
+	// minus jitter
     float2 ScreenPos = CurrentVelocity.xy / CurrentVelocity.w - TemporalAAJitter.xy;
     float2 PrevScreenPos = PreVelocity.xy / PreVelocity.w - TemporalAAJitter.zw;
 
     float DeviceZ = CurrentVelocity.z / CurrentVelocity.w;
-    float PreDeviceZ = PreVelocity.z / PreVelocity.w;
+    float PrevDeviceZ = PreVelocity.z / PreVelocity.w;
 
-    float3 Velocity = float3(ScreenPos - PrevScreenPos, DeviceZ - PreDeviceZ);
+	// 3d velocity, includes camera an object motion
+    float3 Velocity = float3(ScreenPos - PrevScreenPos, DeviceZ - PrevDeviceZ);
+	//Velocity.xy = float2(0.5f, -0.5f) * Velocity.xy;
+	//Velocity.xy *= float2(1024, 768);
 
+	// Make sure not to touch 0,0 which is clear color
     return Velocity;
 }
 
@@ -236,6 +241,7 @@ void PS_PBR_GBuffer(PixelInput In, out PixelOutput Out)
     Out.Target2 = float4(Metallic, 0.5, Roughness, 1.0);
     Out.Target3 = float4(Albedo, AO);
     Out.Target4 = float4(Calculate3DVelocity(In.VelocityScreenPosition, In.VelocityPrevScreenPosition), 0);
+
 }
 
 struct VertexOutput

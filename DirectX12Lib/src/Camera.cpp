@@ -122,7 +122,6 @@ void FCamera::Orbit(float Yaw, float Pitch)
 	m_Up = Result.r1;
 	m_Forward = Result.r2;
 	m_Position = Result.r3;
-	UpdateViewMatrix();
 }
 
 void FCamera::Rotate(float Yaw, float Pitch)
@@ -136,7 +135,6 @@ void FCamera::Rotate(float Yaw, float Pitch)
 	m_Right = Result.r0;
 	m_Up = Result.r1;
 	m_Forward = Result.r2;
-	UpdateViewMatrix();
 }
 
 void FCamera::Rotate(float radius,float theta, float phi)
@@ -232,13 +230,18 @@ void FCamera::ProcessMouseMove(float DeltaTime)
 
 void FCamera::UpdateAllMatrix()
 {
+	// Record the Previous frame ViewProjMatrix
 	m_PreviousViewMat = m_ViewMat;
 	m_PreviousProjMat = m_ProjMat;
 	m_PreviousViewProjMatrix = m_ViewMat * m_ProjMat;
 
 	UpdateViewMatrix();
+
 	UpdateProjMatrix();
+
 	m_ViewProjMatrix = m_ViewMat * m_ProjMat;
+
+	// Update ReprojectMatrix
 	m_ClipToPrevClip = m_ViewProjMatrix.Inverse() * m_PreviousViewProjMatrix;
 
 	FMatrix PreProjNoAA = m_PreviousProjMat;
@@ -250,5 +253,6 @@ void FCamera::UpdateAllMatrix()
 	CurProjNoAA.r2.x = 0.f;
 	CurProjNoAA.r2.y = 0.f;
 	FMatrix CurViewProjNoAA = m_ViewMat * CurProjNoAA;
+
 	m_ClipToPrevClipNoAA = PreViewProjNoAA.Inverse() * CurViewProjNoAA;
 }

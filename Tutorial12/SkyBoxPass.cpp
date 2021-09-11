@@ -8,6 +8,7 @@
 #include "Shader.h"
 #include "CubeBuffer.h"
 #include "BufferManager.h"
+#include "UserMarkers.h"
 
 using namespace BufferManager;
 
@@ -33,6 +34,8 @@ void SkyBoxPass::Init(std::shared_ptr< FModel> skyBox, int32_t width, int height
 
 void SkyBoxPass::Render(FCommandContext& GfxContext, FCamera& MainCamera,FCubeBuffer& CubeBuffer, bool clear)
 {
+	UserMarker GpuMarker(GfxContext, "SkyBoxPass");
+
 	if (!m_RenderState)
 	{
 		SetupPipelineState(FPipelineState::DepthStateReadOnly);
@@ -67,6 +70,8 @@ void SkyBoxPass::Render(FCommandContext& GfxContext, FCamera& MainCamera,FCubeBu
 
 void SkyBoxPass::ShowCubeMapDebugView(FCommandContext& GfxContext, FCubeBuffer& CubeBuffer, float Exposure, int MipLevel, const std::vector<Vector3f>& SHCoeffs, int SHDegree)
 {
+	UserMarker GpuMarker(GfxContext, "ShowCubeMapDebugView");
+
 	if (!m_RenderState)
 	{
 		SetupPipelineState(FPipelineState::DepthStateDisabled);

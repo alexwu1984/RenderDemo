@@ -184,8 +184,8 @@ private:
 
 	void SetupShaders()
 	{
-		m_vertexShader = D3D12RHI::Get().CreateShader(L"../../Resources/Shaders/simplebox.hlsl", "vs_main", "vs_5_1");
-		m_pixelShader = D3D12RHI::Get().CreateShader(L"../../Resources/Shaders/simplebox.hlsl", "ps_main", "ps_5_1");
+		m_vertexShader = D3D12RHI::Get().CreateShader(L"../Resources/Shaders/simplebox.hlsl", "vs_main", "vs_5_1");
+		m_pixelShader = D3D12RHI::Get().CreateShader(L"../Resources/Shaders/simplebox.hlsl", "ps_main", "ps_5_1");
 	}
 
 	void SetupPipelineState()
@@ -338,7 +338,6 @@ private:
 
 int main()
 {
-	ApplicationWin32::Get().SetCurrentWorkPath(L"../../");
 	GameDesc Desc;
 	Desc.Caption = L"Tutorial 3 - Draw Cube";
 	Tutorial3 tutorial(Desc);

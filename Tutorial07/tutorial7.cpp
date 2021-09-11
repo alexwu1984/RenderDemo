@@ -170,7 +170,7 @@ public:
 		m_SkyRenderState = std::make_shared<RenderPipelineInfo>(shader);
 		m_SkyRenderState->SetupRenderTargetFormat(1, &RenderWindow::Get().GetColorFormat(), RenderWindow::Get().GetDepthFormat());
 		m_SkyRenderState->SetRasterizerState(FGraphicsPipelineState::RasterizerTwoSided);
-		m_SkyRenderState->SetDepthStencilState(FGraphicsPipelineState::DepthStateTwoSided);
+		m_SkyRenderState->SetDepthStencilState(FGraphicsPipelineState::DepthStateReadOnly);
 
 		std::vector<D3D12_INPUT_ELEMENT_DESC> MeshLayout;
 		m_skyBox.CreateCube();
@@ -227,6 +227,19 @@ public:
 
 	void RenderSky(FCommandContext& CommandContext)
 	{
+
+		RenderWindow& renderWindow = RenderWindow::Get();
+		FColorBuffer& BackBuffer = renderWindow.GetBackBuffer();
+		FDepthBuffer& DepthBuffer = renderWindow.GetDepthBuffer();
+		// Indicate that the back buffer will be used as a render target.
+		CommandContext.TransitionResource(BackBuffer, D3D12_RESOURCE_STATE_RENDER_TARGET);
+		CommandContext.TransitionResource(DepthBuffer, D3D12_RESOURCE_STATE_DEPTH_WRITE, true);
+		CommandContext.SetRenderTargets(1, &BackBuffer.GetRTV(), DepthBuffer.GetDSV());
+
+		// Record commands.
+
+		CommandContext.SetPrimitiveTopology(D3D_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
+
 		m_BasePassInfo.modelMatrix = m_skyBox.GetModelMatrix();
 		m_BasePassInfo.viewMatrix = m_Camera.GetViewMatrix();
 
@@ -242,6 +255,9 @@ public:
 
 		CommandContext.SetPipelineState(m_SkyRenderState->GetPipelineState());
 		m_skyBox.Draw(CommandContext);
+
+		CommandContext.TransitionResource(BackBuffer, D3D12_RESOURCE_STATE_PRESENT);
+
 	}
 
 	void GetCoefs()

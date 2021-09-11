@@ -12,6 +12,7 @@
 #include "BufferManager.h"
 #include "TemporalEffects.h"
 #include "MotionBlur.h"
+#include "UserMarkers.h"
 
 using namespace BufferManager;
 
@@ -124,6 +125,8 @@ void PBRRenderPass::Render(FCommandContext& CommandContext, FCamera& MainCamera,
 
 void PBRRenderPass::RenderBasePass(FCommandContext& CommandContext, FCamera& MainCamera, FCubeBuffer& IrradianceCube, FCubeBuffer& PrefilteredCube, FColorBuffer& PreintegratedGF, bool Clear)
 {
+	UserMarker GpuMarker(CommandContext, "RenderBasePass");
+
 	CommandContext.SetRootSignature(m_MeshSignature);
 	CommandContext.SetPipelineState(m_RenderState->GetPipelineState());
 	CommandContext.SetPrimitiveTopology(D3D_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
@@ -213,6 +216,7 @@ void PBRRenderPass::RenderBasePass(FCommandContext& CommandContext, FCamera& Mai
 
 void PBRRenderPass::RenderIBL(FCommandContext& GfxContext, FCamera& MainCamera, FCubeBuffer& IrradianceCube, FCubeBuffer& PrefilteredCube, FColorBuffer& PreintegratedGF)
 {
+	UserMarker GpuMarker(GfxContext, "RenderIBL");
 	// Set necessary state.
 	GfxContext.SetRootSignature(m_IBLSignature);
 	GfxContext.SetPipelineState(m_IBLRenderState->GetPipelineState());

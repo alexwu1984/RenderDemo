@@ -152,7 +152,7 @@ float ChebyshevUpperBound(float2 Moments,float t)
     float lightBleedingReduction = 0.0;
     pMax = ReduceLightBleeding(pMax, lightBleedingReduction);
     
-    return (t <= Moments.x ? 1.0 : pMax);
+    return (t -0.06 <= Moments.x ? 1.0 : pMax);
 }
 
 float ComputeShadow_VSM(float3 ShadowCoord, float3 Normal, float3 LightDirection)

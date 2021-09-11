@@ -52,6 +52,7 @@ set(HEADER_FILES
 	include/BufferManager.h
 	include/MotionBlur.h
 	include/TemporalEffects.h
+	include/UserMarkers.h
 )
 
 set(SOURCES
@@ -101,6 +102,7 @@ set(SOURCES
 	src/BufferManager.cpp
 	src/MotionBlur.cpp
 	src/TemporalEffects.cpp
+	src/UserMarkers.cpp
 						  
 )
 
@@ -135,5 +137,7 @@ add_library(DirectX12Lib
 
 target_include_directories(DirectX12Lib PUBLIC include include/imgui)
 target_include_directories(DirectX12Lib PUBLIC include)
+target_include_directories(DirectX12Lib PUBLIC ../ThirdParty)
 
 target_link_libraries(DirectX12Lib LINK_PUBLIC DirectXTex)
+target_link_libraries(DirectX12Lib LINK_PUBLIC amd_ags)

@@ -6,6 +6,7 @@
 #include "StringUnit.h"
 #include "Shader.h"
 #include "Texture.h"
+#include "UserMarkers.h"
 
 Show2DTexturePass::Show2DTexturePass()
 {
@@ -26,6 +27,8 @@ void Show2DTexturePass::Init()
 
 void Show2DTexturePass::ShowTexture2D(FCommandContext& GfxContext, D3D12_CPU_DESCRIPTOR_HANDLE inputTex)
 {
+	UserMarker GpuMarker(GfxContext, "ShowTexture2D");
+
 	RenderWindow& renderWindow = RenderWindow::Get();
 	FColorBuffer& BackBuffer = renderWindow.GetBackBuffer();
 
