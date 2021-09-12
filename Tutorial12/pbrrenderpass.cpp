@@ -61,68 +61,6 @@ void PBRRenderPass::InitIBL(const std::wstring& ShaderFile, const std::string& e
 	m_IBLRenderState->PipelineFinalize();
 }
 
-void PBRRenderPass::Render(FCommandContext& CommandContext, FCamera& MainCamera, 
-	FCubeBuffer& IrradianceCube, FCubeBuffer& PrefilteredCube, FColorBuffer& PreintegratedGF)
-{
-	CommandContext.SetRootSignature(m_MeshSignature);
-	CommandContext.SetViewportAndScissor(0, 0, m_GameWndSize.x, m_GameWndSize.y);
-
-
-	RenderWindow& renderWindow = RenderWindow::Get();
-	//FColorBuffer& BackBuffer = renderWindow.GetBackBuffer();
-	//FDepthBuffer& DepthBuffer = renderWindow.GetDepthBuffer();
-	// Indicate that the back buffer will be used as a render target.
-	CommandContext.TransitionResource(IrradianceCube, D3D12_RESOURCE_STATE_PIXEL_SHADER_RESOURCE);
-	CommandContext.TransitionResource(PrefilteredCube, D3D12_RESOURCE_STATE_PIXEL_SHADER_RESOURCE);
-	CommandContext.TransitionResource(PreintegratedGF, D3D12_RESOURCE_STATE_PIXEL_SHADER_RESOURCE);
-	CommandContext.TransitionResource(g_SceneColorBuffer, D3D12_RESOURCE_STATE_RENDER_TARGET);
-	CommandContext.TransitionResource(g_SceneDepthZ, D3D12_RESOURCE_STATE_DEPTH_WRITE, true);
-	CommandContext.SetRenderTargets(1, &g_SceneColorBuffer.GetRTV(), g_SceneDepthZ.GetDSV());
-	
-	// Record commands.
-	//CommandContext.ClearColor(BackBuffer);
-	//CommandContext.ClearDepth(DepthBuffer);
-	CommandContext.SetPrimitiveTopology(D3D_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
-
-	CommandContext.SetPipelineState(m_RenderState->GetPipelineState());
-
-	for (auto Item : m_ItemList)
-	{
-		auto Model = Item->Model;
-		if (Model)
-		{
-			Model->CustomDrawParam = [this,&MainCamera,&IrradianceCube,&PrefilteredCube,&PreintegratedGF, Model](FCommandContext& GfxContext, std::shared_ptr< FMaterial> Material, std::shared_ptr<FRenderItem::BasePassInfoWrapper> InfoWrapper)
-			{
-				g_EVSConstants.ModelMatrix = Model->GetModelMatrix();
-				g_EVSConstants.ViewProjMatrix = MainCamera.GetViewProjMatrix();
-				g_EVSConstants.PreviousModelMatrix = Model->GetPreviousModelMatrix();
-				g_EVSConstants.PreviousViewProjMatrix = MainCamera.GetPreviousViewProjMatrix();
-				g_EVSConstants.ViewportSize = Vector2f(m_GameWndSize.x, m_GameWndSize.y);
-				GfxContext.SetDynamicConstantBufferView(0, sizeof(g_EVSConstants), &g_EVSConstants);
-
-				g_PBRPSConstants.Exposure = 1;
-				g_PBRPSConstants.CameraPos = MainCamera.GetPosition();
-				GfxContext.SetDynamicConstantBufferView(1, sizeof(g_PBRPSConstants), &g_PBRPSConstants);
-
-				GfxContext.SetDynamicDescriptor(2, 0, Material->GetDiffuseTexture().GetSRV());
-				GfxContext.SetDynamicDescriptor(2, 1, Material->GetOpacityTexture().GetSRV());
-				GfxContext.SetDynamicDescriptor(2, 2, Material->GetEmissiveTexture().GetSRV());
-				GfxContext.SetDynamicDescriptor(2, 3, Material->GetMetallicTexture().GetSRV());
-				GfxContext.SetDynamicDescriptor(2, 4, Material->GetRoughnessTexture().GetSRV());
-				GfxContext.SetDynamicDescriptor(2, 5, Material->GetAmbientTexture().GetSRV());
-				GfxContext.SetDynamicDescriptor(2, 6, Material->GetNormalTexture().GetSRV());
-				GfxContext.SetDynamicDescriptor(2, 7, IrradianceCube.GetCubeSRV());
-				GfxContext.SetDynamicDescriptor(2, 8, PrefilteredCube.GetCubeSRV());
-				GfxContext.SetDynamicDescriptor(2, 9, PreintegratedGF.GetSRV());
-			};
-
-			Model->Draw(CommandContext, Item.get());
-
-			Model->CustomDrawParam = nullptr;
-		}
-	}
-}
-
 void PBRRenderPass::RenderBasePass(FCommandContext& CommandContext, FCamera& MainCamera, FCubeBuffer& IrradianceCube, FCubeBuffer& PrefilteredCube, FColorBuffer& PreintegratedGF, bool Clear)
 {
 	UserMarker GpuMarker(CommandContext, "RenderBasePass");
@@ -231,11 +169,11 @@ void PBRRenderPass::RenderIBL(FCommandContext& GfxContext, FCamera& MainCamera, 
 	GfxContext.TransitionResource(PrefilteredCube, D3D12_RESOURCE_STATE_PIXEL_SHADER_RESOURCE);
 	GfxContext.TransitionResource(PreintegratedGF, D3D12_RESOURCE_STATE_PIXEL_SHADER_RESOURCE);
 
+	//GfxContext.TransitionResource(BufferManager::g_SSRBuffer, D3D12_RESOURCE_STATE_PIXEL_SHADER_RESOURCE,true);
 	GfxContext.TransitionResource(SceneBuffer, D3D12_RESOURCE_STATE_RENDER_TARGET);
 	GfxContext.TransitionResource(g_GBufferA, D3D12_RESOURCE_STATE_PIXEL_SHADER_RESOURCE);
 	GfxContext.TransitionResource(g_GBufferB, D3D12_RESOURCE_STATE_PIXEL_SHADER_RESOURCE);
 	GfxContext.TransitionResource(g_GBufferC, D3D12_RESOURCE_STATE_PIXEL_SHADER_RESOURCE);
-	//GfxContext.TransitionResource(BufferManager::g_SSRBuffer, D3D12_RESOURCE_STATE_PIXEL_SHADER_RESOURCE);
 	GfxContext.TransitionResource(g_SceneDepthZ, D3D12_RESOURCE_STATE_PIXEL_SHADER_RESOURCE, true);
 
 	GfxContext.SetRenderTargets(1, &SceneBuffer.GetRTV());

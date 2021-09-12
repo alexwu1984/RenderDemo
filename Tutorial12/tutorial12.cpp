@@ -37,6 +37,7 @@
 #include "PostProcessing.h"
 #include "TemporalEffects.h"
 #include "BufferManager.h"
+#include "PBRFloorRenderPass.h"
 
 extern FCommandListManager g_CommandListManager;
 
@@ -155,6 +156,16 @@ public:
 					ImGui::SliderFloat("Bloom Threshold", &PostProcessing::g_BloomThreshold, 0.f, 10.f);
 					ImGui::Indent(-20);
 				}
+
+				ImGui::Text("Floor PBR Parameters");
+				// floor
+				{
+					ImGui::Indent(20);
+					ImGui::ColorEdit3("Base Color", g_PBRPSConstants.BaseColor.data);
+					ImGui::SliderFloat("Metallic", &g_PBRPSConstants.Metallic, 0.f, 1.f);
+					ImGui::SliderFloat("Roughness", &g_PBRPSConstants.Roughness, 0.f, 1.f);
+					ImGui::Indent(-20);
+				}
 			}
 
 			ImGui::Separator();
@@ -220,6 +231,7 @@ public:
 		case SM_PBR:
 		{
 			m_PBRRenderPass.RenderBasePass(GfxContext, m_Camera, m_IrradianceCube, m_PrefilteredCube, m_PreintegratedBRDF, true);
+			m_PBRFloorRenderPass.RenderBasePass(GfxContext);
 			m_SkyPass.Render(GfxContext, m_Camera, m_CubeBuffer, false);
 			m_PBRRenderPass.RenderIBL(GfxContext, m_Camera, m_IrradianceCube, m_PrefilteredCube, m_PreintegratedBRDF);
 
@@ -263,6 +275,7 @@ public:
 		m_PreintegratedBRDF.Create(L"PreintegratedGF", 128, 32, 1, DXGI_FORMAT_R32G32_FLOAT);
 		m_PBRRenderPass.Init(DiffiusePassList, m_GameDesc.Width, m_GameDesc.Height, L"../Resources/Shaders/PBR.hlsl", "VS_PBR", "PS_PBR_GBuffer");
 		m_PBRRenderPass.InitIBL(L"../Resources/Shaders/PBR.hlsl", "VS_IBL", "PS_IBL");
+		m_PBRFloorRenderPass.Init();
 	}
 
 	void ShowTexture2D(FCommandContext& GfxContext, FTexture& Texture2D)
@@ -330,6 +343,7 @@ private:
 	Show2DTexturePass m_LongLatPass;
 	PreIntegratedBRDFPass m_PreintergrateBRDFPass;
 	PBRRenderPass m_PBRRenderPass;
+	PBRFloorRenderPass m_PBRFloorRenderPass;
 
 	SkyBoxPass m_SkyPass;
 	SkyBoxPass m_CubeMapCrossDebug;

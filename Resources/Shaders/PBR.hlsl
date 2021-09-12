@@ -187,7 +187,7 @@ PixelInput VS_PBR(VertexInput In)
     float4 WorldPos = mul(float4(In.Position, 1.0), ModelMatrix);
     ClipPos = mul(WorldPos, ViewProjMatrix);
     Out.VelocityScreenPosition = ClipPos;
-
+    Out.WorldPos = WorldPos.xyz;
     Out.Position = ClipPos;
 
     Out.N = mul(In.Normal, (float3x3)ModelMatrix);
@@ -291,4 +291,63 @@ float4 PS_IBL(float2 Tex : TEXCOORD, float4 ScreenPos : SV_Position) : SV_Target
     float3 V = normalize(CameraPos - WorldPos.xyz);
     float4 IBL = CalcIBL(N, V, AlbedoAo.xyz, Metallic, Roughness, AO, SSR);
     return IBL;
+}
+
+PixelInput VS_PBR_Floor(in uint VertID : SV_VertexID)
+{
+    float3 Positions[6] =
+    {
+        float3(-1.0, 0.0, 1.0), //0
+		float3(1.0, 0.0, 1.0), //1
+		float3(-1.0, 0.0, -1.0), //3
+		float3(1.0, 0.0, 1.0), //1
+		float3(1.0, 0.0, -1.0), //2
+		float3(-1.0, 0.0, -1.0), //3
+    };
+    float2 Texs[6] =
+    {
+        float2(0.0, 0.0), //0
+		float2(1.0, 0.0), //1
+		float2(0.0, 1.0), //3
+		float2(1.0, 0.0), //1
+		float2(1.0, 1.0), //2
+		float2(0.0, 1.0), //3
+    };
+    
+    float3 InPosition = Positions[VertID];
+    float3 InNormal = float3(0.0, 1.0, 0.0);
+    float3 InTangent = float3(0.0, 0.0, 1.0);
+    
+    PixelInput Out;
+    Out.Tex = Texs[VertID];
+    
+    float4 PreviousWorldPos = mul(float4(InPosition, 1.0), PreviousModelMatrix);
+    float4 ClipPos = mul(PreviousWorldPos, PreviousViewProjMatrix);
+    Out.VelocityPrevScreenPosition = ClipPos;
+
+    float4 WorldPos = mul(float4(InPosition, 1.0), ModelMatrix);
+    ClipPos = mul(WorldPos, ViewProjMatrix);
+    Out.VelocityScreenPosition = ClipPos;
+    Out.WorldPos = WorldPos.xyz;
+    Out.Position = ClipPos;
+
+    Out.N = mul(InNormal, (float3x3) ModelMatrix);
+    Out.T = mul(InTangent.xyz, (float3x3) ModelMatrix);
+    Out.B = cross(InNormal, InTangent.xyz);
+    Out.B = mul(Out.B, (float3x3) ModelMatrix);
+    return Out;
+}
+
+void PS_PBR_Floor(PixelInput In, out PixelOutput Out)
+{
+    float3 Color = BaseMap.Sample(LinearSampler, In.Tex).xyz;
+    float Alpha = OpacityMap.Sample(LinearSampler, In.Tex).r;
+
+    float3 N = normalize(In.N);
+	
+    Out.Target0 = float4(0.0, 0.0, 0.0, 1.0);
+    Out.Target1 = float4(0.5 * N + 0.5, 1.0);
+    Out.Target2 = float4(Metallic, 0.5, Roughness, 1.0);
+    Out.Target3 = float4(BaseColor, 1.0);
+    Out.Target4 = float4(Calculate3DVelocity(In.VelocityScreenPosition, In.VelocityPrevScreenPosition), 0);
 }

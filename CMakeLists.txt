@@ -110,8 +110,10 @@ set_target_properties(Tutorial11 PROPERTIES
 	
 
 add_executable(Tutorial12 Tutorial12/tutorial12.cpp 
-						  Tutorial12/pbrrenderpass.cpp
-						  Tutorial12/pbrrenderpass.h
+						  Tutorial12/PBRRenderPass.cpp
+						  Tutorial12/PBRRenderPass.h
+						  Tutorial12/PBRFloorRenderPass.cpp
+						  Tutorial12/PBRFloorRenderPass.h
 						  Tutorial12/Show2DTexturePass.h
 						  Tutorial12/Show2DTexturePass.cpp
 						  Tutorial12/SkyBoxPass.h
