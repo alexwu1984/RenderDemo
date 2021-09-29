@@ -230,25 +230,9 @@ void RandomSample(const DirectX::ScratchImage& InputImage, size_t Width, size_t 
 	dstSImg.Initialize2D(DXGI_FORMAT_R32G32B32A32_FLOAT, InputImage.GetMetadata().width, InputImage.GetMetadata().height, InputImage.GetMetadata().arraySize, InputImage.GetMetadata().mipLevels);
 	for (int i = 0; i < InputImage.GetImageCount(); i++)
 	{
-		DirectX::_ConvertFromR16G16B16A16(InputImage.GetImages()[i], dstSImg.GetImages()[i]);
 
-		//const Image img = dstSImg.GetImages()[i];
-		//{
-		//	float* dst = (float*)(img.pixels);
-		//	size_t rowPitch = 0;
-		//	size_t slicePitch = 0;
-		//	ComputePitch(img.format, img.width, img.height, rowPitch, slicePitch);
-		//	for (int rowIndex = 0; rowIndex < img.height; rowIndex++)
-		//	{
-		//		float* dst = (float*)(img.pixels + rowPitch * rowIndex);
-		//		for (int colIndex = 0; colIndex < img.width; colIndex++)
-		//		{
-		//		}
-		//	}
-		//}
+		DirectX::_ConvertFromR32G32B32A32(InputImage.GetImages()[i], dstSImg.GetImages()[i]);
 	}
-
-	//HRESULT hr = DirectX::SaveToDDSFile(dstSImg.GetImages(), dstSImg.GetImageCount(), dstSImg.GetMetadata(), DDS_FLAGS_NONE, L"test_image.dds");
 
 	OutSamples.clear();
 	OutSamples.resize(SampleNum);
@@ -385,7 +369,8 @@ std::vector<Vector3f> FCubeBuffer::GenerateSHcoeffs(int Degree, int SampleNum)
 	hr = DirectX::_ConvertFromR16G16B16A16(temp.GetImages()[0], image.GetImages()[5]);
 #endif
 
-	if (SUCCEEDED(hr))
+	Assert(SUCCEEDED(hr));
+	//if (SUCCEEDED(hr))
 	{
 		std::vector<Vertex> Samples;
 		RandomSample(image, image.GetMetadata().width, image.GetMetadata().height, SampleNum, Samples);
@@ -420,6 +405,7 @@ std::vector<Vector3f> FCubeBuffer::GenerateSHcoeffs(int Degree, int SampleNum)
 			SHcoeffs[i] = SHcoeffs[i] * ConvolveCosineLobeBandFactor[i];
 		}
 	}
+
 
 	// render test
 	//RenderCubemap(Degree, SHcoeffs, image.GetMetadata().width, image.GetMetadata().height);

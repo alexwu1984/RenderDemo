@@ -36,7 +36,7 @@ void FGenerateMips::Initialize()
 	m_GenMipPSO.SetDepthStencilState(FPipelineState::DepthStateDisabled);
 	// no need to set input layout
 	m_GenMipPSO.SetPrimitiveTopologyType(D3D12_PRIMITIVE_TOPOLOGY_TYPE_TRIANGLE);
-	DXGI_FORMAT CubeFormat = DXGI_FORMAT_R16G16B16A16_FLOAT;
+	DXGI_FORMAT CubeFormat = DXGI_FORMAT_R32G32B32A32_FLOAT;
 	m_GenMipPSO.SetRenderTargetFormats(1, &CubeFormat, DXGI_FORMAT_UNKNOWN);
 
 	m_ScreenQuadVS = D3D12RHI::Get().CreateShader(L"../Resources/Shaders/PostProcess.hlsl", "VS_ScreenQuad", "vs_5_1");

@@ -153,7 +153,7 @@ void GenCubePass::SetupPipelineState(const std::wstring& ShaderFile, const std::
 {
 	std::shared_ptr<FShader> Shader = FShaderMgr::Get().CreateShaderDirect(ShaderFile, entryVSPoint, entryPSPoint);
 	m_RenderState = std::make_shared<RenderPipelineInfo>(Shader);
-	DXGI_FORMAT CubeFormat = DXGI_FORMAT_R16G16B16A16_FLOAT;
+	DXGI_FORMAT CubeFormat = DXGI_FORMAT_R32G32B32A32_FLOAT;
 	m_RenderState->SetupRenderTargetFormat(1, &CubeFormat, DXGI_FORMAT_UNKNOWN);
 	m_RenderState->SetRasterizerState(FPipelineState::RasterizerTwoSided);
 	m_RenderState->SetDepthStencilState(FPipelineState::DepthStateDisabled);

@@ -143,6 +143,9 @@ public:
 				ImGui::SliderFloat("LightDir.x", &g_PBRPSConstants.LightDir.x, -1, 1);
 				ImGui::SliderFloat("LightDir.y", &g_PBRPSConstants.LightDir.y, -1, 1);
 				g_PBRPSConstants.EnableLight = m_EnableLight;
+				g_PBRPSConstants.bSHDiffuse = m_bSHDiffuse;
+				g_PBRPSConstants.Degree = m_SHDegree;
+
 				if (m_EnableLight)
 				{
 					m_RotateMesh = true;
@@ -225,7 +228,7 @@ public:
 			ShowTexture2D(GfxContext, m_PreintegratedBRDF);
 			break;
 		case SM_SphericalHarmonics:
-			m_CubeMapCrossDebug.ShowCubeMapDebugView(GfxContext, m_CubeBuffer, 1.0, m_MipLevel, m_SHCoeffs, m_SHDegree);
+			m_SHCubeMapDebug.ShowCubeMapDebugView(GfxContext, m_CubeBuffer, 1.0, m_MipLevel, m_SHCoeffs, m_SHDegree);
 			PostProcessing::Render(GfxContext);
 			break;
 		case SM_PBR:
@@ -330,6 +333,10 @@ public:
 	void GenerateSHCoeffs()
 	{
 		m_SHCoeffs = m_CubeBuffer.GenerateSHcoeffs(4, m_SHSampleNum);
+		for (size_t i = 0 ; i < m_SHCoeffs.size(); ++i)
+		{
+			g_PBRPSConstants.Coeffs[i] = m_SHCoeffs[i];
+		}
 	}
 
 private:
