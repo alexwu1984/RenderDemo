@@ -13,6 +13,7 @@
 #include "Texture.h"
 #include "Camera.h"
 #include "CubeBuffer.h"
+#include "UserMarkers.h"
 
 using namespace BufferManager;
 extern FCommandListManager g_CommandListManager;
@@ -23,6 +24,8 @@ namespace PostProcessing
 
 	float g_BloomIntensity = 1.f;
 	float g_BloomThreshold = 1.f;
+	float g_Thickness = 0.08f;
+	bool g_EnableSSR = true;
 
 	FRootSignature m_CSSignature;
 	FRootSignature m_PostProcessSignature;
@@ -82,10 +85,10 @@ namespace PostProcessing
 		m_CSExtractBloomPSO.SetComputeShader(CD3DX12_SHADER_BYTECODE(m_ExtractBloomCS.Get()));
 		m_CSExtractBloomPSO.Finalize();
 
-		//m_BuildHZBCS = D3D12RHI::Get().CreateShader(L"../Resources/Shaders/HZB.hlsl", "CS_BuildHZB", "cs_5_1");
-		//m_CSBuildHZBPSO.SetRootSignature(m_CSSignature);
-		//m_CSBuildHZBPSO.SetComputeShader(CD3DX12_SHADER_BYTECODE(m_BuildHZBCS.Get()));
-		//m_CSBuildHZBPSO.Finalize();
+		m_BuildHZBCS = D3D12RHI::Get().CreateShader(L"../Resources/Shaders/HZB.hlsl", "CS_BuildHZB", "cs_5_1");
+		m_CSBuildHZBPSO.SetRootSignature(m_CSSignature);
+		m_CSBuildHZBPSO.SetComputeShader(CD3DX12_SHADER_BYTECODE(m_BuildHZBCS.Get()));
+		m_CSBuildHZBPSO.Finalize();
 
 		uint32_t Width = WindowWin32::Get().GetWidth();
 		uint32_t Height = WindowWin32::Get().GetHeight();
@@ -123,6 +126,15 @@ namespace PostProcessing
 
 		int Black = 0;
 		m_BlackTexture.Create(1, 1, DXGI_FORMAT_R8G8B8A8_UNORM, &Black);
+
+		int32_t ScreenWidth = WindowWin32::Get().GetWidth();
+		int32_t ScreenHeight = WindowWin32::Get().GetHeight();
+		int32_t NumMipsX = std::max((int32_t)std::ceil(std::log2(ScreenWidth) - 1.0), 1);
+		int32_t NumMipsY = std::max((int32_t)std::ceil(std::log2(ScreenHeight) - 1.0), 1);
+		int32_t NumMips = std::max(NumMipsX, NumMipsY);
+		int32_t HZBWidth = 1 << NumMipsX;
+		int32_t HZBHeight = 1 << NumMipsY;
+		g_HiZBuffer.Create(L"HZB", HZBWidth, HZBHeight, NumMips, DXGI_FORMAT_R32G32_FLOAT);
 	}
 
 	void Destroy()
@@ -231,12 +243,70 @@ namespace PostProcessing
 
 	void BuildHZB(FCommandContext& GfxContext)
 	{
+		UserMarker GpuMarker(GfxContext, "BuildHZB");
+		int32_t ScreenWidth = WindowWin32::Get().GetWidth();
+		int32_t ScreenHeight = WindowWin32::Get().GetHeight();
+		int32_t NumMipsX = std::max((int32_t)std::ceil(std::log2(ScreenWidth) - 1.0), 1);
+		int32_t NumMipsY = std::max((int32_t)std::ceil(std::log2(ScreenHeight) - 1.0), 1);
+		int32_t NumMips = std::max(NumMipsX, NumMipsY);
+		int32_t HZBWidth = 1 << NumMipsX;
+		int32_t HZBHeight = 1 << NumMipsY;
 
+		GfxContext.TransitionResource(g_SceneDepthZ, D3D12_RESOURCE_STATE_NON_PIXEL_SHADER_RESOURCE, true);
+
+		FComputeContext& ComputeContext = GfxContext.GetComputeContext();
+
+		ComputeContext.SetRootSignature(m_CSSignature);
+		ComputeContext.SetPipelineState(m_CSBuildHZBPSO);
+
+		__declspec(align(16)) struct
+		{
+			Vector2f	SrcTexelSize;
+			Vector2f	InputViewportMaxBound;
+			float		Thickness;
+		} Constants;
+
+		for (int i = 0; i < NumMips; ++i)
+		{
+			if (i > 0)
+			{
+				ComputeContext.TransitionSubResource(g_HiZBuffer, D3D12_RESOURCE_STATE_NON_PIXEL_SHADER_RESOURCE, i - 1, true);
+			}
+			ComputeContext.TransitionSubResource(g_HiZBuffer, D3D12_RESOURCE_STATE_UNORDERED_ACCESS, i, true);
+			ComputeContext.ClearUAV(g_HiZBuffer,i);
+
+			ComputeContext.SetDynamicDescriptor(1, 0, i == 0 ? g_SceneDepthZ.GetDepthSRV() : g_HiZBuffer.GetMipSRV(i - 1));
+			ComputeContext.SetDynamicDescriptor(2, 0, g_HiZBuffer.GetMipUAV(i));
+
+			int32_t DestSizeX = DivideByMultiple(HZBWidth, uint32_t(1 << i));
+			int32_t DestSizeY = DivideByMultiple(HZBHeight, uint32_t(1 << i));
+
+			float SrcWidth = (float)g_SceneDepthZ.GetWidth();
+			float SrcHeight = (float)g_SceneDepthZ.GetHeight();
+			if ( i > 0)
+			{
+				SrcWidth = (float)DivideByMultiple(HZBWidth, uint32_t(1 << (i-1)));
+				SrcHeight = (float)DivideByMultiple(HZBHeight, uint32_t(1 << (i - 1)));
+			}
+			Constants.SrcTexelSize = Vector2f(1.f / SrcWidth, 1.f / SrcHeight);
+
+			Vector2f ViewportBound = Vector2f(1.f, 1.f);
+			if (i == 0)
+			{
+				ViewportBound = Vector2f(1.f) - 0.5f * Constants.SrcTexelSize;
+			}
+			Constants.Thickness = g_Thickness;
+			Constants.InputViewportMaxBound = ViewportBound;
+			ComputeContext.SetDynamicConstantBufferView(0, sizeof(Constants), &Constants);
+
+			ComputeContext.Dispatch2D(DestSizeX, DestSizeY);
+			ComputeContext.TransitionSubResource(g_HiZBuffer, D3D12_RESOURCE_STATE_COMMON, i, true);
+		}
 	}
 
 	void GenerateSSR(FCommandContext& GfxContext, FCamera& Camera, FCubeBuffer& CubeBuffer)
 	{
-
+		BuildHZB(GfxContext);
 	}
 
 }

@@ -172,7 +172,7 @@ float4 CalcIBL(float3 N, float3 V, float3 Albedo, float Metallic, float Roughnes
 
     float SpecAO = GetSpecularOcclusion(NoV, AO, Roughness);
     float3 Final = (Diffuse * AO + Specular * SpecAO) * (1 - SSR.a) + SSR.rgb;
-    return float4(Final,1.0);
+    return float4(Final, 1.0);
 }
 
 PixelInput VS_PBR(VertexInput In)

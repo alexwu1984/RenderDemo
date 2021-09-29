@@ -26,7 +26,7 @@ private:
 
 	std::shared_ptr< RenderPipelineInfo> m_RenderState;
 	FRootSignature m_RootSignature;
-	Vector2<int> m_Size = { 128,32 };
+	Vector2<int> m_Size = { 256,256 };
 	int32_t m_CBVRootIndex = 0;
 	int32_t m_SRVRootIndex = 1;
 
