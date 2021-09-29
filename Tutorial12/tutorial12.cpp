@@ -98,6 +98,7 @@ public:
 
 		ImGui::SetNextWindowPos(ImVec2(1, 1));
 		ImGui::SetNextWindowCollapsed(true, ImGuiCond_Once);
+
 		if (ImGui::Begin("Config", &ShowConfig, ImGuiWindowFlags_AlwaysAutoResize))
 		{
 			ImGui::ColorEdit3("Clear Color", &m_ClearColor.x);
@@ -134,6 +135,12 @@ public:
 				ImGui::Checkbox("TAA", &TemporalEffects::g_EnableTAA);
 
 				ImGui::Checkbox("SHDiffuse", &m_bSHDiffuse);
+				if (m_bSHDiffuse)
+				{
+					ImGui::Indent(20);
+					ImGui::SliderInt("SH Degree", &m_SHDegree, 1, 4);
+					ImGui::Indent(-20);
+				}
 				ImGui::Checkbox("Rotate Mesh", &m_RotateMesh);
 				ImGui::SameLine();
 				ImGui::Text("%.3f", m_RotateY);
