@@ -215,3 +215,70 @@ void ReprojectHit(float3 HitUVz, out float2 OutPrevUV, out float OutVignette)
     OutVignette = min(ComputeHitVignetteFromScreenPos(ThisScreen), ComputeHitVignetteFromScreenPos(PrevScreen));
     OutPrevUV = PrevUV;
 }
+
+float4 PS_SSR(float2 Tex : TEXCOORD,float4 SVPosition: SV_Position) : SV_Target
+{
+    float3 N = GBufferA.Sample(LinearSampler, Tex).xyz;
+    N = 2.0 * N - 1.0;
+    float2 uv = Tex * HZBUvFactorAndInvFactor.xy * 0.5;
+    float Depth = UseHiZ > 0.f ? GetMinimunDepthPlane(uv, 0) : SceneDepthZ.SampleLevel(LinearSampler, Tex, 0).x;
+    
+    float3 Screen0 = float3(Tex, Depth);
+    float3 World0 = UnprojectScreen(Screen0);
+    Screen0 = UseHiZ > 0.f ? ApplyHZBUvFactor(Screen0) : Screen0;
+    
+    float3 V = normalize(CameraPos - World0);
+    
+    float3 MetallicSpecularRoughness = GBufferB.SampleLevel(LinearSampler, Tex, 0).xyz;
+    float Roughness = MetallicSpecularRoughness.z;
+    float a = Roughness * Roughness;
+    float a2 = a * a;
+    
+    uint2 PixelPos = (uint2) SVPosition.xy;
+    uint2 Random = Rand3DPCG16(int3(PixelPos,FrameIndexMod8)).xy;
+    
+    float3x3 TangentBasis = GetTangentBasis(N);
+    float3 TangentV = mul(TangentBasis, V);
+
+    float4 OutColor = 0;
+    for (int i = 0; i < NumRays; i++)
+    {
+        float2 E = Hammersley16(i, NumRays, Random);
+        float3 H = mul(ImportanceSampleVisibleGGX(UniformSampleDisk(E), a2, TangentV).xyz, TangentBasis);
+        float3 L = 2 * dot(V, H) * H - V;
+        
+        float3 World1 = World0 + L * WorldThickness;
+        float3 Screen1 = ProjectWorldPos(World1);
+        Screen1 = UseHiZ > 0.f ? ApplyHZBUvFactor(Screen1) : Screen1;
+        
+        float ScreenDistance = abs(Screen1.z - Screen0.z);
+        
+        float3 StartScreen = Screen0;
+        float3 StepScreen = Screen1 - Screen0;
+        
+        bool bHit;
+        float3 HitUVz;
+        if (UseHiZ > 0.f)
+        {
+            bHit = CastHiZRay(StartScreen, StepScreen, ScreenDistance, HitUVz);
+        }
+        else
+        {
+            bHit = CastSimpleRay(StartScreen, StepScreen, ScreenDistance, HitUVz);
+        }
+        
+        if (bHit)
+        {
+            HitUVz.xy = UseHiZ > 0.f ? HitUVz.xy * HZBUvFactorAndInvFactor.zw * 2 : HitUVz.xy;
+
+            float Vignette;
+            float2 PrevUV;
+            ReprojectHit(HitUVz, PrevUV, Vignette);
+            OutColor += HistorySceneColor.SampleLevel(LinearSampler, PrevUV, 0) * Vignette;
+        }
+
+    }
+    OutColor /= NumRays;
+	
+    return OutColor;
+}

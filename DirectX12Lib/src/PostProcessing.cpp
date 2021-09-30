@@ -135,6 +135,19 @@ namespace PostProcessing
 		int32_t HZBWidth = 1 << NumMipsX;
 		int32_t HZBHeight = 1 << NumMipsY;
 		g_HiZBuffer.Create(L"HZB", HZBWidth, HZBHeight, NumMips, DXGI_FORMAT_R32G32_FLOAT);
+
+		m_SSRPS = D3D12RHI::Get().CreateShader(L"../Resources/Shaders/SSR.hlsl", "PS_SSR", "ps_5_1");
+
+		m_SSRPSO.SetRootSignature(m_PostProcessSignature);
+		m_SSRPSO.SetRasterizerState(FPipelineState::RasterizerTwoSided);
+		m_SSRPSO.SetBlendState(FPipelineState::BlendDisable);
+		m_SSRPSO.SetDepthStencilState(FPipelineState::DepthStateDisabled);
+		// no need to set input layout
+		m_SSRPSO.SetPrimitiveTopologyType(D3D12_PRIMITIVE_TOPOLOGY_TYPE_TRIANGLE);
+		m_SSRPSO.SetRenderTargetFormat(g_SceneColorBuffer.GetFormat(), DXGI_FORMAT_UNKNOWN);
+		m_SSRPSO.SetVertexShader(CD3DX12_SHADER_BYTECODE(m_ScreenQuadVS.Get()));
+		m_SSRPSO.SetPixelShader(CD3DX12_SHADER_BYTECODE(m_SSRPS.Get()));
+		m_SSRPSO.Finalize();
 	}
 
 	void Destroy()
