@@ -73,12 +73,12 @@ public:
 	{
 		FDirectLightGameMode::OnUpdate();
 
-		m_Camera = FCamera(Vector3f(1.5f, 1.f, 0.f), Vector3f(0.f, 0.3f, 0.f), Vector3f(0.f, 1.f, 0.f));
+		m_Camera = FCamera(Vector3f(2.0f, 0.6f, 0.0f), Vector3f(0.f, 0.3f, 0.f), Vector3f(0.f, 1.f, 0.f));
 		m_Camera.SetMouseMoveSpeed(1e-3f);
 		m_Camera.SetMouseRotateSpeed(1e-4f);
 
 		const float FovVertical = MATH_PI / 4.f;
-		m_Camera.SetPerspectiveParams(FovVertical, (float)GetDesc().Width / GetDesc().Height, 0.1f, 100.f);
+		m_Camera.SetPerspectiveParams(FovVertical, (float)GetDesc().Width / GetDesc().Height, 0.5f, 8.f);
 
 		SetupMesh();
 		GenerateCubeMap();
@@ -164,6 +164,22 @@ public:
 					ImGui::Indent(20);
 					ImGui::SliderFloat("Bloom Intensity", &PostProcessing::g_BloomIntensity, 0.f, 5.f);
 					ImGui::SliderFloat("Bloom Threshold", &PostProcessing::g_BloomThreshold, 0.f, 10.f);
+					ImGui::Indent(-20);
+				}
+
+				ImGui::Checkbox("Enable SSR", &PostProcessing::g_EnableSSR);
+				if (PostProcessing::g_EnableSSR)
+				{
+					ImGui::Indent(20);
+					ImGui::Checkbox("Use Hi-Z", &PostProcessing::g_UseHiZ);
+					if (PostProcessing::g_UseHiZ)
+					{
+						ImGui::Checkbox("Use Min-Max Z", &PostProcessing::g_UseMinMaxZ);
+					}
+					ImGui::SliderFloat("Thickness", &PostProcessing::g_Thickness, 0.f, 0.2f);
+					ImGui::SliderFloat("WorldThickness", &PostProcessing::g_WorldThickness, 0.f, 1.f);
+					ImGui::SliderFloat("CompareTolerance", &PostProcessing::g_CompareTolerance, 0.f, 0.1f);
+					ImGui::SliderInt("NumRays", &PostProcessing::g_NumRays, 1, 16);
 					ImGui::Indent(-20);
 				}
 
@@ -266,6 +282,7 @@ public:
 		ActorItem->Init(L"../Resources/Models/harley/harley.obj",true,false);
 		ActorItem->Model->SetLightDir(m_LightInfo.LightDir);
 		ActorItem->Model->SetLightIntensity(0.5);
+		ActorItem->Model->SetPosition(0.f, -0.05f, 0.f);
 		DiffiusePassList.push_back(ActorItem);
 
 		m_LongLatPass.Init();

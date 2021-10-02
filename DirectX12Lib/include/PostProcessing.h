@@ -11,6 +11,12 @@ namespace PostProcessing
 	extern float g_BloomIntensity;
 	extern float g_BloomThreshold;
 	extern bool g_EnableSSR;
+	extern bool g_UseHiZ;
+	extern bool g_UseMinMaxZ;
+	extern float g_Thickness;
+	extern float g_WorldThickness;
+	extern float g_CompareTolerance;
+	extern int g_NumRays;
 
 	void Initialize();
 	void Destroy();

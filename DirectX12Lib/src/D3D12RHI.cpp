@@ -80,7 +80,7 @@ ComPtr<IDXGIAdapter1> D3D12RHI::ChooseAdapter(ComPtr<IDXGIFactory4> factory)
 		if (SUCCEEDED(D3D12CreateDevice(adapter.Get(), D3D_FEATURE_LEVEL_11_0, __uuidof(ID3D12Device), nullptr)))
 		{
 			float sizeGB = 1 << 30;
-			//std::wcout << "***Adapter: " << desc.Description << ": " << desc.DedicatedVideoMemory / sizeGB << "G" << std::endl;
+			std::wcout << "***Adapter: " << desc.Description << ": " << desc.DedicatedVideoMemory / sizeGB << "G" << std::endl;
 			if (desc.DedicatedVideoMemory > MaxGPUMemory)
 			{
 				BestAdapterIndex = adapterIndex;

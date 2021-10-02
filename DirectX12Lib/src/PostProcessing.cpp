@@ -14,6 +14,8 @@
 #include "Camera.h"
 #include "CubeBuffer.h"
 #include "UserMarkers.h"
+#include "TemporalEffects.h"
+#include "MotionBlur.h"
 
 using namespace BufferManager;
 extern FCommandListManager g_CommandListManager;
@@ -24,8 +26,13 @@ namespace PostProcessing
 
 	float g_BloomIntensity = 1.f;
 	float g_BloomThreshold = 1.f;
-	float g_Thickness = 0.08f;
 	bool g_EnableSSR = true;
+	bool g_UseHiZ = true;
+	bool g_UseMinMaxZ = false;
+	float g_Thickness = 0.08f;
+	float g_WorldThickness = 0.06f;
+	float g_CompareTolerance = 0.027f;
+	int g_NumRays = 2;
 
 	FRootSignature m_CSSignature;
 	FRootSignature m_PostProcessSignature;
@@ -254,9 +261,9 @@ namespace PostProcessing
 		GfxContext.TransitionResource(g_BloomBuffers[0], D3D12_RESOURCE_STATE_COMMON, true);
 	}
 
-	void BuildHZB(FCommandContext& GfxContext)
+	void BuildHZB(FCommandContext& CommandContext)
 	{
-		UserMarker GpuMarker(GfxContext, "BuildHZB");
+		UserMarker GpuMarker(CommandContext, "BuildHZB");
 		int32_t ScreenWidth = WindowWin32::Get().GetWidth();
 		int32_t ScreenHeight = WindowWin32::Get().GetHeight();
 		int32_t NumMipsX = std::max((int32_t)std::ceil(std::log2(ScreenWidth) - 1.0), 1);
@@ -265,9 +272,14 @@ namespace PostProcessing
 		int32_t HZBWidth = 1 << NumMipsX;
 		int32_t HZBHeight = 1 << NumMipsY;
 
-		GfxContext.TransitionResource(g_SceneDepthZ, D3D12_RESOURCE_STATE_NON_PIXEL_SHADER_RESOURCE, true);
+		CommandContext.TransitionResource(g_SceneDepthZ, D3D12_RESOURCE_STATE_NON_PIXEL_SHADER_RESOURCE, true);
 
-		FComputeContext& ComputeContext = GfxContext.GetComputeContext();
+#if ASYNC_COMPUTE
+		g_CommandListManager.GetComputeQueue().WaitForFenceValue(CommandContext.Flush());
+		FComputeContext& ComputeContext = FComputeContext::Begin(L"Post Effects");
+#else
+		FComputeContext& ComputeContext = CommandContext.GetComputeContext();
+#endif
 
 		ComputeContext.SetRootSignature(m_CSSignature);
 		ComputeContext.SetPipelineState(m_CSBuildHZBPSO);
@@ -282,23 +294,21 @@ namespace PostProcessing
 		for (int i = 0; i < NumMips; ++i)
 		{
 			if (i > 0)
-			{
 				ComputeContext.TransitionSubResource(g_HiZBuffer, D3D12_RESOURCE_STATE_NON_PIXEL_SHADER_RESOURCE, i - 1, true);
-			}
 			ComputeContext.TransitionSubResource(g_HiZBuffer, D3D12_RESOURCE_STATE_UNORDERED_ACCESS, i, true);
-			ComputeContext.ClearUAV(g_HiZBuffer,i);
+			ComputeContext.ClearUAV(g_HiZBuffer, i);
 
 			ComputeContext.SetDynamicDescriptor(1, 0, i == 0 ? g_SceneDepthZ.GetDepthSRV() : g_HiZBuffer.GetMipSRV(i - 1));
 			ComputeContext.SetDynamicDescriptor(2, 0, g_HiZBuffer.GetMipUAV(i));
 
-			int32_t DestSizeX = DivideByMultiple(HZBWidth, uint32_t(1 << i));
-			int32_t DestSizeY = DivideByMultiple(HZBHeight, uint32_t(1 << i));
+			int32_t DstSizeX = DivideByMultiple(HZBWidth, uint32_t(1 << i));
+			int32_t DstSizeY = DivideByMultiple(HZBHeight, uint32_t(1 << i));
 
 			float SrcWidth = (float)g_SceneDepthZ.GetWidth();
 			float SrcHeight = (float)g_SceneDepthZ.GetHeight();
-			if ( i > 0)
+			if (i > 0)
 			{
-				SrcWidth = (float)DivideByMultiple(HZBWidth, uint32_t(1 << (i-1)));
+				SrcWidth = (float)DivideByMultiple(HZBWidth, uint32_t(1 << (i - 1)));
 				SrcHeight = (float)DivideByMultiple(HZBHeight, uint32_t(1 << (i - 1)));
 			}
 			Constants.SrcTexelSize = Vector2f(1.f / SrcWidth, 1.f / SrcHeight);
@@ -312,14 +322,89 @@ namespace PostProcessing
 			Constants.InputViewportMaxBound = ViewportBound;
 			ComputeContext.SetDynamicConstantBufferView(0, sizeof(Constants), &Constants);
 
-			ComputeContext.Dispatch2D(DestSizeX, DestSizeY);
+			ComputeContext.Dispatch2D(DstSizeX, DstSizeY);
+
 			ComputeContext.TransitionSubResource(g_HiZBuffer, D3D12_RESOURCE_STATE_COMMON, i, true);
 		}
+
+		//CommandContext.TransitionResource(g_SceneDepthZ, D3D12_RESOURCE_STATE_COMMON, true);
+		//ComputeContext.Flush(true);
+#if ASYNC_COMPUTE
+		ComputeContext.Finish(true);
+#endif
 	}
 
 	void GenerateSSR(FCommandContext& GfxContext, FCamera& Camera, FCubeBuffer& CubeBuffer)
 	{
 		BuildHZB(GfxContext);
+
+		UserMarker GpuMarker(GfxContext, "SSR");
+		// Set necessary state.
+		GfxContext.SetRootSignature(m_PostProcessSignature);
+		GfxContext.SetPipelineState(m_SSRPSO);
+		GfxContext.SetPrimitiveTopology(D3D_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
+		// jitter offset
+		GfxContext.SetViewportAndScissor(0, 0, g_SSRBuffer.GetWidth(), g_SSRBuffer.GetHeight());
+
+		FColorBuffer& SceneBuffer = g_SceneColorBuffer;
+
+		// Indicate that the back buffer will be used as a render target.
+		GfxContext.TransitionResource(g_SSRBuffer, D3D12_RESOURCE_STATE_RENDER_TARGET);
+		GfxContext.TransitionResource(g_GBufferA, D3D12_RESOURCE_STATE_PIXEL_SHADER_RESOURCE);
+		GfxContext.TransitionResource(g_GBufferB, D3D12_RESOURCE_STATE_PIXEL_SHADER_RESOURCE);
+		GfxContext.TransitionResource(g_GBufferC, D3D12_RESOURCE_STATE_PIXEL_SHADER_RESOURCE);
+		GfxContext.TransitionResource(g_SceneDepthZ, D3D12_RESOURCE_STATE_PIXEL_SHADER_RESOURCE);
+		GfxContext.TransitionResource(g_HiZBuffer, D3D12_RESOURCE_STATE_PIXEL_SHADER_RESOURCE);
+		GfxContext.TransitionResource(CubeBuffer, D3D12_RESOURCE_STATE_PIXEL_SHADER_RESOURCE);
+		GfxContext.TransitionResource(MotionBlur::g_VelocityBuffer, D3D12_RESOURCE_STATE_PIXEL_SHADER_RESOURCE);
+		GfxContext.TransitionResource(TemporalEffects::GetHistoryBuffer(), D3D12_RESOURCE_STATE_PIXEL_SHADER_RESOURCE, true);
+
+		GfxContext.SetRenderTargets(1, &g_SSRBuffer.GetRTV());
+
+		__declspec(align(16)) struct
+		{
+			FMatrix		ViewProj;
+			FMatrix		InvViewProj;
+			FMatrix		ClipToPreClipNoAA;
+			Vector4f	RootSizeMipCount;
+			Vector4f	HZBUvFactorAndInvFactor;
+			Vector3f	CameraPos;
+			float		Thickness;
+			float		WorldThickness;
+			float		CompareTolerance;
+			float		UseHiZ;
+			float		UseMinMaxZ;
+			int			NumRays;
+			int			FrameIndexMod8;
+		} PSConstants;
+
+		float FactorX = 1.f * g_SSRBuffer.GetWidth() / g_HiZBuffer.GetWidth();
+		float FactorY = 1.f * g_SSRBuffer.GetHeight() / g_HiZBuffer.GetHeight();
+		PSConstants.HZBUvFactorAndInvFactor = Vector4f(FactorX, FactorY, 1.f / FactorX, 1.f / FactorY);
+		PSConstants.CameraPos = Camera.GetPosition();
+		PSConstants.RootSizeMipCount = Vector4f((float)g_HiZBuffer.GetWidth(), (float)g_HiZBuffer.GetHeight(), (float)g_HiZBuffer.GetNumMips(), 0.f);
+		PSConstants.ViewProj = Camera.GetViewProjMatrix();
+		PSConstants.InvViewProj = PSConstants.ViewProj.Inverse();
+		PSConstants.ClipToPreClipNoAA = Camera.GetClipToPrevClipNoAA();
+		PSConstants.Thickness = g_Thickness;
+		PSConstants.WorldThickness = g_WorldThickness;
+		PSConstants.CompareTolerance = g_CompareTolerance;
+		PSConstants.UseHiZ = g_UseHiZ ? 1.f : 0.f;
+		PSConstants.UseMinMaxZ = g_UseMinMaxZ ? 1.f : 0.f;
+		PSConstants.NumRays = g_NumRays;
+		PSConstants.FrameIndexMod8 = TemporalEffects::GetFrameIndex() % 8;
+
+		GfxContext.SetDynamicConstantBufferView(0, sizeof(PSConstants), &PSConstants);
+		GfxContext.SetDynamicDescriptor(1, 0, g_GBufferA.GetSRV());
+		GfxContext.SetDynamicDescriptor(1, 1, g_GBufferB.GetSRV());
+		GfxContext.SetDynamicDescriptor(1, 2, g_GBufferC.GetSRV());
+		GfxContext.SetDynamicDescriptor(1, 3, g_SceneDepthZ.GetDepthSRV());
+		GfxContext.SetDynamicDescriptor(1, 4, g_HiZBuffer.GetSRV());
+		GfxContext.SetDynamicDescriptor(1, 5, TemporalEffects::GetHistoryBuffer().GetSRV());
+		GfxContext.SetDynamicDescriptor(1, 6, MotionBlur::g_VelocityBuffer.GetSRV());
+		GfxContext.SetDynamicDescriptor(1, 7, CubeBuffer.GetCubeSRV(0));
+
+		GfxContext.Draw(3);
 	}
 
 }

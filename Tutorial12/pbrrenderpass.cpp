@@ -83,6 +83,7 @@ void PBRRenderPass::RenderBasePass(FCommandContext& CommandContext, FCamera& Mai
 	CommandContext.TransitionResource(MotionBlur::g_VelocityBuffer, D3D12_RESOURCE_STATE_RENDER_TARGET);
 	CommandContext.TransitionResource(g_SceneDepthZ, D3D12_RESOURCE_STATE_DEPTH_WRITE, true);
 
+
 	D3D12_CPU_DESCRIPTOR_HANDLE RTVs[] = {
 		g_SceneColorBuffer.GetRTV(), g_GBufferA.GetRTV(), g_GBufferB.GetRTV(), g_GBufferC.GetRTV(), MotionBlur::g_VelocityBuffer.GetRTV(),
 	};
@@ -169,7 +170,7 @@ void PBRRenderPass::RenderIBL(FCommandContext& GfxContext, FCamera& MainCamera, 
 	GfxContext.TransitionResource(PrefilteredCube, D3D12_RESOURCE_STATE_PIXEL_SHADER_RESOURCE);
 	GfxContext.TransitionResource(PreintegratedGF, D3D12_RESOURCE_STATE_PIXEL_SHADER_RESOURCE);
 
-	//GfxContext.TransitionResource(BufferManager::g_SSRBuffer, D3D12_RESOURCE_STATE_PIXEL_SHADER_RESOURCE,true);
+	GfxContext.TransitionResource(BufferManager::g_SSRBuffer, D3D12_RESOURCE_STATE_PIXEL_SHADER_RESOURCE,true);
 	GfxContext.TransitionResource(SceneBuffer, D3D12_RESOURCE_STATE_RENDER_TARGET);
 	GfxContext.TransitionResource(g_GBufferA, D3D12_RESOURCE_STATE_PIXEL_SHADER_RESOURCE);
 	GfxContext.TransitionResource(g_GBufferB, D3D12_RESOURCE_STATE_PIXEL_SHADER_RESOURCE);
@@ -189,7 +190,7 @@ void PBRRenderPass::RenderIBL(FCommandContext& GfxContext, FCamera& MainCamera, 
 	GfxContext.SetDynamicDescriptor(2, 1, g_GBufferB.GetSRV());
 	GfxContext.SetDynamicDescriptor(2, 2, g_GBufferC.GetSRV());
 	GfxContext.SetDynamicDescriptor(2, 3, g_SceneDepthZ.GetDepthSRV());
-	//GfxContext.SetDynamicDescriptor(2, 4, BufferManager::g_SSRBuffer.GetSRV());
+	GfxContext.SetDynamicDescriptor(2, 4, BufferManager::g_SSRBuffer.GetSRV());
 
 	GfxContext.SetDynamicDescriptor(2, 7, IrradianceCube.GetCubeSRV());
 	GfxContext.SetDynamicDescriptor(2, 8, PrefilteredCube.GetCubeSRV());

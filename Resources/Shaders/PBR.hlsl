@@ -116,6 +116,66 @@ float3 Calculate3DVelocity(float4 CurrentVelocity, float4 PreVelocity)
 
 float4 CalcIBL(float3 N, float3 V, float3 Albedo, float Metallic, float Roughness, float AO, float4 SSR)
 {
+    //float3 R = reflect(-V, N); //incident ray, surface normal
+
+    //float NoV = saturate(dot(N, V));
+    //float3 F0 = lerp(0.04, Albedo.rgb, Metallic);
+    //float3 F = F_schlickR(NoV, F0, Roughness);
+
+    //float3 Irradiance = 0;
+    //if (bSHDiffuse)
+    //{
+    //    // SH Irradiance
+    //    Irradiance = GetSHIrradiance(N, Degree, Coeffs);
+    //}
+    //else
+    //{
+    //    Irradiance = IrradianceCubeMap.SampleLevel(LinearSampler, N, 0).xyz;
+    //}
+
+    //float3 DiffuseColor = (1.0 - Metallic) * Albedo;
+    //float3 Diffuse = DiffuseColor;
+
+    //FDirectLighting Lighting;
+    //Lighting.Diffuse = 0;
+    //Lighting.Specular = 0;
+    //if (EnableLight == 1)
+    //{
+    //    float3 L = -LightDir;
+    //    BxDFContext Context;
+    //    Init(Context, N, V, L);
+    //    Context.NoL = saturate(Context.NoL);
+    //    Context.NoV = saturate(abs(Context.NoV) + 1e-5);
+
+    //    float3 Color = 0;
+
+    //    // Diffuse
+    //    Lighting.Diffuse = Context.NoL * Diffuse_Burley(Diffuse, Roughness, Context.NoV, Context.NoL, Context.VoH);
+    //    Lighting.Specular = Context.NoL * SpecularGGX(Roughness, F0, Context, Context.NoL);
+
+    //    Diffuse = Lighting.Diffuse;
+
+    //}
+    //else
+    //{
+
+    //   // Diffuse = Diffuse_Lambert(Diffuse);
+    //    Diffuse *= Irradiance;
+    //}
+
+
+    //float Mip = ComputeReflectionCaptureMipFromRoughness(Roughness, MaxMipLevel - 1);
+    //float2 BRDF = PreintegratedGF.SampleLevel(LinearSampler, float2(NoV, Roughness), 0).rg;
+
+    //float3 PrefilteredColor = PrefilteredCubeMap.SampleLevel(LinearSampler, R, Mip).rgb;
+    //float3 Specular = PrefilteredColor * (F * BRDF.x + BRDF.y);
+
+    //float SpecAO = GetSpecularOcclusion(NoV, AO, Roughness);
+    //float3 Final = (Diffuse * AO + Specular * SpecAO) * (1 - SSR.a) + SSR.rgb;
+    //return float4(Final, 1.0);
+    
+    
+    
     float3 R = reflect(-V, N); //incident ray, surface normal
 
     float NoV = saturate(dot(N, V));
@@ -125,7 +185,7 @@ float4 CalcIBL(float3 N, float3 V, float3 Albedo, float Metallic, float Roughnes
     float3 Irradiance = 0;
     if (bSHDiffuse)
     {
-        // SH Irradiance
+		// SH Irradiance
         Irradiance = GetSHIrradiance(N, Degree, Coeffs);
     }
     else
@@ -134,35 +194,7 @@ float4 CalcIBL(float3 N, float3 V, float3 Albedo, float Metallic, float Roughnes
     }
 
     float3 DiffuseColor = (1.0 - Metallic) * Albedo;
-    float3 Diffuse = DiffuseColor;
-
-    FDirectLighting Lighting;
-    Lighting.Diffuse = 0;
-    Lighting.Specular = 0;
-    if (EnableLight == 1)
-    {
-        float3 L = -LightDir;
-        BxDFContext Context;
-        Init(Context, N, V, L);
-        Context.NoL = saturate(Context.NoL);
-        Context.NoV = saturate(abs(Context.NoV) + 1e-5);
-
-        float3 Color = 0;
-
-        // Diffuse
-        Lighting.Diffuse = Context.NoL * Diffuse_Burley(Diffuse, Roughness, Context.NoV, Context.NoL, Context.VoH);
-        Lighting.Specular = Context.NoL * SpecularGGX(Roughness, F0, Context, Context.NoL);
-
-        Diffuse = Lighting.Diffuse;
-
-    }
-    else
-    {
-
-       // Diffuse = Diffuse_Lambert(Diffuse);
-        Diffuse *= Irradiance;
-    }
-
+    float3 Diffuse = DiffuseColor * Irradiance; // no need to multiply "(1 - F)"
 
     float Mip = ComputeReflectionCaptureMipFromRoughness(Roughness, MaxMipLevel - 1);
     float2 BRDF = PreintegratedGF.SampleLevel(LinearSampler, float2(NoV, Roughness), 0).rg;
@@ -265,7 +297,7 @@ Texture2D GBufferA		: register(t0); // normal
 Texture2D GBufferB		: register(t1); // metallSpecularRoughness
 Texture2D GBufferC		: register(t2); // AlbedoAO
 Texture2D SceneDepthZ	: register(t3); // Depth
-//Texture2D SSRBuffer		: register(t4); // SSR
+Texture2D SSRBuffer		: register(t4); // SSR
 
 float4 PS_IBL(float2 Tex : TEXCOORD, float4 ScreenPos : SV_Position) : SV_Target
 {
@@ -280,8 +312,7 @@ float4 PS_IBL(float2 Tex : TEXCOORD, float4 ScreenPos : SV_Position) : SV_Target
     float AO = AlbedoAo.w;
 
     float Depth = SceneDepthZ.SampleLevel(LinearSampler, Tex, 0).x;
-    //float4 SSR = SSRBuffer.SampleLevel(LinearSampler, Tex, 0);
-    float4 SSR = 0;
+    float4 SSR = SSRBuffer.SampleLevel(LinearSampler, Tex, 0);
     float2 ScreenCoord = ViewportUVToScreenPos(Tex);
 
     float4 NDCPos = float4(ScreenCoord, Depth, 1.0f);

@@ -1,7 +1,6 @@
-#include "Camera.h"
-#include <stdio.h>
-#include "glm/glm.hpp"
+﻿#include "Camera.h"
 #include "GameInput.h"
+#include <stdio.h>
 
 FCamera::FCamera()
 {
@@ -10,18 +9,17 @@ FCamera::FCamera()
 
 FCamera::FCamera(const Vector3f& CamPosition, const Vector3f& LookAtPosition, const Vector3f& UpDirection)
 {
-	m_Position = CamPosition;
+	Position = CamPosition;
 
-	m_Up = UpDirection.Normalize();
-	m_Forward = LookAtPosition - CamPosition;
-	m_CameraLength = m_Forward.Length();
-	m_Forward = m_Forward.Normalize();
-	m_Right = Cross(m_Up, m_Forward);
-	m_Up = Cross(m_Forward, m_Right);
+	Up = UpDirection.Normalize();
+	Forward = LookAtPosition - CamPosition;
+	CameraLength = Forward.Length();
+	Forward = Forward.Normalize();
+	Right = Cross(Up, Forward);
+	Up = Cross(Forward, Right);
 
 	UpdateViewMatrix();
 }
-
 
 void FCamera::Update(float DeltaTime)
 {
@@ -59,95 +57,120 @@ void FCamera::Update(float DeltaTime)
 
 Vector4f FCamera::GetPosition() const
 {
-	return Vector4f(m_Position, 1.f);
+	return Vector4f(Position, 1.f);
+}
+
+void FCamera::UpdateAllMatrix()
+{
+	// Record the Previous frame ViewProjMatrix
+	m_PreviousViewMat = m_ViewMat;
+	m_PreviousProjMat = m_ProjMat;
+	m_PreviousViewProjMatrix = m_ViewMat * m_ProjMat;
+
+	UpdateViewMatrix();
+
+	UpdateProjMatrix();
+
+	m_ViewProjMatrix = m_ViewMat * m_ProjMat;
+
+	// Update ReprojectMatrix
+	m_ClipToPrevClip = m_ViewProjMatrix.Inverse() * m_PreviousViewProjMatrix;
+
+	FMatrix PreProjNoAA = m_PreviousProjMat;
+	PreProjNoAA.r2.x = 0.f;
+	PreProjNoAA.r2.y = 0.f;
+	FMatrix PreViewProjNoAA = m_PreviousViewMat * PreProjNoAA;
+
+	FMatrix CurProjNoAA = m_ProjMat;
+	CurProjNoAA.r2.x = 0.f;
+	CurProjNoAA.r2.y = 0.f;
+	FMatrix CurViewProjNoAA = m_ViewMat * CurProjNoAA;
+
+	m_ClipToPrevClipNoAA = PreViewProjNoAA.Inverse() * CurViewProjNoAA;
 }
 
 void FCamera::UpdateViewMatrix()
 {
-	Vector3f Focus = m_Position + m_Forward * m_CameraLength;
-	m_ViewMat = FMatrix::MatrixLookAtLH(m_Position, Focus, m_Up);
+	// Update ViewMatrix 
+	Vector3f Focus = Position + Forward * CameraLength;
+	m_ViewMat = FMatrix::MatrixLookAtLH(Position, Focus, Up);
 }
 
-FMatrix FCamera::GetViewMatrix() const
+const FMatrix FCamera::GetViewMatrix() const
 {
 	return m_ViewMat;
 }
 
 void FCamera::MoveForward(float Value)
 {
-	Vector3f Delta = m_Forward * Value;
-	m_Position += Delta;
-	UpdateViewMatrix();
+	if (CameraLength > Value)
+	{
+		CameraLength -= Value;
+		Vector3f Delta = Forward * Value;
+		Position += Delta;
+		//UpdateViewMatrix();
+	}
 }
 
 void FCamera::MoveRight(float Value)
 {
-	Vector3f Delta = m_Right * Value;
-	m_Position += Delta;
-	UpdateViewMatrix();
+	Vector3f Delta = Right * Value;
+	Position += Delta;
+	//UpdateViewMatrix();
 }
 
 void FCamera::MoveUp(float Value)
 {
-	Vector3f Delta = m_Up * Value;
-	m_Position += Delta;
-	UpdateViewMatrix();
+	Vector3f Delta = Up * Value;
+	Position += Delta;
+	//UpdateViewMatrix();
 }
 
 void FCamera::Orbit(float Yaw, float Pitch)
 {
-	printf("Orbit %f %f\n", Yaw, Pitch);
-	Vector3f Focus = m_Position + m_Forward * m_CameraLength;
-	float D0 = -m_Right.Dot(Focus);
-	float D1 = -m_Up.Dot(Focus);
-	float D2 = -m_Forward.Dot(Focus);
+	Vector3f Focus = Position + Forward * CameraLength;
+	float D0 = -Right.Dot(Focus);
+	float D1 = -Up.Dot(Focus);
+	float D2 = -Forward.Dot(Focus);
 
-	// 1. to orbit space
-	FMatrix ToOrbit(Vector4f(m_Right, D0), Vector4f(m_Up, D1), Vector4f(m_Forward, D2), Vector4f(0.f, 0.f, 0.f, 1.f));
-    ToOrbit = ToOrbit.Transpose();
-
-	// 3. translate camera in orbit space
-	FMatrix CameraTranslate = FMatrix::TranslateMatrix(Vector3f(0.f, 0.f, -m_CameraLength));
+	// 1. translate camera to focus
+	FMatrix CameraTranslate = FMatrix::TranslateMatrix(Vector3f(0.f, 0.f, -CameraLength));
 	FMatrix Result = CameraTranslate;
 
-	// 2. rotate in orbit space
-	FMatrix Rot = FMatrix::MatrixRotationRollPitchYaw(0, Pitch, Yaw);
+	Vector3f Forward1 = Vector3f(Forward.x, 0.f, Forward.z).Normalize();
+	Vector3f Up1 = Cross(Forward1, Right);
+
+	// 2. pitch camera to horizontal
+	float ToHorizontalPitch = acos(Forward.Dot(Forward1));
+	ToHorizontalPitch = Forward.y < 0.f ? ToHorizontalPitch : -ToHorizontalPitch;
+	FMatrix ToHorrizontal = FMatrix::MatrixRotationRollPitchYaw(0.f, ToHorizontalPitch, 0.f);
+	Result *= ToHorrizontal;
+
+	// 3. rotate camera in horizontal
+	FMatrix Rot = FMatrix::MatrixRotationRollPitchYaw(0.f, Pitch, Yaw);
 	Result *= Rot;
 
 	// 4. translate to world space
-	FMatrix OrbitToWorld = FMatrix(m_Right, m_Up, m_Forward, Focus);
+	FMatrix OrbitToWorld = FMatrix(Right, Up1, Forward1, Vector3f(0.f));
 	Result *= OrbitToWorld;
 
-	m_Right = Result.r0;
-	m_Up = Result.r1;
-	m_Forward = Result.r2;
-	m_Position = Result.r3;
+	Right = Result.r0;
+	Up = Result.r1;
+	Forward = Result.r2;
+	Position = Focus - Forward * CameraLength; // Focus will not change
+	//UpdateViewMatrix();
 }
 
 void FCamera::Rotate(float Yaw, float Pitch)
 {
-	printf("Rotate %f %f\n", Yaw, Pitch);
-	// pitch, yaw, roll
 	FMatrix Rot = FMatrix::MatrixRotationRollPitchYaw(0.f, Pitch, Yaw);
-	FMatrix Trans(m_Right, m_Up, m_Forward, Vector3f(0.f));
-	FMatrix Result = Rot * Trans;
+	FMatrix Trans(Right, Up, Forward, Vector3f(0.f));
+	FMatrix Result = Trans * Rot;
 
-	m_Right = Result.r0;
-	m_Up = Result.r1;
-	m_Forward = Result.r2;
-}
-
-void FCamera::Rotate(float radius,float theta, float phi)
-{
-	// Convert Spherical to Cartesian coordinates.
-	m_Position = SphericalToCartesian(radius, theta, phi);
-
-	// Build the view matrix.
-	Vector3f target;
-	Vector3f up = Vector3f(0.0f, 1.0f, 0.0f);
-
-	Vector3f Focus = m_Position + m_Forward * m_CameraLength;
-	m_ViewMat = FMatrix::MatrixLookAtLH(m_Position, Focus, m_Up);
+	Right = Result.r0;
+	Up = Result.r1;
+	Forward = Result.r2;
+	//UpdateViewMatrix();
 }
 
 void FCamera::SetVerticalFov(float VerticalFov)
@@ -178,14 +201,14 @@ void FCamera::SetPerspectiveParams(float VerticalFov, float AspectHByW, float Ne
 	UpdateProjMatrix();
 }
 
-const FMatrix FCamera::GetProjectionMatrix() const
-{
-	return m_ProjMat;
-}
-
 void FCamera::UpdateProjMatrix()
 {
 	m_ProjMat = FMatrix::MatrixPerspectiveFovLH(m_VerticalFov, m_AspectHByW, m_NearZ, m_FarZ);
+}
+
+const FMatrix FCamera::GetProjectionMatrix() const
+{
+	return m_ProjMat;
 }
 
 void FCamera::ProcessMouseMove(float DeltaTime)
@@ -226,33 +249,4 @@ void FCamera::ProcessMouseMove(float DeltaTime)
 	{
 		this->MoveForward(Zoom * m_ZoomSpeed);
 	}
-}
-
-void FCamera::UpdateAllMatrix()
-{
-	// Record the Previous frame ViewProjMatrix
-	m_PreviousViewMat = m_ViewMat;
-	m_PreviousProjMat = m_ProjMat;
-	m_PreviousViewProjMatrix = m_ViewMat * m_ProjMat;
-
-	UpdateViewMatrix();
-
-	UpdateProjMatrix();
-
-	m_ViewProjMatrix = m_ViewMat * m_ProjMat;
-
-	// Update ReprojectMatrix
-	m_ClipToPrevClip = m_ViewProjMatrix.Inverse() * m_PreviousViewProjMatrix;
-
-	FMatrix PreProjNoAA = m_PreviousProjMat;
-	PreProjNoAA.r2.x = 0.f;
-	PreProjNoAA.r2.y = 0.f;
-	FMatrix PreViewProjNoAA = m_PreviousViewMat * PreProjNoAA;
-
-	FMatrix CurProjNoAA = m_ProjMat;
-	CurProjNoAA.r2.x = 0.f;
-	CurProjNoAA.r2.y = 0.f;
-	FMatrix CurViewProjNoAA = m_ViewMat * CurProjNoAA;
-
-	m_ClipToPrevClipNoAA = PreViewProjNoAA.Inverse() * CurViewProjNoAA;
 }
