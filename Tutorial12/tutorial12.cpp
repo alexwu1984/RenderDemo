@@ -39,6 +39,8 @@
 #include "BufferManager.h"
 #include "PBRFloorRenderPass.h"
 
+#include "GltfModel.h"
+
 extern FCommandListManager g_CommandListManager;
 
 const int CUBE_MAP_SIZE = 1024;
@@ -276,6 +278,12 @@ public:
 
 	void SetupMesh()
 	{
+		{
+			
+			FGLTFMode gltf(L"F:/code/DXAR/ZQjiumi1.glb");
+		}
+
+
 		std::vector< std::shared_ptr<FRenderItem> > DiffiusePassList;
 
 		std::shared_ptr<FRenderItem> ActorItem = std::make_shared<FRenderItem>();

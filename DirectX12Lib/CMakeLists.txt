@@ -53,6 +53,8 @@ set(HEADER_FILES
 	include/MotionBlur.h
 	include/TemporalEffects.h
 	include/UserMarkers.h
+	include/tiny_gltf.h
+	include/GltfModel.h
 )
 
 set(SOURCES
@@ -103,7 +105,8 @@ set(SOURCES
 	src/MotionBlur.cpp
 	src/TemporalEffects.cpp
 	src/UserMarkers.cpp
-						  
+	src/tiny_gltf.cc
+	src/GltfModel.cpp
 )
 
 set( IMGUI_HEADERS
