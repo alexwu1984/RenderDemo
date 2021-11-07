@@ -9,6 +9,7 @@ public:
 	FTexture(D3D12_CPU_DESCRIPTOR_HANDLE Handle) : m_CpuDescriptorHandle(Handle) {}
 
 	void Create(uint32_t Width, uint32_t Height, DXGI_FORMAT Format, const void* InitialData);
+	void Create(float r, float g, float b, float a);
 	void LoadFromFile(const std::wstring& FileName, bool IsSRGB = false);
 	void LoadFromFileForCube(const std::array<std::wstring, 6>& FileNames);
 

@@ -1,5 +1,6 @@
 add_compile_options("/std:c++17")
 include_directories(../ThirdParty/Assimp/include)
+include_directories(./GLTFModel)
 
 set(HEADER_FILES
 	include/ApplicationWin32.h
@@ -53,8 +54,6 @@ set(HEADER_FILES
 	include/MotionBlur.h
 	include/TemporalEffects.h
 	include/UserMarkers.h
-	include/tiny_gltf.h
-	include/GltfModel.h
 )
 
 set(SOURCES
@@ -105,8 +104,6 @@ set(SOURCES
 	src/MotionBlur.cpp
 	src/TemporalEffects.cpp
 	src/UserMarkers.cpp
-	src/tiny_gltf.cc
-	src/GltfModel.cpp
 )
 
 set( IMGUI_HEADERS
@@ -128,17 +125,42 @@ set( IMGUI_SOURCE
     src/imgui/imgui_widgets.cpp
 )
 
+
+set( GLTFModel_HEADERS
+    include/GLTFModel/tiny_gltf.h
+    include/GLTFModel/GltfModel.h
+	include/GLTFModel/GltfNode.h
+	include/GLTFModel/GltfMaterial.h
+	include/GLTFModel/PBRMaterial.h
+	include/GLTFModel/GltfMesh.h
+	include/GLTFModel/GltfMeshBuffer.h
+)
+
+set( GLTFModel_SOURCE
+    src/GLTFModel/tiny_gltf.cpp
+    src/GLTFModel/GltfModel.cpp
+	src/GLTFModel/GltfNode.cpp
+	src/GLTFModel/GltfMaterial.cpp
+	src/GLTFModel/PBRMaterial.cpp
+	src/GLTFModel/GltfMesh.cpp
+	src/GLTFModel/GltfMeshBuffer.cpp
+)
+
 source_group("Header Files\\ImGUI" FILES ${IMGUI_HEADERS} )
 source_group("Source Files\\ImGUI" FILES ${IMGUI_SOURCE} )
+source_group("Header Files\\GLTFModel" FILES ${GLTFModel_HEADERS} )
+source_group("Source Files\\GLTFModel" FILES ${GLTFModel_SOURCE} )
 
 add_library(DirectX12Lib
 	${HEADER_FILES}
 	${SOURCES}
 	${IMGUI_HEADERS}
 	${IMGUI_SOURCE}
+	${GLTFModel_HEADERS}
+	${GLTFModel_SOURCE}
 	)
 
-target_include_directories(DirectX12Lib PUBLIC include include/imgui)
+target_include_directories(DirectX12Lib PUBLIC include include/imgui include/GLTFModel)
 target_include_directories(DirectX12Lib PUBLIC include)
 target_include_directories(DirectX12Lib PUBLIC ../ThirdParty)
 

@@ -1,4 +1,5 @@
 #include "MathLib.h"
+#include "Common.h"
 
 FMatrix::FMatrix()
 	: r0(1.f, 0.f, 0.f, 0.f)
@@ -70,6 +71,17 @@ FMatrix& FMatrix::operator*=(float rhs)
 {
 	*this = (*this) * rhs;
 	return *this;
+}
+
+Vector4f FMatrix::operator [](int index) const
+{
+	Assert(index < 4);
+	return row[index];
+}
+Vector4f& FMatrix::operator[](int index)
+{
+	Assert(index < 4);
+	return row[index];
 }
 
 Vector3f FMatrix::TranslateVector(const Vector3f& vector)
@@ -144,6 +156,15 @@ FMatrix FMatrix::ScaleMatrix(float s)
 		s, 0.f, 0.f, 0.f,
 		0.f, s, 0.f, 0.f,
 		0.f, 0.f, s, 0.f,
+		0.f, 0.f, 0.f, 1.f);
+}
+
+FMatrix FMatrix::ScaleMatrix(const Vector3f& T)
+{
+	return FMatrix(
+		T.x, 0.f, 0.f, 0.f,
+		0.f, T.y, 0.f, 0.f,
+		0.f, 0.f, T.z, 0.f,
 		0.f, 0.f, 0.f, 1.f);
 }
 
@@ -255,3 +276,88 @@ Vector4f operator*(const Vector4f& vec, const FMatrix& mat)
 	return Vector4f(d0, d1, d2, d3);
 }
 
+void MathLib::QuaternionNormalize(Vector4f& vec4Out)
+{
+	const float mag = std::sqrt(vec4Out.x * vec4Out.x + vec4Out.y * vec4Out.y + vec4Out.z * vec4Out.z + vec4Out.w * vec4Out.w);
+	if (mag)
+	{
+		const float invMag = 1.0f / mag;
+		vec4Out.x *= invMag;
+		vec4Out.y *= invMag;
+		vec4Out.z *= invMag;
+		vec4Out.w *= invMag;
+	}
+}
+
+void MathLib::QuaternionInterpolate(Vector4f& vec4Out, const Vector4f& vec4Start, const Vector4f& vec4End, float fFactor)
+{
+	// calc cosine theta
+	float cosom = vec4Start.x * vec4End.x + vec4Start.y * vec4End.y + vec4Start.z * vec4End.z + vec4Start.w * vec4End.w;
+
+	// adjust signs (if necessary)
+	Vector4f  end = vec4End;
+	if (cosom < 0.0f)
+	{
+		cosom = -cosom;
+		end.x = -end.x;   // Reverse all signs
+		end.y = -end.y;
+		end.z = -end.z;
+		end.w = -end.w;
+	}
+
+	// Calculate coefficients
+	float sclp, sclq;
+	if ((1.0f - cosom) > 0.0001f) // 0.0001 -> some epsillon
+	{
+		// Standard case (slerp)
+		float omega, sinom;
+		omega = (std::acos)(cosom); // extract theta from dot product's cos theta
+		sinom = (std::sin)(omega);
+		sclp = (std::sin)((1.0f - fFactor) * omega) / sinom;
+		sclq = (std::sin)(fFactor * omega) / sinom;
+	}
+	else
+	{
+		// Very close, do linear interp (because it's faster)
+		sclp = 1.0f - fFactor;
+		sclq = fFactor;
+	}
+
+	vec4Out.x = sclp * vec4Start.x + sclq * end.x;
+	vec4Out.y = sclp * vec4Start.y + sclq * end.y;
+	vec4Out.z = sclp * vec4Start.z + sclq * end.z;
+	vec4Out.w = sclp * vec4Start.w + sclq * end.w;
+}
+
+FMatrix MathLib::QuaternionToMatrix(const Vector4f& vec4InQuaternion)
+{
+	FMatrix resMatrix;
+	Vector4 tmp = vec4InQuaternion;
+	QuaternionNormalize(tmp);
+	float x = tmp.x;
+	float y = tmp.y;
+	float z = tmp.z;
+	float w = tmp.w;
+
+	resMatrix[0][0] = (1.0f) - (2.0f) * (y * y + z * z);
+	resMatrix[1][0] = (2.0f) * (x * y - z * w);
+	resMatrix[2][0] = (2.0f) * (x * z + y * w);
+	resMatrix[3][0] = 0.0f;
+
+	resMatrix[0][1] = (2.0f) * (x * y + z * w);
+	resMatrix[1][1] = (1.0f) - (2.0f) * (x * x + z * z);
+	resMatrix[2][1] = (2.0f) * (y * z - x * w);
+	resMatrix[3][1] = 0.0f;
+
+	resMatrix[0][2] = (2.0f) * (x * z - y * w);
+	resMatrix[1][2] = (2.0f) * (y * z + x * w);
+	resMatrix[2][2] = (1.0f) - (2.0f) * (x * x + y * y);
+	resMatrix[3][2] = 0.0f;
+
+	resMatrix[0][3] = 0.0f;
+	resMatrix[1][3] = 0.0f;
+	resMatrix[2][3] = 0.0f;
+	resMatrix[3][3] = 1.0f;
+
+	return FMatrix(resMatrix.r0,resMatrix.r1,resMatrix.r2,resMatrix.r3);
+}

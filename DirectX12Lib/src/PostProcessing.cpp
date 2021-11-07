@@ -26,7 +26,7 @@ namespace PostProcessing
 
 	float g_BloomIntensity = 1.f;
 	float g_BloomThreshold = 1.f;
-	bool g_EnableSSR = true;
+	bool g_EnableSSR = false;
 	bool g_UseHiZ = true;
 	bool g_UseMinMaxZ = false;
 	float g_Thickness = 0.08f;

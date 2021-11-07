@@ -30,7 +30,7 @@ public:
 	void SetRotation(const FMatrix& Rotation);
 	void SetPosition(const Vector3f& Position);
 	const FMatrix GetModelMatrix() { return m_ModelMatrix; }
-	const BoundingBox& GetBoundBox() const { return m_boundingBox; }
+	const BoundingBoxDeprecated& GetBoundBox() const { return m_boundingBox; }
 private:
 	void UpdateModelMatrix();
 	void UpdateBoundingBox(const Vector3f& pos, Vector3f& vMin, Vector3f& vMax);
@@ -46,5 +46,5 @@ private:
 	Vector3f m_Position;
 	FMatrix m_ModelMatrix;
 
-	BoundingBox m_boundingBox;
+	BoundingBoxDeprecated m_boundingBox;
 };

@@ -141,6 +141,10 @@ struct Vector3
 		return (T)sqrt(x * x + y * y + z * z);
 	}
 
+	T Length2() const {
+		return x * x + y * y + z * z;
+	}
+
 	Vector3 Normalize() const
 	{
 		T length = Length();
@@ -202,18 +206,39 @@ struct Vector4
 	{
 		return x * rhs.x + y * rhs.y + z * rhs.z + w * rhs.w;
 	}
+
+	Vector4& operator += (const Vector4& rhs)
+	{
+		x += rhs.x;
+		y += rhs.y;
+		z += rhs.z;
+		w += rhs.w;
+		return *this;
+	}
+
+	Vector4 operator + (const Vector4& rhs) const
+	{
+		Vector4 Res(*this);
+		Res += rhs;
+		return Res;
+	}
+
+	Vector4 operator/(const float& other) const
+	{
+		return Vector4(this->x / other, this->y / other, this->z / other,this->w / other);
+	}
 };
 
 template<typename T, typename scalar>
 Vector4<T> operator * (const Vector4<T>& lhs, scalar s)
 {
-	return Vector4<T>(lhs.x * s, lhs.y * s, lhs.z * s, lhs.w * s);
+	return Vector4<T>(lhs.x * (T)s, lhs.y * (T)s, lhs.z * (T)s, lhs.w * (T)s);
 }
 
 template<typename T, typename scalar>
 Vector4<T> operator * (scalar s, const Vector4<T>& lhs)
 {
-	return Vector4<T>(lhs.x * s, lhs.y * s, lhs.z * s, lhs.w * s);
+	return Vector4<T>(lhs.x * (T)s, lhs.y * (T)s, lhs.z * (T)s, lhs.w * (T)s);
 }
 
 
@@ -256,6 +281,9 @@ struct FMatrix
 	FMatrix operator * (float rhs) const;
 	FMatrix& operator *= (float rhs);
 
+	Vector4f operator [](int index) const;
+	Vector4f& operator[](int index);
+
 	Vector3f TranslateVector(const Vector3f& vector);
 	Vector3f TransformPosition(const Vector3f& position);
 	FMatrix Transpose() const;
@@ -263,6 +291,7 @@ struct FMatrix
 
 	static FMatrix TranslateMatrix(const Vector3f& T);
 	static FMatrix ScaleMatrix(float s);
+	static FMatrix ScaleMatrix(const Vector3f& T);
 	static FMatrix RotateX(float v);
 	static FMatrix RotateY(float v);
 	static FMatrix RotateZ(float v);
@@ -278,7 +307,9 @@ struct FMatrix
 		float FarZ);
 };
 
-struct BoundingBox
+inline Vector4f operator*(const Vector4f& vec, const FMatrix& mat);
+
+struct BoundingBoxDeprecated
 {
 	static const size_t CORNER_COUNT = 8;
 
@@ -286,19 +317,36 @@ struct BoundingBox
 	Vector3f Extents;           // Distance from the center to each side.
 
 	// Creators
-	BoundingBox() noexcept : Center(0, 0, 0), Extents(1.f, 1.f, 1.f) {}
+	BoundingBoxDeprecated() noexcept : Center(0, 0, 0), Extents(1.f, 1.f, 1.f) {}
 
-	BoundingBox(const BoundingBox&) = default;
-	BoundingBox& operator=(const BoundingBox&) = default;
+	BoundingBoxDeprecated(const BoundingBoxDeprecated&) = default;
+	BoundingBoxDeprecated& operator=(const BoundingBoxDeprecated&) = default;
 
-	BoundingBox(BoundingBox&&) = default;
-	BoundingBox& operator=(BoundingBox&&) = default;
+	BoundingBoxDeprecated(BoundingBoxDeprecated&&) = default;
+	BoundingBoxDeprecated& operator=(BoundingBoxDeprecated&&) = default;
 
 };
 
-//inline Vector4f operator*(const FMatrix& mat, const Vector4f& vec);
+struct FBoundingBox
+{
+	Vector3f minPoint = Vector3f(0, 0, 0);
+	Vector3f maxPoint = Vector3f(0, 0, 0);;
+	Vector3f centerPoint = Vector3f(0, 0, 0);
 
-inline Vector4f operator*(const Vector4f& vec, const FMatrix& mat);
+	float radius = 0.0f;
+	float GetRadius()
+	{
+		return std::sqrt(GetRadius2());
+	}
+
+	float GetRadius2()
+	{
+		return 0.25f * (maxPoint - minPoint).Length2();
+	}
+};
+
+
+
 
 namespace MathLib
 {
@@ -331,6 +379,28 @@ namespace MathLib
 	{
 		return 0 == ((size_t)value & (alignment - 1));
 	}
+
+	/****************************************************
+*	旋转四元组归一化
+*	@param[vec4Out]		四元组
+****************************************************/
+	void QuaternionNormalize(Vector4f& vec4Out);
+
+	/****************************************************
+*	旋转四元组插值
+*	@param[vec4Out]		插值后的四元组
+*	@param[vec4Start]	初始四元组
+*	@param[vec4End]		结束四元组
+*	@param[fFactor]		插值系数
+****************************************************/
+	void QuaternionInterpolate(Vector4f& vec4Out, const Vector4f& vec4Start, const Vector4f& vec4End, float fFactor);
+
+	/****************************************************
+*	旋转四元组转化成glm::mat4
+*	@param[vec4InQuaternion]	旋转四元组
+*	@return						旋转矩阵
+****************************************************/
+	FMatrix QuaternionToMatrix(const Vector4f& vec4InQuaternion);
 }
 
 

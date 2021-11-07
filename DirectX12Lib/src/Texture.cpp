@@ -49,6 +49,12 @@ void FTexture::Create(uint32_t Width, uint32_t Height, DXGI_FORMAT Format, const
 	D3D12RHI::Get().GetD3D12Device()->CreateShaderResourceView(m_Resource.Get(), nullptr, m_CpuDescriptorHandle);
 }
 
+void FTexture::Create(float r, float g, float b, float a)
+{
+	uint8_t tmp[] = { (uint8_t)(r * 255),(uint8_t)(g * 255),(uint8_t)(b * 255),(uint8_t)(a * 255) };
+	Create(1, 1, DXGI_FORMAT_B8G8R8A8_UNORM, tmp);
+}
+
 void FTexture::LoadFromFile(const std::wstring& FileName,bool IsSRGB )
 {
 

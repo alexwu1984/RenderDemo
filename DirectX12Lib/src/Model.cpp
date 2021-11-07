@@ -344,11 +344,11 @@ void FModel::InitializeResource()
 	m_lightMaterial.uLightColor = Vector4f(1.0);
 }
 
- BoundingBox FModel::GetBoundBox() const
+ BoundingBoxDeprecated FModel::GetBoundBox() const
 {
 	if (!m_MeshDataWapper.m_MeshData)
 	{
-		return BoundingBox();
+		return BoundingBoxDeprecated();
 	}
 	return m_MeshDataWapper.m_MeshData->GetBoundBox();
  }

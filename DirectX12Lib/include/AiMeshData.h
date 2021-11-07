@@ -73,7 +73,7 @@ public:
 	const FMaterialData& GetMaterialData(size_t Index);
 	std::map<uint32_t, FMaterialData> GetAllMaterialData();
 	void UpdateBoundingBox(const Vector3f& pos, Vector3f& vMin, Vector3f& vMax);
-	const BoundingBox& GetBoundBox() const { return m_Bounds; }
+	const BoundingBoxDeprecated& GetBoundBox() const { return m_Bounds; }
 
 	void TraverserNodes(const aiScene* scene);
 	const std::vector<FSubMeshData>& GetSubMeshData() { return m_Submeshes; }
@@ -99,5 +99,5 @@ protected:
 
 	std::map<uint32_t, FMaterialData> m_Materials;
 	std::vector<FSubMeshData> m_Submeshes;
-	BoundingBox m_Bounds;
+	BoundingBoxDeprecated m_Bounds;
 };

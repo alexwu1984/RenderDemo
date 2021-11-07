@@ -69,7 +69,7 @@ public:
 	void SetLightIntensity(const Vector3f& LightIntensity);
 	void SetCameraPos(const Vector3f& cameraPos);
 	void SetLightMVP(FMatrix modelMatrix,FMatrix viewMatrix,FMatrix projectionMatrix);
-	BoundingBox GetBoundBox() const;
+	BoundingBoxDeprecated GetBoundBox() const;
 	void SetDrawParam(const std::function<void(FCommandContext& , std::shared_ptr<FMaterial>)>& fun);
 	void SetShadowType(int32_t shadowType);
 	void InitRootIndex(int lightMaterialIndex, int textureIndex);

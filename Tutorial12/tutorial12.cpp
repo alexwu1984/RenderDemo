@@ -39,7 +39,7 @@
 #include "BufferManager.h"
 #include "PBRFloorRenderPass.h"
 
-#include "GltfModel.h"
+#include "GLTFModel/GltfModel.h"
 
 extern FCommandListManager g_CommandListManager;
 
@@ -280,7 +280,7 @@ public:
 	{
 		{
 			
-			FGLTFMode gltf(L"F:/code/DXAR/ZQjiumi1.glb");
+			FGLTFMode gltf(L"F:/code/work/DXAR/huojian1.glb");
 		}
 
 

@@ -92,7 +92,7 @@ public:
 	std::wstring GetBaseColorPath(uint32_t Index);
 	const MaterialData& GetMaterialData(size_t Index);
 	void UpdateBoundingBox(const Vector3f& pos, Vector3f& vMin, Vector3f& vMax);
-	const BoundingBox& GetBoundBox() const { return m_bounds; }
+	const BoundingBoxDeprecated& GetBoundBox() const { return m_bounds; }
 
 	void ComputeBoundingBox();
 
@@ -111,7 +111,7 @@ protected:
 
 	std::vector<MaterialData> m_materials;
 	std::vector<SubMeshData> m_submeshes;
-	BoundingBox m_bounds;
+	BoundingBoxDeprecated m_bounds;
 };
 
 
