@@ -104,7 +104,7 @@ void NormalRenderPass::SetupRootSignature()
 void NormalRenderPass::SetupPipelineState()
 {
 	std::shared_ptr<FShader> shader = FShaderMgr::Get().CreateShader("phongFragment", L"../Resources/Shaders/phongFragment.hlsl");
-	m_TexutreRenderState = std::make_shared<RenderPipelineInfo>(shader);
+	m_TexutreRenderState = std::make_shared<FRenderPipelineInfo>(shader);
 	m_TexutreRenderState->SetupRenderTargetFormat(1, &RenderWindow::Get().GetColorFormat(), RenderWindow::Get().GetDepthFormat());
 	m_TexutreRenderState->SetRasterizerState(FGraphicsPipelineState::RasterizerFront);
 

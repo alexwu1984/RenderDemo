@@ -56,7 +56,7 @@ void PBRFloorRenderPass::SetupRootSignature()
 void PBRFloorRenderPass::SetupPipelineState()
 {
 	std::shared_ptr<FShader> shader = FShaderMgr::Get().CreateShaderDirect(L"../Resources/Shaders/PBR.hlsl", "VS_PBR_Floor", "PS_PBR_Floor");
-	m_RenderState = std::make_shared<RenderPipelineInfo>(shader);
+	m_RenderState = std::make_shared<FRenderPipelineInfo>(shader);
 	m_RenderState->SetRasterizerState(FPipelineState::RasterizerTwoSided);
 	m_RenderState->SetBlendState(FPipelineState::BlendTraditional);
 	m_RenderState->SetDepthStencilState(FPipelineState::DepthStateReadWrite);

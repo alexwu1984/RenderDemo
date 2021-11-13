@@ -135,6 +135,11 @@ public:
 			else if (m_ShowMode == SM_PBR)
 			{
 				ImGui::Checkbox("TAA", &TemporalEffects::g_EnableTAA);
+				if (!TemporalEffects::g_EnableTAA)
+				{
+					PostProcessing::g_EnableSSR = false;
+					PostProcessing::g_EnableBloom = false;
+				}
 
 				ImGui::Checkbox("SHDiffuse", &m_bSHDiffuse);
 				if (m_bSHDiffuse)
@@ -265,6 +270,7 @@ public:
 			{
 				PostProcessing::GenerateSSR(GfxContext, m_Camera, m_CubeBuffer);
 			}
+			g_PBRPSConstants.EnableSSR = PostProcessing::g_EnableSSR;
 			m_PBRRenderPass.RenderIBL(GfxContext, m_Camera, m_IrradianceCube, m_PrefilteredCube, m_PreintegratedBRDF);
 
 			TemporalEffects::ResolveImage(GfxContext, BufferManager::g_SceneColorBuffer);
@@ -278,10 +284,6 @@ public:
 
 	void SetupMesh()
 	{
-		{
-			
-			FGLTFMode gltf(L"F:/code/work/DXAR/huojian1.glb");
-		}
 
 
 		std::vector< std::shared_ptr<FRenderItem> > DiffiusePassList;
@@ -305,9 +307,9 @@ public:
 		m_IrradianceCube.Create(L"Irradiance Map", IRRADIANCE_SIZE, IRRADIANCE_SIZE, 1, DXGI_FORMAT_R32G32B32A32_FLOAT);
 		m_PrefilteredCube.Create(L"Prefilter Environment Map", PREFILTERED_SIZE, PREFILTERED_SIZE, 0, DXGI_FORMAT_R32G32B32A32_FLOAT);
 
-		m_GenCubePass.Init(m_SkyBox, CUBE_MAP_SIZE, CUBE_MAP_SIZE,L"../Resources/Shaders/EnvironmentShaders.hlsl", "VS_LongLatToCube", "PS_LongLatToCube",GenCubePass::CubePass_CubeMap);
-		m_GenIrradiancePass.Init(m_SkyBox, IRRADIANCE_SIZE, IRRADIANCE_SIZE, L"../Resources/Shaders/EnvironmentShaders.hlsl", "VS_SkyCube", "PS_GenIrradiance",GenCubePass::CubePass_IrradianceMap);
-		m_GenPrefilterEnvMapPass.Init(m_SkyBox, PREFILTERED_SIZE, PREFILTERED_SIZE, L"../Resources/Shaders/EnvironmentShaders.hlsl", "VS_SkyCube", "PS_GenPrefiltered", GenCubePass::CubePass_PreFilterEnvMap);
+		m_GenCubePass.Init(m_SkyBox, CUBE_MAP_SIZE, CUBE_MAP_SIZE,L"../Resources/Shaders/EnvironmentShaders.hlsl", "VS_LongLatToCube", "PS_LongLatToCube",FGenCubePass::CubePass_CubeMap);
+		m_GenIrradiancePass.Init(m_SkyBox, IRRADIANCE_SIZE, IRRADIANCE_SIZE, L"../Resources/Shaders/EnvironmentShaders.hlsl", "VS_SkyCube", "PS_GenIrradiance",FGenCubePass::CubePass_IrradianceMap);
+		m_GenPrefilterEnvMapPass.Init(m_SkyBox, PREFILTERED_SIZE, PREFILTERED_SIZE, L"../Resources/Shaders/EnvironmentShaders.hlsl", "VS_SkyCube", "PS_GenPrefiltered", FGenCubePass::CubePass_PreFilterEnvMap);
 		m_CubeMapCrossDebug.Init(m_CubeMapCross, m_GameDesc.Width, m_GameDesc.Height, L"../Resources/Shaders/EnvironmentShaders.hlsl", "VS_CubeMapCross", "PS_CubeMapCross");
 		m_SHCubeMapDebug.Init(m_CubeMapCross, m_GameDesc.Width, m_GameDesc.Height, L"../Resources/Shaders/EnvironmentShaders.hlsl", "VS_CubeMapCross", "PS_SphericalHarmonics");
 
@@ -384,17 +386,17 @@ private:
 	bool m_RotateMesh = false;
 	float m_RotateY = 0.f;
 	Show2DTexturePass m_LongLatPass;
-	PreIntegratedBRDFPass m_PreintergrateBRDFPass;
+	FPreIntegratedBRDFPass m_PreintergrateBRDFPass;
 	PBRRenderPass m_PBRRenderPass;
 	PBRFloorRenderPass m_PBRFloorRenderPass;
 
-	SkyBoxPass m_SkyPass;
-	SkyBoxPass m_CubeMapCrossDebug;
-	SkyBoxPass m_SHCubeMapDebug;
+	FSkyBoxPass m_SkyPass;
+	FSkyBoxPass m_CubeMapCrossDebug;
+	FSkyBoxPass m_SHCubeMapDebug;
 
-	GenCubePass m_GenCubePass;
-	GenCubePass m_GenIrradiancePass;
-	GenCubePass m_GenPrefilterEnvMapPass;
+	FGenCubePass m_GenCubePass;
+	FGenCubePass m_GenIrradiancePass;
+	FGenCubePass m_GenPrefilterEnvMapPass;
 	std::shared_ptr< FSkyBox> m_SkyBox;
 	std::shared_ptr< FCubeMapCross > m_CubeMapCross;
 

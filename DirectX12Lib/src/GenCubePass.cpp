@@ -1,0 +1,167 @@
+#include "GenCubePass.h"
+#include "Model.h"
+#include "SamplerManager.h"
+#include "CommandContext.h"
+#include "RenderWindow.h"
+#include "RenderPipelineInfo.h"
+#include "StringUnit.h"
+#include "Shader.h"
+#include "CubeBuffer.h"
+#include "GenerateMips.h"
+
+FGenCubePass::FGenCubePass()
+{
+
+}
+
+FGenCubePass::~FGenCubePass()
+{
+
+}
+
+void FGenCubePass::Init(std::shared_ptr< FModel> skyBox, int32_t width, int height,
+	const std::wstring& ShaderFile, const std::string& entryVSPoint, const std::string& entryPSPoint, CubePass passType)
+{
+	m_passType = passType;
+	m_Size = { width,height };
+	m_Cube = skyBox;
+	SetupRootSignature();
+	SetupPipelineState(ShaderFile, entryVSPoint, entryPSPoint);
+}
+
+void FGenCubePass::GenerateCubeMap(FCubeBuffer& CubeBuffer, FTexture& inputTex)
+{
+	FCommandContext& GfxContext = FCommandContext::Begin(D3D12_COMMAND_LIST_TYPE_DIRECT, L"3D Queue");
+
+	GfxContext.SetRootSignature(m_GenCubeSignature);
+	GfxContext.SetPipelineState(m_RenderState->GetPipelineState());
+	GfxContext.SetPrimitiveTopology(D3D_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
+	GfxContext.SetViewportAndScissor(0, 0, m_Size.x, m_Size.y); // very important, cubemap size
+
+	GfxContext.TransitionResource(CubeBuffer, D3D12_RESOURCE_STATE_RENDER_TARGET, true);
+
+	GfxContext.SetDynamicDescriptor(2, 0, inputTex.GetSRV());
+
+	EVN_VS.ModelMatrix = FMatrix(); // identity
+
+	for (int i = 0; i < 6; ++i)
+	{
+		GfxContext.SetRenderTargets(1, &CubeBuffer.GetRTV(i, 0));
+		GfxContext.ClearColor(CubeBuffer, i, 0);
+
+		EVN_VS.ViewProjMatrix = CubeBuffer.GetViewProjMatrix(i);
+		GfxContext.SetDynamicConstantBufferView(0, sizeof(EVN_VS), &EVN_VS);
+
+		m_Cube->Draw(GfxContext);
+	}
+	GfxContext.Flush(true);
+	FGenerateMips::GenerateForCube(CubeBuffer, GfxContext);
+	GfxContext.Finish(true);
+}
+
+void FGenCubePass::GenerateIrradianceMap(FCubeBuffer& CubeBuffer, FCubeBuffer& IrradianceCube, int NumSamplesPerDir)
+{
+	FCommandContext& GfxContext = FCommandContext::Begin(D3D12_COMMAND_LIST_TYPE_DIRECT, L"3D Queue");
+
+	GfxContext.SetRootSignature(m_GenCubeSignature);
+	GfxContext.SetPipelineState(m_RenderState->GetPipelineState());
+	GfxContext.SetPrimitiveTopology(D3D_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
+	GfxContext.SetViewportAndScissor(0, 0, m_Size.x, m_Size.y); // very important, cubemap size
+
+	GfxContext.TransitionResource(CubeBuffer, D3D12_RESOURCE_STATE_PIXEL_SHADER_RESOURCE);
+	GfxContext.TransitionResource(IrradianceCube, D3D12_RESOURCE_STATE_RENDER_TARGET, true);
+
+	GfxContext.SetDynamicDescriptor(2, 0, CubeBuffer.GetCubeSRV());
+
+	EVN_PS.NumSamplesPerDir = NumSamplesPerDir;
+	GfxContext.SetDynamicConstantBufferView(1, sizeof(EVN_PS), &EVN_PS);
+
+	EVN_VS.ModelMatrix = FMatrix(); // identity
+	for (int i = 0; i < 6; ++i)
+	{
+		GfxContext.SetRenderTargets(1, &IrradianceCube.GetRTV(i, 0));
+		GfxContext.ClearColor(IrradianceCube, i, 0);
+
+		EVN_VS.ViewProjMatrix = IrradianceCube.GetViewProjMatrix(i);
+		GfxContext.SetDynamicConstantBufferView(0, sizeof(EVN_VS), &EVN_VS);
+
+		m_Cube->Draw(GfxContext);
+	}
+	GfxContext.Finish(true);
+}
+
+void FGenCubePass::GeneratePrefilteredMap(FCubeBuffer& CubeBuffer, FCubeBuffer& PrefilteredCube)
+{
+	FCommandContext& GfxContext = FCommandContext::Begin(D3D12_COMMAND_LIST_TYPE_DIRECT, L"3D Queue");
+
+	GfxContext.SetRootSignature(m_GenCubeSignature);
+	GfxContext.SetPipelineState(m_RenderState->GetPipelineState());
+	GfxContext.SetPrimitiveTopology(D3D_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
+
+	GfxContext.TransitionResource(CubeBuffer, D3D12_RESOURCE_STATE_PIXEL_SHADER_RESOURCE);
+	GfxContext.TransitionResource(PrefilteredCube, D3D12_RESOURCE_STATE_RENDER_TARGET, true);
+
+	GfxContext.SetDynamicDescriptor(2, 0, CubeBuffer.GetCubeSRV());
+
+	EVN_VS.ModelMatrix = FMatrix(); // identity
+	uint32_t NumMips = PrefilteredCube.GetNumMips();
+	EVN_PS.MaxMipLevel = NumMips;
+	for (uint32_t MipLevel = 0; MipLevel < NumMips; ++MipLevel)
+	{
+		uint32_t Size = m_Size.x >> MipLevel;
+		GfxContext.SetViewportAndScissor(0, 0, Size, Size);
+		EVN_PS.MipLevel = MipLevel;
+		GfxContext.SetDynamicConstantBufferView(1, sizeof(EVN_PS), &EVN_PS);
+
+		for (int i = 0; i < 6; ++i)
+		{
+			GfxContext.SetRenderTargets(1, &PrefilteredCube.GetRTV(i, MipLevel));
+			GfxContext.ClearColor(PrefilteredCube, i, MipLevel);
+
+			EVN_VS.ViewProjMatrix = PrefilteredCube.GetViewProjMatrix(i);
+			GfxContext.SetDynamicConstantBufferView(0, sizeof(EVN_VS), &EVN_VS);
+
+			m_Cube->Draw(GfxContext);
+		}
+	}
+
+	GfxContext.Finish(true);
+}
+
+void FGenCubePass::SetupRootSignature()
+{
+	FSamplerDesc PointSamplerDesc(D3D12_FILTER_MIN_MAG_MIP_POINT, D3D12_TEXTURE_ADDRESS_MODE_CLAMP);
+	FSamplerDesc DefaultSamplerDesc(D3D12_FILTER_MIN_MAG_MIP_LINEAR, D3D12_TEXTURE_ADDRESS_MODE_CLAMP);
+
+	m_GenCubeSignature.Reset(3, 1);
+	m_GenCubeSignature[0].InitAsBufferCBV(0, D3D12_SHADER_VISIBILITY_VERTEX);
+	m_GenCubeSignature[1].InitAsBufferCBV(0, D3D12_SHADER_VISIBILITY_PIXEL);
+	m_GenCubeSignature[2].InitAsDescriptorRange(D3D12_DESCRIPTOR_RANGE_TYPE_SRV, 0, 1);
+	if (m_passType == CubePass_CubeMap)
+	{
+		m_GenCubeSignature.InitStaticSampler(0, PointSamplerDesc, D3D12_SHADER_VISIBILITY_PIXEL);
+	}
+	else
+	{
+		m_GenCubeSignature.InitStaticSampler(0, DefaultSamplerDesc, D3D12_SHADER_VISIBILITY_PIXEL);
+	}
+	
+	m_GenCubeSignature.Finalize(L"GenCubePass", D3D12_ROOT_SIGNATURE_FLAG_ALLOW_INPUT_ASSEMBLER_INPUT_LAYOUT);
+}
+
+void FGenCubePass::SetupPipelineState(const std::wstring& ShaderFile, const std::string& entryVSPoint, const std::string& entryPSPoint)
+{
+	std::shared_ptr<FShader> Shader = FShaderMgr::Get().CreateShaderDirect(ShaderFile, entryVSPoint, entryPSPoint);
+	m_RenderState = std::make_shared<FRenderPipelineInfo>(Shader);
+	DXGI_FORMAT CubeFormat = DXGI_FORMAT_R32G32B32A32_FLOAT;
+	m_RenderState->SetupRenderTargetFormat(1, &CubeFormat, DXGI_FORMAT_UNKNOWN);
+	m_RenderState->SetRasterizerState(FPipelineState::RasterizerTwoSided);
+	m_RenderState->SetDepthStencilState(FPipelineState::DepthStateDisabled);
+	m_RenderState->SetBlendState(FPipelineState::BlendDisable);
+
+	std::vector<D3D12_INPUT_ELEMENT_DESC> SkyBoxLayout;
+	m_Cube->GetMeshLayout(SkyBoxLayout);
+
+	m_RenderState->SetupPipeline(m_GenCubeSignature, SkyBoxLayout);
+	m_RenderState->PipelineFinalize();
+}

@@ -114,8 +114,8 @@ private:
 	GBufferRenderPass m_GBufferRenderPass;
 	ScreenQuadRenderPass m_ScreenQuadRenderPass;
 	SSAOPass m_SSAOPass;
-	SimplePostProcessPass m_AOBlurPass;
-	SimplePostProcessPass m_DOBlurPass;
+	FSimplePostProcessPass m_AOBlurPass;
+	FSimplePostProcessPass m_DOBlurPass;
 	SSDOPass m_SSDOPass;
 };
 

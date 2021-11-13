@@ -9,7 +9,7 @@
 
 
 class FCommandContext;
-class RenderPipelineInfo;
+class FRenderPipelineInfo;
 class FMaterial;
 
 struct FRenderItem
@@ -41,7 +41,7 @@ struct FRenderItem
 
 	std::shared_ptr<class FModel> Model;
 	std::shared_ptr<class FGeometry> Geo;
-	std::shared_ptr<class RenderPipelineInfo> PiplelineInfo;
+	std::shared_ptr<class FRenderPipelineInfo> PiplelineInfo;
 };
 
 class FModel

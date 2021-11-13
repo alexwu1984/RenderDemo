@@ -26,6 +26,6 @@ __declspec(align(16)) struct EPSConstants
 	Vector4f	Coeffs[16];
 	Vector3f	LightDir;
 	int			EnableLight;
-
+	int         EnableSSR;
 } ;
 extern EPSConstants g_PBRPSConstants;

@@ -7,7 +7,7 @@
 
 struct FRenderItem;
 class FCommandContext;
-class RenderPipelineInfo;
+class FRenderPipelineInfo;
 class FTexture;
 
 class Show2DTexturePass
@@ -25,7 +25,7 @@ private:
 	void SetupRootSignature();
 	void SetupPipelineState(const std::wstring& ShaderFile, const std::string& entryVSPoint , const std::string& entryPSPoint);
 
-	std::shared_ptr< RenderPipelineInfo> m_RenderState;
+	std::shared_ptr< FRenderPipelineInfo> m_RenderState;
 	FRootSignature m_RootSignature;
 	Vector2<int> m_Size;
 	Vector2<int> m_Pos;

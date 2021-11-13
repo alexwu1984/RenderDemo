@@ -6,13 +6,13 @@
 
 struct FRenderItem;
 class FCommandContext;
-class RenderPipelineInfo;
+class FRenderPipelineInfo;
 
-class SimplePostProcessPass
+class FSimplePostProcessPass
 {
 public:
-	SimplePostProcessPass();
-	~SimplePostProcessPass();
+	FSimplePostProcessPass();
+	~FSimplePostProcessPass();
 
 	void Init(const std::wstring& ShaderFile, int Width, int Height);
 	void Init(const std::wstring& ShaderFile, const std::string& vs, const std::string& ps,DXGI_FORMAT renderTargetTormat);
@@ -30,7 +30,7 @@ private:
 	void SetupRootSignature();
 	void SetupPipelineState(const std::wstring& ShaderFile, const std::string& entryVSPoint="vs_main", const std::string& entryPSPoint="ps_main");
 
-	std::shared_ptr< RenderPipelineInfo> m_RenderState;
+	std::shared_ptr< FRenderPipelineInfo> m_RenderState;
 	FRootSignature m_RootSignature;
 	Vector2<int> m_GameWndSize;
 	Vector2<int> m_Pos;

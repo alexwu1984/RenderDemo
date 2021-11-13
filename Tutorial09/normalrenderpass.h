@@ -5,7 +5,7 @@
 
 struct FRenderItem;
 class FCommandContext;
-class RenderPipelineInfo;
+class FRenderPipelineInfo;
 class FCamera;
 
 class NormalRenderPass
@@ -24,7 +24,7 @@ private:
 
 private:
 	std::vector < std::shared_ptr<FRenderItem>> m_ItemList;
-	std::shared_ptr< RenderPipelineInfo> m_TexutreRenderState;
+	std::shared_ptr< FRenderPipelineInfo> m_TexutreRenderState;
 	FRootSignature m_RootSignature;
 	Vector2<int> m_GameWndSize;
 };

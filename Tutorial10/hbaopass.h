@@ -7,7 +7,7 @@
 #include "GpuBuffer.h"
 
 class FCommandContext;
-class RenderPipelineInfo;
+class FRenderPipelineInfo;
 class FDepthBuffer;
 
 class HBAOPass
@@ -26,7 +26,7 @@ private:
 
 	std::vector<Vector4f> GenerateNoise();
 
-	std::shared_ptr< RenderPipelineInfo> m_RenderState;
+	std::shared_ptr< FRenderPipelineInfo> m_RenderState;
 	FRootSignature m_RootSignature;
 	Vector2<int> m_GameWndSize;
 	FTexture m_NoiseTexture;

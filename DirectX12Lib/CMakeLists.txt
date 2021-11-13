@@ -54,6 +54,10 @@ set(HEADER_FILES
 	include/MotionBlur.h
 	include/TemporalEffects.h
 	include/UserMarkers.h
+	include/GenCubePass.h
+	include/SkyBoxPass.h					  
+	include/PreIntegratedBRDFPass.h
+	include/EnvironmentContanstBuffer.h
 )
 
 set(SOURCES
@@ -104,6 +108,10 @@ set(SOURCES
 	src/MotionBlur.cpp
 	src/TemporalEffects.cpp
 	src/UserMarkers.cpp
+	src/GenCubePass.cpp
+	src/SkyBoxPass.cpp
+	src/PreIntegratedBRDFPass.cpp
+	src/EnvironmentContanstBuffer.cpp
 )
 
 set( IMGUI_HEADERS

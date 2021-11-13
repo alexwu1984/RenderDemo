@@ -4,7 +4,7 @@
 #include "MathLib.h"
 
 class FCommandContext;
-class RenderPipelineInfo;
+class FRenderPipelineInfo;
 
 class ScreenQuadRenderPass
 {
@@ -20,7 +20,7 @@ private:
 	void SetupRootSignature();
 	void SetupPipelineState(const std::wstring& ShaderFile);
 
-	std::shared_ptr< RenderPipelineInfo> m_ScreenQuadRenderState;
+	std::shared_ptr< FRenderPipelineInfo> m_ScreenQuadRenderState;
 	FRootSignature m_ScreenQuadSignature;
 	Vector2<int> m_GameWndSize;
 };

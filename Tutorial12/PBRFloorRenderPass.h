@@ -6,7 +6,7 @@
 
 struct FRenderItem;
 class FCommandContext;
-class RenderPipelineInfo;
+class FRenderPipelineInfo;
 class FCamera;
 class FCubeBuffer;
 class FColorBuffer;
@@ -26,7 +26,7 @@ private:
 
 private:
 	std::vector < std::shared_ptr<FRenderItem>> m_ItemList;
-	std::shared_ptr< RenderPipelineInfo> m_RenderState;
+	std::shared_ptr< FRenderPipelineInfo> m_RenderState;
 	FRootSignature m_MeshSignature;
 	FTexture m_FloorAlbedo;
 	FTexture m_FloorAlpha;

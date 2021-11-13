@@ -6,31 +6,31 @@
 #include "StringUnit.h"
 #include "Shader.h"
 
-SimplePostProcessPass::SimplePostProcessPass()
+FSimplePostProcessPass::FSimplePostProcessPass()
 {
 
 }
 
-SimplePostProcessPass::~SimplePostProcessPass()
+FSimplePostProcessPass::~FSimplePostProcessPass()
 {
 
 }
 
-void SimplePostProcessPass::Init(const std::wstring& ShaderFile, int Width, int Height)
+void FSimplePostProcessPass::Init(const std::wstring& ShaderFile, int Width, int Height)
 {
 	m_GameWndSize = { Width,Height };
 	SetupRootSignature();
 	SetupPipelineState(ShaderFile);
 }
 
-void SimplePostProcessPass::Init(const std::wstring& ShaderFile, const std::string& vs, const std::string& ps,DXGI_FORMAT format)
+void FSimplePostProcessPass::Init(const std::wstring& ShaderFile, const std::string& vs, const std::string& ps,DXGI_FORMAT format)
 {
 	m_RenderTargetFormat = format;
 	SetupRootSignature();
 	SetupPipelineState(ShaderFile, vs,ps);
 }
 
-void SimplePostProcessPass::Render(FCommandContext& CommandContext, const std::function<void(FCommandContext& CommandContext)>& BeforeDrawParam, 
+void FSimplePostProcessPass::Render(FCommandContext& CommandContext, const std::function<void(FCommandContext& CommandContext)>& BeforeDrawParam, 
 	const std::function<void(FCommandContext& CommandContext)>& AfterDrawParam)
 {
 	// Set necessary state.
@@ -61,7 +61,7 @@ void SimplePostProcessPass::Render(FCommandContext& CommandContext, const std::f
 	}
 }
 
-void SimplePostProcessPass::Render(FColorBuffer& RenderTarget, FCommandContext& CommandContext, const std::function<void(FCommandContext& CommandContext)>& BeforeDrawParam, 
+void FSimplePostProcessPass::Render(FColorBuffer& RenderTarget, FCommandContext& CommandContext, const std::function<void(FCommandContext& CommandContext)>& BeforeDrawParam, 
 	const std::function<void(FCommandContext& CommandContext)>& AfterDrawParam)
 {
 	CommandContext.SetRootSignature(m_RootSignature);
@@ -91,22 +91,22 @@ void SimplePostProcessPass::Render(FColorBuffer& RenderTarget, FCommandContext& 
 	}
 }
 
-FColorBuffer& SimplePostProcessPass::GetResult()
+FColorBuffer& FSimplePostProcessPass::GetResult()
 {
 	return m_PostRenderTarget;
 }
 
-int32_t SimplePostProcessPass::GetCBVRootIndex() const
+int32_t FSimplePostProcessPass::GetCBVRootIndex() const
 {
 	return m_CBVRootIndex;
 }
 
-int32_t SimplePostProcessPass::GetSRVRootIndex() const
+int32_t FSimplePostProcessPass::GetSRVRootIndex() const
 {
 	return m_SRVRootIndex;
 }
 
-void SimplePostProcessPass::SetupRootSignature()
+void FSimplePostProcessPass::SetupRootSignature()
 {
 	FSamplerDesc DefaultSamplerDesc;
 	m_RootSignature.Reset(2, 1);
@@ -116,10 +116,10 @@ void SimplePostProcessPass::SetupRootSignature()
 	m_RootSignature.Finalize(L"SimplePostProcessPass", D3D12_ROOT_SIGNATURE_FLAG_ALLOW_INPUT_ASSEMBLER_INPUT_LAYOUT);
 }
 
-void SimplePostProcessPass::SetupPipelineState(const std::wstring& ShaderFile, const std::string& entryVSPoint, const std::string& entryPSPoint)
+void FSimplePostProcessPass::SetupPipelineState(const std::wstring& ShaderFile, const std::string& entryVSPoint, const std::string& entryPSPoint)
 {
 	std::shared_ptr<FShader> Shader = FShaderMgr::Get().CreateShader(core::usc2_u8(ShaderFile), entryVSPoint, entryPSPoint, ShaderFile);
-	m_RenderState = std::make_shared<RenderPipelineInfo>(Shader);
+	m_RenderState = std::make_shared<FRenderPipelineInfo>(Shader);
 	m_RenderState->SetupRenderTargetFormat(1, &m_RenderTargetFormat, DXGI_FORMAT_UNKNOWN);
 	m_RenderState->SetRasterizerState(FPipelineState::RasterizerTwoSided);
 	m_RenderState->SetDepthStencilState(FPipelineState::DepthStateDisabled);
@@ -135,7 +135,7 @@ void SimplePostProcessPass::SetupPipelineState(const std::wstring& ShaderFile, c
 	
 }
 
-void SimplePostProcessPass::SetViewportAndScissor(int32_t x, int32_t y, int32_t w, int32_t h)
+void FSimplePostProcessPass::SetViewportAndScissor(int32_t x, int32_t y, int32_t w, int32_t h)
 {
 	m_GameWndSize = { w,h };
 	m_Pos = { x,y };

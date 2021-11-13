@@ -47,7 +47,7 @@ void PBRRenderPass::InitIBL(const std::wstring& ShaderFile, const std::string& e
 	m_IBLSignature.Finalize(L"IBL RootSignature", D3D12_ROOT_SIGNATURE_FLAG_ALLOW_INPUT_ASSEMBLER_INPUT_LAYOUT);
 
 	std::shared_ptr<FShader> shader = FShaderMgr::Get().CreateShaderDirect(ShaderFile, entryVSPoint, entryPSPoint);
-	m_IBLRenderState = std::make_shared<RenderPipelineInfo>(shader);
+	m_IBLRenderState = std::make_shared<FRenderPipelineInfo>(shader);
 	m_IBLRenderState->SetupRenderTargetFormat(1, &g_SceneColorBuffer.GetFormat(), DXGI_FORMAT_UNKNOWN);
 	m_IBLRenderState->SetRasterizerState(FGraphicsPipelineState::RasterizerTwoSided);
 	D3D12_BLEND_DESC BlendAdd = FPipelineState::BlendTraditional;
@@ -179,7 +179,6 @@ void PBRRenderPass::RenderIBL(FCommandContext& GfxContext, FCamera& MainCamera, 
 
 	GfxContext.SetRenderTargets(1, &SceneBuffer.GetRTV());
 
-
 	g_PBRPSConstants.Exposure = 1;
 	g_PBRPSConstants.CameraPos = MainCamera.GetPosition();
 	g_PBRPSConstants.InvViewProj = MainCamera.GetViewProjMatrix().Inverse();
@@ -238,7 +237,7 @@ void PBRRenderPass::SetupRootSignature()
 void PBRRenderPass::SetupPipelineState(const std::wstring& ShaderFile, const std::string& entryVSPoint, const std::string& entryPSPoint)
 {
 	std::shared_ptr<FShader> shader = FShaderMgr::Get().CreateShaderDirect(ShaderFile,entryVSPoint,entryPSPoint);
-	m_RenderState = std::make_shared<RenderPipelineInfo>(shader);
+	m_RenderState = std::make_shared<FRenderPipelineInfo>(shader);
 	DXGI_FORMAT RTFormats[] = {
 			g_SceneColorBuffer.GetFormat(), g_GBufferA.GetFormat(), g_GBufferB.GetFormat(), g_GBufferC.GetFormat(), MotionBlur::g_VelocityBuffer.GetFormat(),
 	};

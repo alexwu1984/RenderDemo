@@ -23,6 +23,8 @@ public:
 	void InitMesh(std::shared_ptr< FGltfMeshInfo> MeshInfo);
 	void UpdateVert(Vector3f* pVert, int nVert);
 
+	void GetMeshLayout(std::vector<D3D12_INPUT_ELEMENT_DESC>& MeshLayout);
+
 public:
 	std::array<std::shared_ptr<FGpuBuffer>, VT_Max> VerticeBuffer;
 	std::shared_ptr<FGpuBuffer> IndexBuffer;

@@ -73,7 +73,7 @@ void SSAOPass::SetupRootSignature()
 void SSAOPass::SetupPipelineState()
 {
 	std::shared_ptr<FShader> Shader = FShaderMgr::Get().CreateShader("SSAOPass", L"../Resources/Shaders/Tutorial09/SSAOPass.hlsl");
-	m_RenderState = std::make_shared<RenderPipelineInfo>(Shader);
+	m_RenderState = std::make_shared<FRenderPipelineInfo>(Shader);
 	const DXGI_FORMAT renderTargetFormat[] = { DXGI_FORMAT_R32G32B32A32_FLOAT };
 	m_RenderState->SetupRenderTargetFormat(1, renderTargetFormat, DXGI_FORMAT_UNKNOWN);
 	m_RenderState->SetRasterizerState(FPipelineState::RasterizerTwoSided);

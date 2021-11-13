@@ -7,7 +7,7 @@
 
 struct FRenderItem;
 class FCommandContext;
-class RenderPipelineInfo;
+class FRenderPipelineInfo;
 class FCamera;
 
 class GBufferRenderPass
@@ -31,7 +31,7 @@ private:
 
 private:
 	std::vector < std::shared_ptr<FRenderItem>> m_ItemList;
-	std::shared_ptr< RenderPipelineInfo> m_GBufferRenderState;
+	std::shared_ptr< FRenderPipelineInfo> m_GBufferRenderState;
 	FRootSignature m_GBufferSignature;
 
 	//DXGI_FORMAT m_RenderTargetFormat = DXGI_FORMAT_R32G32B32_FLOAT;

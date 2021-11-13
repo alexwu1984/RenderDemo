@@ -107,7 +107,7 @@ void GBufferRenderPass::SetupPipelineState(const std::wstring& ShaderFile)
 {
 	std::shared_ptr<FShader> shader = FShaderMgr::Get().CreateShader(core::ucs2_u8(ShaderFile), ShaderFile);
 
-	m_GBufferRenderState = std::make_shared<RenderPipelineInfo>(shader);
+	m_GBufferRenderState = std::make_shared<FRenderPipelineInfo>(shader);
 	const DXGI_FORMAT renderTargetFormat[] = { m_RenderTargetFormat,m_RenderTargetFormat,m_RenderTargetFormat };
 	m_GBufferRenderState->SetupRenderTargetFormat(3, renderTargetFormat, DXGI_FORMAT_D24_UNORM_S8_UINT);
 	m_GBufferRenderState->SetRasterizerState(FGraphicsPipelineState::RasterizerFront);

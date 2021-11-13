@@ -35,3 +35,27 @@ void GltfMeshBuffer::UpdateVert(Vector3f* pVert, int nVert)
 	}
 }
 
+void GltfMeshBuffer::GetMeshLayout(std::vector<D3D12_INPUT_ELEMENT_DESC>& MeshLayout)
+{
+	uint32_t slot = 0;
+	if (VerticeBuffer[VT_Position])
+	{
+		MeshLayout.push_back({ "POSITION", 0, DXGI_FORMAT_R32G32B32_FLOAT, slot++, 0, D3D12_INPUT_CLASSIFICATION_PER_VERTEX_DATA, 0 });
+	}
+
+	if (VerticeBuffer[VT_Texcoord])
+	{
+		MeshLayout.push_back({ "TEXCOORD", 0, DXGI_FORMAT_R32G32_FLOAT, slot++, 0, D3D12_INPUT_CLASSIFICATION_PER_VERTEX_DATA, 0 });
+	}
+
+	if (VerticeBuffer[VT_Normal])
+	{
+		MeshLayout.push_back({ "NORMAL", 0, DXGI_FORMAT_R32G32B32_FLOAT, slot++, 0, D3D12_INPUT_CLASSIFICATION_PER_VERTEX_DATA, 0 });
+	}
+
+	if (VerticeBuffer[VT_Tangent])
+	{
+		MeshLayout.push_back({ "TANGENT", 0, DXGI_FORMAT_R32G32B32_FLOAT, slot++, 0, D3D12_INPUT_CLASSIFICATION_PER_VERTEX_DATA, 0 });
+	}
+}
+

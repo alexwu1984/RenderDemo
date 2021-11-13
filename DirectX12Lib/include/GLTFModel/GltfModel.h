@@ -20,7 +20,6 @@ private:
 	tinygltf::TinyGLTF m_GltfCtx ;
 	tinygltf::Model m_GltfMode;
 	std::shared_ptr<class FGltfNode> m_ModelNode;
-	std::vector<std::shared_ptr<class FTexture>> m_ModelTexture;
 	std::vector < std::shared_ptr<class FGltfMaterial>> m_ModelMaterial;
 	std::vector< std::shared_ptr<class FGltfMesh>> m_ModelMesh;
 

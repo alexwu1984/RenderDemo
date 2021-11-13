@@ -74,7 +74,7 @@ void Show2DTexturePass::SetupRootSignature()
 void Show2DTexturePass::SetupPipelineState(const std::wstring& ShaderFile, const std::string& entryVSPoint, const std::string& entryPSPoint)
 {
 	std::shared_ptr<FShader> Shader = FShaderMgr::Get().CreateShaderDirect(ShaderFile, entryVSPoint, entryPSPoint);
-	m_RenderState = std::make_shared<RenderPipelineInfo>(Shader);
+	m_RenderState = std::make_shared<FRenderPipelineInfo>(Shader);
 
 	m_RenderState->SetupRenderTargetFormat(1, &RenderWindow::Get().GetColorFormat(), RenderWindow::Get().GetDepthFormat());
 	m_RenderState->SetRasterizerState(FPipelineState::RasterizerTwoSided);

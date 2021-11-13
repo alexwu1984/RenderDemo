@@ -3,11 +3,11 @@
 #include "PipelineState.h"
 
 class FShader;
-class RenderPipelineInfo
+class FRenderPipelineInfo
 {
 public:
-	RenderPipelineInfo(std::shared_ptr< FShader> shader);
-	~RenderPipelineInfo() {}
+	FRenderPipelineInfo(std::shared_ptr< FShader> shader);
+	~FRenderPipelineInfo() {}
 	void SetupPipeline(FRootSignature& rootSignature, std::vector<D3D12_INPUT_ELEMENT_DESC> inputElements);
 	void SetupPipeline(FRootSignature& rootSignature);
 	void SetRasterizerState(const D3D12_RASTERIZER_DESC& RasterizerDesc);

@@ -30,6 +30,7 @@ cbuffer PSContant : register(b0)
     float3	Coeffs[16];
     float3	LightDir;
     int		EnableLight;
+    int     EnableSSR;
 };
 
 Texture2D BaseMap 			: register(t0);
@@ -115,66 +116,7 @@ float3 Calculate3DVelocity(float4 CurrentVelocity, float4 PreVelocity)
 }
 
 float4 CalcIBL(float3 N, float3 V, float3 Albedo, float Metallic, float Roughness, float AO, float4 SSR)
-{
-    //float3 R = reflect(-V, N); //incident ray, surface normal
-
-    //float NoV = saturate(dot(N, V));
-    //float3 F0 = lerp(0.04, Albedo.rgb, Metallic);
-    //float3 F = F_schlickR(NoV, F0, Roughness);
-
-    //float3 Irradiance = 0;
-    //if (bSHDiffuse)
-    //{
-    //    // SH Irradiance
-    //    Irradiance = GetSHIrradiance(N, Degree, Coeffs);
-    //}
-    //else
-    //{
-    //    Irradiance = IrradianceCubeMap.SampleLevel(LinearSampler, N, 0).xyz;
-    //}
-
-    //float3 DiffuseColor = (1.0 - Metallic) * Albedo;
-    //float3 Diffuse = DiffuseColor;
-
-    //FDirectLighting Lighting;
-    //Lighting.Diffuse = 0;
-    //Lighting.Specular = 0;
-    //if (EnableLight == 1)
-    //{
-    //    float3 L = -LightDir;
-    //    BxDFContext Context;
-    //    Init(Context, N, V, L);
-    //    Context.NoL = saturate(Context.NoL);
-    //    Context.NoV = saturate(abs(Context.NoV) + 1e-5);
-
-    //    float3 Color = 0;
-
-    //    // Diffuse
-    //    Lighting.Diffuse = Context.NoL * Diffuse_Burley(Diffuse, Roughness, Context.NoV, Context.NoL, Context.VoH);
-    //    Lighting.Specular = Context.NoL * SpecularGGX(Roughness, F0, Context, Context.NoL);
-
-    //    Diffuse = Lighting.Diffuse;
-
-    //}
-    //else
-    //{
-
-    //   // Diffuse = Diffuse_Lambert(Diffuse);
-    //    Diffuse *= Irradiance;
-    //}
-
-
-    //float Mip = ComputeReflectionCaptureMipFromRoughness(Roughness, MaxMipLevel - 1);
-    //float2 BRDF = PreintegratedGF.SampleLevel(LinearSampler, float2(NoV, Roughness), 0).rg;
-
-    //float3 PrefilteredColor = PrefilteredCubeMap.SampleLevel(LinearSampler, R, Mip).rgb;
-    //float3 Specular = PrefilteredColor * (F * BRDF.x + BRDF.y);
-
-    //float SpecAO = GetSpecularOcclusion(NoV, AO, Roughness);
-    //float3 Final = (Diffuse * AO + Specular * SpecAO) * (1 - SSR.a) + SSR.rgb;
-    //return float4(Final, 1.0);
-    
-    
+{    
     
     float3 R = reflect(-V, N); //incident ray, surface normal
 
@@ -320,7 +262,7 @@ float4 PS_IBL(float2 Tex : TEXCOORD, float4 ScreenPos : SV_Position) : SV_Target
     WorldPos /= WorldPos.w;
 
     float3 V = normalize(CameraPos - WorldPos.xyz);
-    float4 IBL = CalcIBL(N, V, AlbedoAo.xyz, Metallic, Roughness, AO, SSR);
+    float4 IBL = CalcIBL(N, V, AlbedoAo.xyz, Metallic, Roughness, AO, EnableSSR ? SSR : 0);
     return IBL;
 }
 

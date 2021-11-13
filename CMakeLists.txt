@@ -57,16 +57,6 @@ target_link_libraries(Tutorial06 LINK_PUBLIC DirectX12Lib Assimp)
 set_target_properties(Tutorial06 PROPERTIES
 	PROJECT_LABEL "Tutorial06 - Mesh Loader")
 
-add_executable(Tutorial07 Tutorial07/tutorial7.cpp)
-target_link_libraries(Tutorial07 LINK_PUBLIC DirectX12Lib Assimp)
-set_target_properties(Tutorial07 PROPERTIES
-	PROJECT_LABEL "Tutorial07 - Spherical Harmonic")
-
-add_executable(Tutorial08 Tutorial08/tutorial8.cpp)
-target_link_libraries(Tutorial08 LINK_PUBLIC DirectX12Lib Assimp)
-set_target_properties(Tutorial08 PROPERTIES
-	PROJECT_LABEL "Tutorial08 - Reflective shadow map")
-
 add_executable(Tutorial09 Tutorial09/tutorial9.cpp 
                           Tutorial09/normalrenderpass.cpp
 						  Tutorial09/normalrenderpass.h
@@ -93,21 +83,6 @@ target_link_libraries(Tutorial10 LINK_PUBLIC DirectX12Lib
 set_target_properties(Tutorial10 PROPERTIES
 	PROJECT_LABEL "Tutorial10 - Image Space Horizon Based Ambient Occlusion")
 	
-add_subdirectory(SHSampler)
-
-add_executable(Tutorial11 Tutorial11/tutorial11.cpp 
-						  Tutorial11/screenquadrenderpass.cpp
-						  Tutorial11/screenquadrenderpass.h
-						  Tutorial11/ScreenSpaceRayTracingPass.cpp
-						  Tutorial11/ScreenSpaceRayTracingPass.h
-						  Tutorial11/baserenderpass.cpp
-						  Tutorial11/baserenderpass.h
-)
-target_link_libraries(Tutorial11 LINK_PUBLIC DirectX12Lib 
-                      Assimp)
-set_target_properties(Tutorial11 PROPERTIES
-	PROJECT_LABEL "Tutorial11 - Efficient GPU Screen-Space Ray Tracing")
-	
 
 add_executable(Tutorial12 Tutorial12/tutorial12.cpp 
 						  Tutorial12/PBRRenderPass.cpp
@@ -116,12 +91,6 @@ add_executable(Tutorial12 Tutorial12/tutorial12.cpp
 						  Tutorial12/PBRFloorRenderPass.h
 						  Tutorial12/Show2DTexturePass.h
 						  Tutorial12/Show2DTexturePass.cpp
-						  Tutorial12/SkyBoxPass.h
-						  Tutorial12/SkyBoxPass.cpp
-						  Tutorial12/GenCubePass.h
-						  Tutorial12/GenCubePass.cpp
-						  Tutorial12/PreIntegratedBRDFPass.cpp
-						  Tutorial12/PreIntegratedBRDFPass.h
 						  Tutorial12/EnvironmentCommon.h
 
 )
@@ -130,3 +99,12 @@ target_link_libraries(Tutorial12 LINK_PUBLIC DirectX12Lib
 					 amd_ags )
 set_target_properties(Tutorial12 PROPERTIES
 	PROJECT_LABEL "Tutorial12 - PBR")
+
+
+add_executable(Tutorial13 Tutorial13/tutorial13.cpp 
+)
+target_link_libraries(Tutorial13 LINK_PUBLIC DirectX12Lib 
+                      Assimp
+					  amd_ags)
+set_target_properties(Tutorial13 PROPERTIES
+	PROJECT_LABEL "Tutorial13 - GLTF Rendering")

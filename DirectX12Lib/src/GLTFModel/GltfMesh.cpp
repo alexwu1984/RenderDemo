@@ -37,7 +37,7 @@ void FGltfMesh::Init(uint32_t MeshIndex, uint32_t PrimitiveIndex, const std::vec
 
 		std::shared_ptr<uint16_t> Data(new uint16_t[m_Mesh->nNumFaces * 3], [](uint16_t* p) {delete[]p; });
 		uint8_t* pSrc = (uint8_t*)Index;
-		for (int i = 0; i < m_Mesh->nNumFaces * 3; i++)
+		for (uint32_t i = 0; i < m_Mesh->nNumFaces * 3; ++i)
 		{
 			Data.get()[i] = pSrc[i];
 		}
@@ -59,12 +59,12 @@ void FGltfMesh::Init(uint32_t MeshIndex, uint32_t PrimitiveIndex, const std::vec
 			auto& maxVaue = m_Model->accessors[attribute.second].maxValues;
 			if (minVaue.size() == 3 && maxVaue.size() == 3)
 			{
-				m_MeshBox.minPoint.x = minVaue[0];
-				m_MeshBox.minPoint.y = minVaue[1];
-				m_MeshBox.minPoint.z = minVaue[2];
-				m_MeshBox.maxPoint.x = maxVaue[0];
-				m_MeshBox.maxPoint.y = maxVaue[1];
-				m_MeshBox.maxPoint.z = maxVaue[2];
+				m_MeshBox.minPoint.x = float(minVaue[0]);
+				m_MeshBox.minPoint.y = float(minVaue[1]);
+				m_MeshBox.minPoint.z = float(minVaue[2]);
+				m_MeshBox.maxPoint.x = float(maxVaue[0]);
+				m_MeshBox.maxPoint.y = float(maxVaue[1]);
+				m_MeshBox.maxPoint.z = float(maxVaue[2]);
 				m_MeshBox.centerPoint = m_MeshBox.minPoint * 0.5f + m_MeshBox.maxPoint * 0.5f;
 			}
 
@@ -135,6 +135,16 @@ const FBoundingBox& FGltfMesh::GetBoundingBox() const
 	return m_MeshBox;
 }
 
+std::shared_ptr<GltfMeshBuffer> FGltfMesh::GetGPUBuffer()
+{
+	return m_GPUBuffer;
+}
+
+std::shared_ptr<FGltfMaterial> FGltfMesh::GetMaterial()
+{
+	return m_Material;
+}
+
 void* FGltfMesh::Getdata(int32_t attributeIndex, uint32_t& nCount, int32_t& CommpontType)
 {
 	const auto& indicesAccessor = m_Model->accessors[attributeIndex];
@@ -143,7 +153,7 @@ void* FGltfMesh::Getdata(int32_t attributeIndex, uint32_t& nCount, int32_t& Comm
 	const auto dataAddress = buffer.data.data() + bufferView.byteOffset +
 		indicesAccessor.byteOffset;
 	const auto byteStride = indicesAccessor.ByteStride(bufferView);
-	nCount = indicesAccessor.count;
+	nCount = uint32_t(indicesAccessor.count);
 	CommpontType = indicesAccessor.componentType;
 
 
@@ -188,7 +198,7 @@ void* FGltfMesh::Getdata(int32_t attributeIndex, uint32_t& nCount, int32_t& Comm
 		std::shared_ptr<uint8_t> Data(new uint8_t[nStep * OneSize * nCount], [](uint8_t* p) {delete[]p; });
 
 		uint8_t* pSrc = (uint8_t*)dataAddress;
-		for (int i = 0; i < nCount; i++)
+		for (uint32_t i = 0; i < nCount; ++i)
 		{
 
 			memcpy(Data.get() + i * OneSize * nStep, pSrc + i * byteStride, OneSize * nStep);

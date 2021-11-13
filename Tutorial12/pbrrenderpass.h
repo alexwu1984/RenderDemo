@@ -5,7 +5,7 @@
 
 struct FRenderItem;
 class FCommandContext;
-class RenderPipelineInfo;
+class FRenderPipelineInfo;
 class FCamera;
 class FCubeBuffer;
 class FColorBuffer;
@@ -31,8 +31,8 @@ private:
 
 private:
 	std::vector < std::shared_ptr<FRenderItem>> m_ItemList;
-	std::shared_ptr< RenderPipelineInfo> m_RenderState;
-	std::shared_ptr< RenderPipelineInfo> m_IBLRenderState;
+	std::shared_ptr< FRenderPipelineInfo> m_RenderState;
+	std::shared_ptr< FRenderPipelineInfo> m_IBLRenderState;
 	FRootSignature m_MeshSignature;
 	FRootSignature m_IBLSignature;
 	Vector2<int> m_GameWndSize;

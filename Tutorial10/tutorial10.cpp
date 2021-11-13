@@ -111,7 +111,7 @@ private:
 	GBufferRenderPass m_GBufferRenderPass;
 	ScreenQuadRenderPass m_ScreenQuadRenderPass;
 	HBAOPass m_HBAOPass;
-	SimplePostProcessPass m_HBAOBlurPass;
+	FSimplePostProcessPass m_HBAOBlurPass;
 };
 
 int main()

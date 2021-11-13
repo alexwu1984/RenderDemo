@@ -65,16 +65,16 @@ public:
 		if (m_GenVSMMode == E_GenWithComputeShader)
 		{
 			std::shared_ptr<FShader> drawShadows = FShaderMgr::Get().CreateShader("shadows", L"../Resources/Shaders/shadows.hlsl");
-			m_ShadowMapRenderState = std::make_shared<RenderPipelineInfo>(drawShadows);
+			m_ShadowMapRenderState = std::make_shared<FRenderPipelineInfo>(drawShadows);
 		}
 		else
 		{
 			std::shared_ptr<FShader> drawShadows = FShaderMgr::Get().CreateShader("shadows","vs_main","ps_main_sqrtshadow", L"../Resources/Shaders/shadows.hlsl");
-			m_ShadowMapRenderState = std::make_shared<RenderPipelineInfo>(drawShadows);
+			m_ShadowMapRenderState = std::make_shared<FRenderPipelineInfo>(drawShadows);
 		}
 
 		std::shared_ptr<FShader> shader = FShaderMgr::Get().CreateShader("phongFragment",L"../Resources/Shaders/phongFragment.hlsl");
-		m_TexutreRenderState = std::make_shared<RenderPipelineInfo>(shader);
+		m_TexutreRenderState = std::make_shared<FRenderPipelineInfo>(shader);
 		m_TexutreRenderState->SetupRenderTargetFormat(1, &RenderWindow::Get().GetColorFormat(), RenderWindow::Get().GetDepthFormat());
 		m_TexutreRenderState->SetRasterizerState(FGraphicsPipelineState::RasterizerFront);
 
@@ -96,7 +96,7 @@ public:
 		m_Actor->SetShadowType(m_ShadowMode);
 
 		shader = FShaderMgr::Get().CreateShader("phongColorFragment",L"../Resources/Shaders/phongColorFragment.hlsl");
-		m_ColorRenderState = std::make_shared<RenderPipelineInfo>(shader);
+		m_ColorRenderState = std::make_shared<FRenderPipelineInfo>(shader);
 		m_ColorRenderState->SetupRenderTargetFormat(1, &RenderWindow::Get().GetColorFormat(), RenderWindow::Get().GetDepthFormat());
 		m_ColorRenderState->SetRasterizerState(FGraphicsPipelineState::RasterizerFront);
 
@@ -117,7 +117,7 @@ public:
 		}
 
 		std::shared_ptr<FShader> shadowDebug = FShaderMgr::Get().CreateShader("shadowdebug", L"../Resources/Shaders/ShadowDebug.hlsl");
-		m_ShadowDebugRenderState = std::make_shared<RenderPipelineInfo>(shadowDebug);
+		m_ShadowDebugRenderState = std::make_shared<FRenderPipelineInfo>(shadowDebug);
 		m_ShadowDebugRenderState->SetupRenderTargetFormat(1, &RenderWindow::Get().GetColorFormat(), RenderWindow::Get().GetDepthFormat());
 
 		m_DebugBox = std::make_shared<FGeometry>();
@@ -177,7 +177,7 @@ public:
 		m_skyBoxTex.LoadFromFileForCube(faces);
 		
 		std::shared_ptr<FShader> shader = FShaderMgr::Get().CreateShader("sky", L"../Resources/Shaders/sky.hlsl");
-		m_SkyRenderState = std::make_shared<RenderPipelineInfo>(shader);
+		m_SkyRenderState = std::make_shared<FRenderPipelineInfo>(shader);
 		m_SkyRenderState->SetupRenderTargetFormat(1, &RenderWindow::Get().GetColorFormat(), RenderWindow::Get().GetDepthFormat());
 		m_SkyRenderState->SetRasterizerState(FGraphicsPipelineState::RasterizerTwoSided);
 		m_SkyRenderState->SetDepthStencilState(FPipelineState::DepthStateReadOnly);
@@ -554,10 +554,10 @@ private:
 	std::shared_ptr< FGeometry> m_DebugBox;
 	std::shared_ptr< FShadowMap> m_ShaderMap;
 
-	std::shared_ptr< RenderPipelineInfo> m_TexutreRenderState;
-	std::shared_ptr< RenderPipelineInfo> m_ColorRenderState;
-	std::shared_ptr< RenderPipelineInfo> m_ShadowMapRenderState;
-	std::shared_ptr< RenderPipelineInfo> m_ShadowDebugRenderState;
+	std::shared_ptr< FRenderPipelineInfo> m_TexutreRenderState;
+	std::shared_ptr< FRenderPipelineInfo> m_ColorRenderState;
+	std::shared_ptr< FRenderPipelineInfo> m_ShadowMapRenderState;
+	std::shared_ptr< FRenderPipelineInfo> m_ShadowDebugRenderState;
 
 	//computeshader
 	FComputePipelineState m_VSMConvertPSO;
@@ -584,7 +584,7 @@ private:
 
 	FTexture m_skyBoxTex;
 	FGeometry m_skyBox;
-	std::shared_ptr< RenderPipelineInfo> m_SkyRenderState;
+	std::shared_ptr< FRenderPipelineInfo> m_SkyRenderState;
 };
 
 int main()

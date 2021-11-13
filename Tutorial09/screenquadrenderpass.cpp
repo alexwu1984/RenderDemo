@@ -70,7 +70,7 @@ void ScreenQuadRenderPass::SetupRootSignature()
 void ScreenQuadRenderPass::SetupPipelineState(const std::wstring& ShaderFile)
 {
 	std::shared_ptr<FShader> Shader = FShaderMgr::Get().CreateShader(core::usc2_u8(ShaderFile), ShaderFile);
-	m_ScreenQuadRenderState = std::make_shared<RenderPipelineInfo>(Shader);
+	m_ScreenQuadRenderState = std::make_shared<FRenderPipelineInfo>(Shader);
 	m_ScreenQuadRenderState->SetupRenderTargetFormat(1, &RenderWindow::Get().GetColorFormat(), DXGI_FORMAT_UNKNOWN);
 	m_ScreenQuadRenderState->SetRasterizerState(FGraphicsPipelineState::RasterizerTwoSided);
 	m_ScreenQuadRenderState->SetBlendState(FGraphicsPipelineState::BlendDisable);
