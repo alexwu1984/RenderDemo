@@ -67,8 +67,8 @@ public:
 	bool IsTransparent() const;
 	const FMatrix& GetMeshMat() const;
 	const FBoundingBox& GetBoundingBox()const;
-	std::shared_ptr<GltfMeshBuffer> GetGPUBuffer();
-	std::shared_ptr<FGltfMaterial> GetMaterial();
+	std::shared_ptr<GltfMeshBuffer> GetGPUBuffer() const;
+	std::shared_ptr<FGltfMaterial> GetMaterial() const;
 private:
 	void* Getdata(int32_t attributeIndex, uint32_t& nCount, int32_t& CommpontType);
 private:

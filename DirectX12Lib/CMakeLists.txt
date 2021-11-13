@@ -142,6 +142,7 @@ set( GLTFModel_HEADERS
 	include/GLTFModel/PBRMaterial.h
 	include/GLTFModel/GltfMesh.h
 	include/GLTFModel/GltfMeshBuffer.h
+	include/GLTFModel/GltfPBRRender.h
 )
 
 set( GLTFModel_SOURCE
@@ -152,6 +153,7 @@ set( GLTFModel_SOURCE
 	src/GLTFModel/PBRMaterial.cpp
 	src/GLTFModel/GltfMesh.cpp
 	src/GLTFModel/GltfMeshBuffer.cpp
+	src/GLTFModel/GltfPBRRender.cpp
 )
 
 source_group("Header Files\\ImGUI" FILES ${IMGUI_HEADERS} )

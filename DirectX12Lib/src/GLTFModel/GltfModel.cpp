@@ -14,7 +14,6 @@ FGLTFMode::FGLTFMode(const std::wstring& FileName)
 	m_GltfCtx.LoadBinaryFromFile(&m_GltfMode, &err, &warn, utf8FileName);
 
 	LoadNode();
-	LoadMaterial();
 	LoadMesh();
 }
 
@@ -26,6 +25,11 @@ FGLTFMode::FGLTFMode()
 FGLTFMode::~FGLTFMode()
 {
 
+}
+
+const std::vector<std::shared_ptr<FGltfMesh>>& FGLTFMode::GetModelMesh() const
+{
+	return m_ModelMesh;
 }
 
 void FGLTFMode::LoadNode()
@@ -48,29 +52,28 @@ void FGLTFMode::LoadNode()
 }
 
 
-void FGLTFMode::LoadMaterial()
+std::vector <std::shared_ptr<FGltfMaterial>> FGLTFMode::LoadMaterial()
 {
+	std::vector <std::shared_ptr<FGltfMaterial>> ModelMaterial;
 	for (int i = 0; i < m_GltfMode.materials.size(); i++)
 	{
 		std::shared_ptr< FPBRMaterial> PBRMaterial = std::make_shared<FPBRMaterial>(&m_GltfMode);
 		PBRMaterial->InitMaterial(i);
-		//CC3DMaterial* pMaterial = new CC3DPBRMaterial();
-		//pMaterial->InitShaderProgram("");
-	
-		PBRMaterial->InitMaterial(i);
-		m_ModelMaterial.push_back(PBRMaterial);
+		ModelMaterial.push_back(PBRMaterial);
 	}
+	return ModelMaterial;
 }
 
 void FGLTFMode::LoadMesh()
 {
+	std::vector <std::shared_ptr<FGltfMaterial>> ModelMaterial(std::move(LoadMaterial()));
 	for (int i = 0; i < m_GltfMode.meshes.size(); i++)
 	{
 		auto& ModelMesh = m_GltfMode.meshes[i];
 		for (int j = 0; j < ModelMesh.primitives.size(); j++)
 		{
 			std::shared_ptr<FGltfMesh> Mesh = std::make_shared<FGltfMesh>(&m_GltfMode);
-			Mesh->Init(i, j, m_ModelMaterial, m_ModelNode);
+			Mesh->Init(i, j, ModelMaterial, m_ModelNode);
 
 			//if (pMesh->m_mesh->pBoneWeights != NULL)
 			//{

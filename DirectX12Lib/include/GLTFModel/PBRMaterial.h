@@ -3,36 +3,47 @@
 
 class FTexture;
 
+
+__declspec(align(16)) struct FPBRVSConstants
+{
+	FMatrix ModelMatrix;
+	FMatrix ViewProjMatrix;
+	FMatrix PreviousModelMatrix;
+	FMatrix PreviousViewProjMatrix;
+	Vector2f ViewportSize;
+};
+
+__declspec(align(16)) struct FPBRPSConstants
+{
+	float		Exposure = 1.0;
+	Vector3f	CameraPos;
+	Vector3f	BaseColor;
+	float		Metallic = 1.0;
+	float		Roughness = 0.0;
+	int			MaxMipLevel;
+	int			bSHDiffuse = false;
+	int			Degree = 0;
+	FMatrix		InvViewProj;
+	Vector4f	TemporalAAJitter;
+	Vector4f	Coeffs[16];
+	Vector3f	LightDir;
+	int			EnableLight;
+	int         EnableSSR;
+};
+
+
 class FPBRMaterial : public FGltfMaterial
 {
-public:
-	__declspec(align(16)) struct PSConstants
-	{
-		float		Exposure = 1.0;
-		Vector3f	CameraPos;
-		Vector3f	BaseColor;
-		float		Metallic = 1.0;
-		float		Roughness = 0.0;
-		int			MaxMipLevel;
-		int			bSHDiffuse = false;
-		int			Degree = 0;
-		FMatrix		InvViewProj;
-		Vector4f	TemporalAAJitter;
-		Vector4f	Coeffs[16];
-		Vector3f	LightDir;
-		int			EnableLight;
-
-	};
 public:
 	FPBRMaterial(tinygltf::Model* Model);
 	~FPBRMaterial();
 
-	PSConstants& GetPS() { return m_PS; }
+	FPBRPSConstants& GetPS() { return m_PS; }
 
 	virtual void InitTexture(const tinygltf::Material& material);
 
 public:
-	PSConstants m_PS;
+	FPBRPSConstants m_PS;
 
 protected:
 	std::shared_ptr<FTexture> m_BaseColorTexture;

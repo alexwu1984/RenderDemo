@@ -135,12 +135,12 @@ const FBoundingBox& FGltfMesh::GetBoundingBox() const
 	return m_MeshBox;
 }
 
-std::shared_ptr<GltfMeshBuffer> FGltfMesh::GetGPUBuffer()
+std::shared_ptr<GltfMeshBuffer> FGltfMesh::GetGPUBuffer() const
 {
 	return m_GPUBuffer;
 }
 
-std::shared_ptr<FGltfMaterial> FGltfMesh::GetMaterial()
+std::shared_ptr<FGltfMaterial> FGltfMesh::GetMaterial() const
 {
 	return m_Material;
 }
