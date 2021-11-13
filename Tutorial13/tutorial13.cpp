@@ -8,6 +8,7 @@
 #include "MathLib.h"
 #include "Camera.h"
 #include "GLTFModel/GltfModel.h"
+#include "GLTFModel/GltfPBRRender.h"
 #include "CubeBuffer.h"
 #include "SkyBoxPass.h"
 #include "SkyBox.h"
@@ -68,6 +69,8 @@ public:
 		m_GenIrradiancePass.Init(m_SkyBox, IRRADIANCE_SIZE, IRRADIANCE_SIZE, L"../Resources/Shaders/EnvironmentShaders.hlsl", "VS_SkyCube", "PS_GenIrradiance", FGenCubePass::CubePass_IrradianceMap);
 		m_GenPrefilterEnvMapPass.Init(m_SkyBox, PREFILTERED_SIZE, PREFILTERED_SIZE, L"../Resources/Shaders/EnvironmentShaders.hlsl", "VS_SkyCube", "PS_GenPrefiltered", FGenCubePass::CubePass_PreFilterEnvMap);
 		m_PreintegratedBRDF.Create(L"PreintegratedGF", 256, 256, 1, DXGI_FORMAT_R32G32_FLOAT);
+		m_PBRRender.InitBase(m_gltfMode, m_GameDesc.Width, m_GameDesc.Height, L"../Resources/Shaders/PBR.hlsl", "VS_PBR", "PS_PBR_GBuffer");
+		m_PBRRender.InitIBL(L"../Resources/Shaders/PBR.hlsl", "VS_IBL", "PS_IBL");
 
 		GenerateCubeMap();
 		GenerateIrradianceMap();
@@ -98,7 +101,7 @@ public:
 
 	virtual void DoRender(FCommandContext& GfxContext)
 	{
-		m_SkyPass.Render(GfxContext, m_Camera, m_CubeBuffer, true);
+		m_SkyPass.Render(GfxContext, m_Camera, m_IrradianceCube, true);
 
 		TemporalEffects::ResolveImage(GfxContext, BufferManager::g_SceneColorBuffer);
 		PostProcessing::Render(GfxContext);
@@ -123,7 +126,7 @@ private:
 	FGenCubePass m_GenCubePass;
 	FGenCubePass m_GenIrradiancePass;
 	FGenCubePass m_GenPrefilterEnvMapPass;
-
+	FGlftPBRRender m_PBRRender;
 };
 
 
