@@ -69,8 +69,12 @@ public:
 	const FBoundingBox& GetBoundingBox()const;
 	std::shared_ptr<GltfMeshBuffer> GetGPUBuffer() const;
 	std::shared_ptr<FGltfMaterial> GetMaterial() const;
+	void Update();
+	FMatrix GetPreviousModelMatrix();
+
 private:
 	void* Getdata(int32_t attributeIndex, uint32_t& nCount, int32_t& CommpontType);
+
 private:
 	std::shared_ptr< FGltfMeshInfo> m_Mesh;
 	std::shared_ptr< GltfMeshBuffer> m_GPUBuffer;
@@ -85,4 +89,5 @@ private:
 	int m_nSkinID = -1;
 
 	FMatrix m_MeshMat;
+	FMatrix m_PreviousModelMatrix;
 };

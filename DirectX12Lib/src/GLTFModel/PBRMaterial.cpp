@@ -53,3 +53,28 @@ void FPBRMaterial::InitTexture(const tinygltf::Material& material)
 		m_OcclusionTexture = CreateTexture(gltfTexture[index].source);
 	}
 }
+
+std::shared_ptr<FTexture> FPBRMaterial::GetBaseColorTexture() const
+{
+	return m_BaseColorTexture;
+}
+
+std::shared_ptr<FTexture> FPBRMaterial::GetMetallicRoughnessTexture() const
+{
+	return m_MetallicRoughnessTexture;
+}
+
+std::shared_ptr<FTexture> FPBRMaterial::GetNormalTexture() const
+{
+	return m_NormalTexture;
+}
+
+std::shared_ptr<FTexture> FPBRMaterial::GetEmissiveTexture() const
+{
+	return m_EmissiveTexture;
+}
+
+std::shared_ptr<FTexture> FPBRMaterial::GetOcclusionTexture() const
+{
+	return m_OcclusionTexture;
+}

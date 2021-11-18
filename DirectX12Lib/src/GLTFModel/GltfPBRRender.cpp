@@ -66,7 +66,100 @@ void FGlftPBRRender::InitIBL(const std::wstring& ShaderFile, const std::string& 
 
 void FGlftPBRRender::RenderBasePass(FCommandContext& CommandContext, FCamera& MainCamera, FCubeBuffer& IrradianceCube, FCubeBuffer& PrefilteredCube, FColorBuffer& PreintegratedGF, bool Clear)
 {
+	UserMarker GpuMarker(CommandContext, "RenderBasePass");
 
+	CommandContext.SetRootSignature(m_MeshSignature);
+	CommandContext.SetPipelineState(m_RenderState->GetPipelineState());
+	CommandContext.SetPrimitiveTopology(D3D_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
+	CommandContext.SetViewportAndScissor(0, 0, m_GameWndSize.x, m_GameWndSize.y);
+
+	// Indicate that the back buffer will be used as a render target.
+	CommandContext.TransitionResource(IrradianceCube, D3D12_RESOURCE_STATE_PIXEL_SHADER_RESOURCE);
+	CommandContext.TransitionResource(PrefilteredCube, D3D12_RESOURCE_STATE_PIXEL_SHADER_RESOURCE);
+	CommandContext.TransitionResource(PreintegratedGF, D3D12_RESOURCE_STATE_PIXEL_SHADER_RESOURCE);
+
+	CommandContext.TransitionResource(g_SceneColorBuffer, D3D12_RESOURCE_STATE_RENDER_TARGET);
+	CommandContext.TransitionResource(g_GBufferA, D3D12_RESOURCE_STATE_RENDER_TARGET);
+	CommandContext.TransitionResource(g_GBufferB, D3D12_RESOURCE_STATE_RENDER_TARGET);
+	CommandContext.TransitionResource(g_GBufferC, D3D12_RESOURCE_STATE_RENDER_TARGET);
+	CommandContext.TransitionResource(MotionBlur::g_VelocityBuffer, D3D12_RESOURCE_STATE_RENDER_TARGET);
+	CommandContext.TransitionResource(g_SceneDepthZ, D3D12_RESOURCE_STATE_DEPTH_WRITE, true);
+
+
+	D3D12_CPU_DESCRIPTOR_HANDLE RTVs[] = {
+		g_SceneColorBuffer.GetRTV(), g_GBufferA.GetRTV(), g_GBufferB.GetRTV(), g_GBufferC.GetRTV(), MotionBlur::g_VelocityBuffer.GetRTV(),
+	};
+	CommandContext.SetRenderTargets(5, RTVs, g_SceneDepthZ.GetDSV());
+
+	if (Clear)
+	{
+		CommandContext.ClearColor(g_SceneColorBuffer);
+		CommandContext.ClearColor(g_GBufferA);
+		CommandContext.ClearColor(g_GBufferB);
+		CommandContext.ClearColor(g_GBufferC);
+		CommandContext.ClearColor(MotionBlur::g_VelocityBuffer);
+		CommandContext.ClearDepth(g_SceneDepthZ);
+	}
+
+	uint32_t MeshSize = m_GltfMode->GetModelMesh().size();
+	for (int32_t MeshIndex = 0; MeshIndex < MeshSize; ++MeshIndex)
+	{
+		std::shared_ptr<FGltfMesh> GltfMesh = m_GltfMode->GetModelMesh()[MeshIndex];
+		if (!GltfMesh->IsTransparent())
+		{
+			std::shared_ptr<GltfMeshBuffer> MeshBuffer = GltfMesh->GetGPUBuffer();
+			for (int vI = 0, slot = 0; vI < GltfMeshBuffer::VT_Max; ++vI)
+			{
+				CommandContext.SetVertexBuffer(slot++, MeshBuffer->VerticeBuffer[vI]->VertexBufferView());
+			}
+			CommandContext.SetIndexBuffer(MeshBuffer->IndexBuffer->IndexBufferView());
+
+			FPBRMaterial* Material = GLTFResourceCast(GltfMesh->GetMaterial().get());
+			FPBRPSConstants& PS = Material->GetPS();
+			FGltfVSConstants& VS = MeshBuffer->GetVS();
+
+			if (TemporalEffects::g_EnableTAA)
+			{
+				VS.ModelMatrix = GltfMesh->GetMeshMat();
+				VS.ViewProjMatrix = MainCamera.GetViewMatrix() * TemporalEffects::HackAddTemporalAAProjectionJitter(MainCamera, m_GameWndSize.x, m_GameWndSize.y, false);
+				VS.PreviousModelMatrix = GltfMesh->GetPreviousModelMatrix();
+				VS.PreviousViewProjMatrix = MainCamera.GetPreviousViewMatrix() * TemporalEffects::HackAddTemporalAAProjectionJitter(MainCamera, m_GameWndSize.x, m_GameWndSize.y, true);
+				VS.ViewportSize = Vector2f(m_GameWndSize.x, m_GameWndSize.y);
+			}
+			else
+			{
+				VS.ModelMatrix = GltfMesh->GetMeshMat();
+				VS.ViewProjMatrix = MainCamera.GetViewProjMatrix();
+				VS.PreviousModelMatrix = GltfMesh->GetPreviousModelMatrix();
+				VS.PreviousViewProjMatrix = MainCamera.GetPreviousViewProjMatrix();
+				VS.ViewportSize = Vector2f(m_GameWndSize.x, m_GameWndSize.y);
+			}
+
+			CommandContext.SetDynamicConstantBufferView(0, sizeof(VS), &VS);
+
+			PS.Exposure = 1;
+			PS.CameraPos = MainCamera.GetPosition();
+			PS.InvViewProj = MainCamera.GetViewProjMatrix().Inverse();
+			PS.MaxMipLevel = PrefilteredCube.GetNumMips();
+
+			TemporalEffects::GetJitterOffset(PS.TemporalAAJitter, m_GameWndSize.x, m_GameWndSize.y);
+
+			CommandContext.SetDynamicConstantBufferView(1, sizeof(PS), &PS);
+
+			//CommandContext.SetDynamicDescriptor(2, 0, Material->GetBaseColorTexture()->GetSRV());
+			//CommandContext.SetDynamicDescriptor(2, 1, Material->GetOpacityTexture().GetSRV());
+			//CommandContext.SetDynamicDescriptor(2, 2, Material->GetEmissiveTexture().GetSRV());
+			//CommandContext.SetDynamicDescriptor(2, 3, Material->GetMetallicTexture().GetSRV());
+			//CommandContext.SetDynamicDescriptor(2, 4, Material->GetRoughnessTexture().GetSRV());
+			//CommandContext.SetDynamicDescriptor(2, 5, Material->GetAmbientTexture().GetSRV());
+			//CommandContext.SetDynamicDescriptor(2, 6, Material->GetNormalTexture().GetSRV());
+			CommandContext.SetDynamicDescriptor(2, 7, IrradianceCube.GetCubeSRV());
+			CommandContext.SetDynamicDescriptor(2, 8, PrefilteredCube.GetCubeSRV());
+			CommandContext.SetDynamicDescriptor(2, 9, PreintegratedGF.GetSRV());
+
+			CommandContext.DrawIndexed(MeshBuffer->IndexBuffer->GetElementCount());
+		}
+	}
 }
 
 void FGlftPBRRender::SetupBaseRootSignature()

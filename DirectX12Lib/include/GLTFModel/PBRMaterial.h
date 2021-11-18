@@ -4,15 +4,6 @@
 class FTexture;
 
 
-__declspec(align(16)) struct FPBRVSConstants
-{
-	FMatrix ModelMatrix;
-	FMatrix ViewProjMatrix;
-	FMatrix PreviousModelMatrix;
-	FMatrix PreviousViewProjMatrix;
-	Vector2f ViewportSize;
-};
-
 __declspec(align(16)) struct FPBRPSConstants
 {
 	float		Exposure = 1.0;
@@ -41,6 +32,11 @@ public:
 	FPBRPSConstants& GetPS() { return m_PS; }
 
 	virtual void InitTexture(const tinygltf::Material& material);
+	std::shared_ptr<FTexture> GetBaseColorTexture() const;
+	std::shared_ptr<FTexture> GetMetallicRoughnessTexture() const;
+	std::shared_ptr<FTexture> GetNormalTexture() const;
+	std::shared_ptr<FTexture> GetEmissiveTexture() const;
+	std::shared_ptr<FTexture> GetOcclusionTexture() const;
 
 public:
 	FPBRPSConstants m_PS;

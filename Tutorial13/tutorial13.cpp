@@ -129,7 +129,6 @@ private:
 	FGlftPBRRender m_PBRRender;
 };
 
-
 int main()
 {
 	ThrowIfFailed(CoInitializeEx(nullptr, COINIT_MULTITHREADED));

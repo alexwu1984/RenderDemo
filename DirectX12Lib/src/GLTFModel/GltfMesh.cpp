@@ -145,6 +145,16 @@ std::shared_ptr<FGltfMaterial> FGltfMesh::GetMaterial() const
 	return m_Material;
 }
 
+void FGltfMesh::Update()
+{
+	m_PreviousModelMatrix = m_MeshMat;
+}
+
+FMatrix FGltfMesh::GetPreviousModelMatrix()
+{
+	return m_PreviousModelMatrix;
+}
+
 void* FGltfMesh::Getdata(int32_t attributeIndex, uint32_t& nCount, int32_t& CommpontType)
 {
 	const auto& indicesAccessor = m_Model->accessors[attributeIndex];

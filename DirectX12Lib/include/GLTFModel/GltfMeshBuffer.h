@@ -5,6 +5,15 @@
 
 struct FGltfMeshInfo;
 
+__declspec(align(16)) struct FGltfVSConstants
+{
+	FMatrix ModelMatrix;
+	FMatrix ViewProjMatrix;
+	FMatrix PreviousModelMatrix;
+	FMatrix PreviousViewProjMatrix;
+	Vector2f ViewportSize;
+};
+
 class GltfMeshBuffer
 {
 public:
@@ -24,10 +33,12 @@ public:
 	void UpdateVert(Vector3f* pVert, int nVert);
 
 	void GetMeshLayout(std::vector<D3D12_INPUT_ELEMENT_DESC>& MeshLayout);
-
+	FGltfVSConstants& GetVS() { return m_VS; }
 public:
 	std::array<std::shared_ptr<FGpuBuffer>, VT_Max> VerticeBuffer;
 	std::shared_ptr<FGpuBuffer> IndexBuffer;
+
+	FGltfVSConstants m_VS;
 
 	int AtrributeCount = 3;
 };
