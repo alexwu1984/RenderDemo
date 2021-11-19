@@ -185,15 +185,18 @@ bool D3D12RHI::Initialize()
 
 void D3D12RHI::Destroy()
 {
+
+	FGenerateMips::Destroy();
+	MotionBlur::Destroy();
+	TemporalEffects::Destroy();
+	PostProcessing::Destroy();
+	BufferManager::DestroyRenderingBuffers();
+
 	FCommandContext::DestroyAllContexts();
 	g_CommandListManager.Destroy();
 	FPipelineState::DestroyAll();
 	FDescriptorAllocator::DestroyAll();
 	RenderWindow::Get().Destroy();
-	FGenerateMips::Destroy();
-	MotionBlur::Destroy();
-	TemporalEffects::Destroy();
-	PostProcessing::Destroy();
 }
 
 ComPtr<ID3DBlob> D3D12RHI::CreateShader(const std::wstring& ShaderFile, const std::string& EntryPoint, const std::string& TargetModel)

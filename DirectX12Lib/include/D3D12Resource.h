@@ -1,5 +1,6 @@
 ﻿#pragma once
 
+#include <vector>
 #include <d3d12.h>
 #include "Common.h"
 
@@ -17,7 +18,7 @@ public:
 		: m_GpuAddress(0)
 	{
 		m_Resource.Attach(Resource);
-
+		
 	}
 
 	void InitializeState(D3D12_RESOURCE_STATES State)
@@ -30,6 +31,7 @@ public:
 	{
 		m_Resource = nullptr;
 		m_GpuAddress = 0;
+		m_AllCurrentState.resize(0);
 	}
 
 	ID3D12Resource* GetResource() { return m_Resource.Get(); }

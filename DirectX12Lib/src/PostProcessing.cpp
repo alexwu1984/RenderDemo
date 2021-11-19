@@ -338,7 +338,7 @@ namespace PostProcessing
 	{
 		BuildHZB(GfxContext);
 
-		UserMarker GpuMarker(GfxContext, "SSR");
+		UserMarker GpuMarker(GfxContext, "GenerateSSR");
 		// Set necessary state.
 		GfxContext.SetRootSignature(m_PostProcessSignature);
 		GfxContext.SetPipelineState(m_SSRPSO);

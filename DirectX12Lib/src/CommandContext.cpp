@@ -1,10 +1,14 @@
-﻿#include "CommandContext.h"
+﻿#include <algorithm>
+
+#include "CommandContext.h"
 #include "CommandListManager.h"
 #include "RootSignature.h"
 #include "DepthBuffer.h"
 #include "ColorBuffer.h"
-#include "PipelineState.h"
 #include "CubeBuffer.h"
+#include "PipelineState.h"
+#include "MathLib.h"
+
 #include "d3dx12.h"
 
 extern FContextManager g_ContextManager;
@@ -80,7 +84,7 @@ void FCommandContext::InitializeTexture(FD3D12Resource& Dest, UINT NumSubResourc
 	FCommandContext& CommandContext = FCommandContext::Begin(D3D12_COMMAND_LIST_TYPE_DIRECT);
 	FAllocation Allocation = CommandContext.ReserveUploadMemory(UploadBufferSize);
 	UpdateSubresources(CommandContext.m_CommandList, Dest.GetResource(), Allocation.D3d12Resource, 0, 0, NumSubResources, SubData);
-	CommandContext.TransitionResource(Dest,D3D12_RESOURCE_STATE_GENERIC_READ);
+	CommandContext.TransitionResource(Dest, D3D12_RESOURCE_STATE_GENERIC_READ);
 	CommandContext.Finish(true);
 }
 
@@ -98,6 +102,12 @@ void FCommandContext::Initialize()
 	g_CommandListManager.CreateNewCommandList(m_Type, &m_CommandList, &m_CurrentAllocator);
 }
 
+void FCommandContext::SetID(const std::wstring& ID)
+{
+	m_ID = ID;
+	m_CommandList->SetName(m_ID.c_str());
+}
+
 FCommandContext::FCommandContext(D3D12_COMMAND_LIST_TYPE Type)
 	: m_Type(Type)
 	, m_CpuLinearAllocator(ELinearAllocatorType::CpuWritable)
@@ -108,7 +118,7 @@ FCommandContext::FCommandContext(D3D12_COMMAND_LIST_TYPE Type)
 	ZeroMemory(m_CurrentDescriptorHeaps, sizeof(m_CurrentDescriptorHeaps));
 	m_CommandList = nullptr;
 	m_CurrentAllocator = nullptr;
-	
+
 	m_CurGraphicsRootSignature = nullptr;
 	m_CurPipelineState = nullptr;
 	m_CurComputeRootSignature = nullptr;
@@ -174,12 +184,12 @@ uint64_t FCommandContext::Finish(bool WaitForCompletion /*= false*/)
 	m_GpuLinearAllocator.CleanupUsedPages(FenceValue);
 	m_DynamicViewDescriptorHeap.CleanupUsedHeaps(FenceValue);
 	m_DynamicSamplerDescriptorHeap.CleanupUsedHeaps(FenceValue);
-	
+
 	if (WaitForCompletion)
 	{
 		g_CommandListManager.WaitForFence(FenceValue);
 	}
-	
+
 	g_ContextManager.FreeContext(this);
 	return FenceValue;
 }
@@ -361,11 +371,6 @@ void FCommandContext::SetIndexBuffer(const D3D12_INDEX_BUFFER_VIEW& View)
 	m_CommandList->IASetIndexBuffer(&View);
 }
 
-void FCommandContext::ClearIndexBuffer()
-{
-	m_CommandList->IASetIndexBuffer(nullptr);
-}
-
 void FCommandContext::SetVertexBuffer(UINT Slot, const D3D12_VERTEX_BUFFER_VIEW& View)
 {
 	SetVertexBuffers(Slot, 1, &View);
@@ -427,17 +432,17 @@ void FCommandContext::ClearColor(FCubeBuffer& Target, int Face, int Mip)
 
 void FCommandContext::ClearDepth(FDepthBuffer& Target)
 {
-	m_CommandList->ClearDepthStencilView(Target.GetDSV(), D3D12_CLEAR_FLAG_DEPTH|D3D12_CLEAR_FLAG_STENCIL, Target.GetClearDepth(), Target.GetClearStencil(), 0, nullptr);
+	m_CommandList->ClearDepthStencilView(Target.GetDSV(), D3D12_CLEAR_FLAG_DEPTH, Target.GetClearDepth(), Target.GetClearStencil(), 0, nullptr);
 }
 
 void FCommandContext::SetRenderTargets(UINT NumRTVs, const D3D12_CPU_DESCRIPTOR_HANDLE RTVs[], D3D12_CPU_DESCRIPTOR_HANDLE DSV)
 {
-	m_CommandList->OMSetRenderTargets(NumRTVs, RTVs, true, &DSV);
+	m_CommandList->OMSetRenderTargets(NumRTVs, RTVs, FALSE, &DSV);
 }
 
 void FCommandContext::SetRenderTargets(UINT NumRTVs, const D3D12_CPU_DESCRIPTOR_HANDLE RTVs[])
 {
-	m_CommandList->OMSetRenderTargets(NumRTVs, RTVs, true, nullptr);
+	m_CommandList->OMSetRenderTargets(NumRTVs, RTVs, FALSE, nullptr);
 }
 
 void FCommandContext::SetDepthStencilTarget(D3D12_CPU_DESCRIPTOR_HANDLE DSV)
@@ -445,11 +450,15 @@ void FCommandContext::SetDepthStencilTarget(D3D12_CPU_DESCRIPTOR_HANDLE DSV)
 	SetRenderTargets(0, nullptr, DSV);
 }
 
+void FCommandContext::SetStencilRef(UINT RefValue)
+{
+	m_CommandList->OMSetStencilRef(RefValue);
+}
+
 void FCommandContext::SetConstantArray(UINT RootIndex, UINT NumConstants, const void* Contents)
 {
 	m_CommandList->SetGraphicsRoot32BitConstants(RootIndex, NumConstants, Contents, 0);
 }
-
 
 void FCommandContext::SetDynamicConstantBufferView(UINT RootIndex, size_t BufferSize, const void* BufferData)
 {

@@ -10,11 +10,11 @@
 
 class FColorBuffer;
 class FDepthBuffer;
+class FCubeBuffer;
 class FCommandContext;
 class FRootSignature;
 class FD3D12Resource;
 class FPipelineState;
-class FCubeBuffer;
 
 class FContextManager
 {
@@ -29,7 +29,7 @@ private:
 	std::vector<std::unique_ptr<FCommandContext>> m_ContextPool[4];
 	std::queue<FCommandContext*> m_AvailableContexts[4];
 };
- 
+
 
 struct NonCopyable
 {
@@ -50,7 +50,7 @@ private:
 
 public:
 	static void DestroyAllContexts();
-	static FCommandContext& Begin(D3D12_COMMAND_LIST_TYPE Type=D3D12_COMMAND_LIST_TYPE_DIRECT, const std::wstring& ID = L"");
+	static FCommandContext& Begin(D3D12_COMMAND_LIST_TYPE Type = D3D12_COMMAND_LIST_TYPE_DIRECT, const std::wstring& ID = L"");
 	static void InitializeBuffer(FD3D12Resource& Dest, const void* Data, uint32_t NumBytes, size_t Offset = 0);
 	static void InitializeTexture(FD3D12Resource& Dest, UINT NumSubResources, D3D12_SUBRESOURCE_DATA SubData[]);
 
@@ -58,7 +58,7 @@ public:
 	~FCommandContext();
 
 	void Initialize();
-	void SetID(const std::wstring& ID) { m_ID = ID; }
+	void SetID(const std::wstring& ID);
 	uint64_t Flush(bool WaitForCompletion = false);
 	uint64_t Finish(bool WaitForCompletion = false);
 
@@ -76,7 +76,7 @@ public:
 	void CopySubresource(FD3D12Resource& Dest, UINT DestSubIndex, FD3D12Resource& Src, UINT SrcSubIndex);
 
 	void TransitionResource(FD3D12Resource& Resource, D3D12_RESOURCE_STATES NewState, bool Flush = false);
-	void TransitionSubResource(FD3D12Resource& Resource, D3D12_RESOURCE_STATES NewState, uint32_t Subresource, bool Flush = false);
+	void TransitionSubResource(FD3D12Resource& Resource, D3D12_RESOURCE_STATES NewState, uint32_t Subresource, bool Flush);
 
 	void SetDescriptorHeap(D3D12_DESCRIPTOR_HEAP_TYPE Type, ID3D12DescriptorHeap* HeapPtr);
 	void SetDescriptorHeaps(UINT HeapCount, D3D12_DESCRIPTOR_HEAP_TYPE Type[], ID3D12DescriptorHeap* HeapPtrs[]);
@@ -88,7 +88,6 @@ public:
 	void SetRootSignature(const FRootSignature& RootSignature);
 	void SetPrimitiveTopology(D3D12_PRIMITIVE_TOPOLOGY Topology);
 	void SetIndexBuffer(const D3D12_INDEX_BUFFER_VIEW& View);
-	void ClearIndexBuffer();
 	void SetVertexBuffer(UINT Slot, const D3D12_VERTEX_BUFFER_VIEW& View);
 	void SetVertexBuffers(UINT StartSlot, UINT Count, const D3D12_VERTEX_BUFFER_VIEW View[]);
 
@@ -105,6 +104,8 @@ public:
 	void SetRenderTargets(UINT NumRTVs, const D3D12_CPU_DESCRIPTOR_HANDLE RTVs[]);
 	void SetRenderTargets(UINT NumRTVs, const D3D12_CPU_DESCRIPTOR_HANDLE RTVs[], D3D12_CPU_DESCRIPTOR_HANDLE DSV);
 	void SetDepthStencilTarget(D3D12_CPU_DESCRIPTOR_HANDLE DSV);
+
+	void SetStencilRef(UINT RefValue);
 
 	void SetConstantArray(UINT RootIndex, UINT NumConstants, const void* Contents);
 	void SetDynamicConstantBufferView(UINT RootIndex, size_t BufferSize, const void* BufferData);
@@ -158,5 +159,6 @@ public:
 	void ClearUAV(FColorBuffer& Target, int Mip);
 
 	void Dispatch(size_t GroupCountX, size_t GroupCountY, size_t GroupCountZ);
+
 	void Dispatch2D(size_t ThreadCountX, size_t ThreadCountY, size_t GroupSizeX = 8, size_t GroupSizeY = 8);
 };
