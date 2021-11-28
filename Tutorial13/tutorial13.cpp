@@ -52,13 +52,15 @@ public:
 	{
 		//m_gltfMode = std::make_shared<FGLTFMode>(L"../Resources/Models/harley_davidson_breakout_gltf/scene.gltf");
 		m_gltfMode = std::make_shared<FGLTFMode>(L"../Resources/Models/FlightHelmet/glTF/FlightHelmet.gltf");
+		//huojian1.glb
+		//m_gltfMode = std::make_shared<FGLTFMode>(L"../Resources/Models/glb/huojian1.glb");
 	}
 
 	void SetupIBL()
 	{
 		m_PreintergrateBRDFPass.Init();
 
-		m_TextureLongLat.LoadFromFile(L"../Resources/HDR/venice_sunset_1k.hdr", true);
+		m_TextureLongLat.LoadFromFile(L"../Resources/HDR/hot.hdr", true);
 		m_SkyBox = std::make_shared<FSkyBox>();
 		m_SkyPass.Init(m_SkyBox, m_GameDesc.Width, m_GameDesc.Height, L"../Resources/Shaders/EnvironmentShaders.hlsl", "VS_SkyCube", "PS_SkyCube");
 
