@@ -37,7 +37,7 @@ public:
 	{
 		FDirectLightGameMode::OnUpdate();
 
-		m_Camera = FCamera(Vector3f(2.0f, 0.6f, 0.0f), Vector3f(0.f, 0.3f, 0.f), Vector3f(0.f, 1.f, 0.f));
+		m_Camera = FCamera(Vector3f(2.0f, 0.6f, 3.f), Vector3f(0.f, 0.3f, 0.f), Vector3f(0.f, 1.f, 0.f));
 		m_Camera.SetMouseMoveSpeed(1e-3f);
 		m_Camera.SetMouseRotateSpeed(1e-4f);
 
@@ -50,7 +50,7 @@ public:
 
 	void SetupMesh()
 	{
-		m_gltfMode = std::make_shared<FGLTFMode>(L"../Resources/Models/Glb/huojian1.glb");
+		m_gltfMode = std::make_shared<FGLTFMode>(L"../Resources/Models/harley_davidson_breakout_gltf/scene.gltf");
 	}
 
 	void SetupIBL()
@@ -69,8 +69,8 @@ public:
 		m_GenIrradiancePass.Init(m_SkyBox, IRRADIANCE_SIZE, IRRADIANCE_SIZE, L"../Resources/Shaders/EnvironmentShaders.hlsl", "VS_SkyCube", "PS_GenIrradiance", FGenCubePass::CubePass_IrradianceMap);
 		m_GenPrefilterEnvMapPass.Init(m_SkyBox, PREFILTERED_SIZE, PREFILTERED_SIZE, L"../Resources/Shaders/EnvironmentShaders.hlsl", "VS_SkyCube", "PS_GenPrefiltered", FGenCubePass::CubePass_PreFilterEnvMap);
 		m_PreintegratedBRDF.Create(L"PreintegratedGF", 256, 256, 1, DXGI_FORMAT_R32G32_FLOAT);
-		m_PBRRender.InitBase(m_gltfMode, m_GameDesc.Width, m_GameDesc.Height, L"../Resources/Shaders/PBR.hlsl", "VS_PBR", "PS_PBR_GBuffer");
-		m_PBRRender.InitIBL(L"../Resources/Shaders/PBR.hlsl", "VS_IBL", "PS_IBL");
+		m_PBRRender.InitBase(m_gltfMode, m_GameDesc.Width, m_GameDesc.Height, L"../Resources/Shaders/GLTFModelPBR.hlsl", "VS_PBR", "PS_PBR_GBuffer");
+		m_PBRRender.InitIBL(L"../Resources/Shaders/GLTFModelPBR.hlsl", "VS_IBL", "PS_IBL");
 
 		GenerateCubeMap();
 		GenerateIrradianceMap();
@@ -101,8 +101,9 @@ public:
 
 	virtual void DoRender(FCommandContext& GfxContext)
 	{
-		m_SkyPass.Render(GfxContext, m_Camera, m_IrradianceCube, true);
-
+		m_PBRRender.RenderBasePass(GfxContext, m_Camera, m_IrradianceCube, m_PrefilteredCube, m_PreintegratedBRDF, true);
+		m_SkyPass.Render(GfxContext, m_Camera, m_IrradianceCube, false);
+		m_PBRRender.RenderIBL(GfxContext, m_Camera, m_IrradianceCube, m_PrefilteredCube, m_PreintegratedBRDF);
 		TemporalEffects::ResolveImage(GfxContext, BufferManager::g_SceneColorBuffer);
 		PostProcessing::Render(GfxContext);
 	}
@@ -110,6 +111,12 @@ public:
 	virtual void OnUpdate()
 	{
 		FDirectLightGameMode::OnUpdate();
+
+		m_RotateY += m_Delta * 0.0005f;
+		m_RotateY = fmodf(m_RotateY, MATH_2PI);
+		//m_PBRRender.Rotate(m_RotateY);
+
+		TemporalEffects::Update();
 	}
 
 private:
@@ -127,6 +134,7 @@ private:
 	FGenCubePass m_GenIrradiancePass;
 	FGenCubePass m_GenPrefilterEnvMapPass;
 	FGlftPBRRender m_PBRRender;
+	float m_RotateY = 0.f;
 };
 
 int main()

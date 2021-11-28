@@ -19,6 +19,10 @@ void FPipelineState::Initialize()
 	RasterizerDefault.ForcedSampleCount = 0;
 	RasterizerDefault.ConservativeRaster = D3D12_CONSERVATIVE_RASTERIZATION_MODE_OFF;
 
+	RasterizerGltfCullBack = RasterizerDefault;
+	RasterizerGltfCullBack.FrontCounterClockwise = TRUE;
+	RasterizerGltfCullBack.CullMode = D3D12_CULL_MODE_BACK;
+
 	RasterizerFront = RasterizerDefault;
 	RasterizerFront.CullMode = D3D12_CULL_MODE_FRONT;
 	RasterizerDefault.FrontCounterClockwise = TRUE;
@@ -81,6 +85,7 @@ void FPipelineState::DestroyAll()
 }
 
 D3D12_RASTERIZER_DESC FPipelineState::RasterizerDefault;
+D3D12_RASTERIZER_DESC FPipelineState::RasterizerGltfCullBack;
 D3D12_RASTERIZER_DESC FPipelineState::RasterizerFront;
 D3D12_RASTERIZER_DESC FPipelineState::RasterizerTwoSided;
 D3D12_RASTERIZER_DESC FPipelineState::RasterizerShadow;

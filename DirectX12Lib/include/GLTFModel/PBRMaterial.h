@@ -18,8 +18,8 @@ __declspec(align(16)) struct FPBRPSConstants
 	Vector4f	TemporalAAJitter;
 	Vector4f	Coeffs[16];
 	Vector3f	LightDir;
-	int			EnableLight;
-	int         EnableSSR;
+	int			EnableLight = 0;
+	int         EnableSSR = 0;
 };
 
 

@@ -20,8 +20,8 @@ public:
 	enum VertexType : uint8_t
 	{
 		VT_Position = 0,
-		VT_Normal = 1,
-		VT_Texcoord = 2,
+		VT_Texcoord = 1,
+		VT_Normal = 2,
 		VT_Tangent = 3,
 		VT_Max = 4
 	};

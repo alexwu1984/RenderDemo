@@ -19,7 +19,7 @@ void FPBRMaterial::InitTexture(const tinygltf::Material& material)
 		auto& ModelImage = m_Model->images[index];
 		uint8_t* pData = (uint8_t*)ModelImage.image.data();
 		std::shared_ptr<FTexture> texture2d = std::make_shared<FTexture>();
-		texture2d->Create(ModelImage.width, ModelImage.height, DXGI_FORMAT_B8G8R8A8_UNORM, pData);
+		texture2d->Create(ModelImage.width, ModelImage.height, DXGI_FORMAT_R8G8B8A8_UNORM, pData);
 		return texture2d;
 	};
 
@@ -34,11 +34,25 @@ void FPBRMaterial::InitTexture(const tinygltf::Material& material)
 	{
 		m_MetallicRoughnessTexture = CreateTexture(gltfTexture[index].source);
 	}
+	else
+	{
+		std::shared_ptr<FTexture> texture2d = std::make_shared<FTexture>();
+		texture2d->Create(1.0, material.pbrMetallicRoughness.roughnessFactor, material.pbrMetallicRoughness.metallicFactor, 1.0);
+		m_MetallicRoughnessTexture = texture2d;
+	}
+
 
 	index = material.emissiveTexture.index;
 	if (index > -1 && index < gltfTexture.size())
 	{
 		m_EmissiveTexture = CreateTexture(gltfTexture[index].source);
+	}
+	else
+	{
+		auto emissiveColor = material.emissiveFactor;
+		std::shared_ptr<FTexture> texture2d = std::make_shared<FTexture>();
+		texture2d->Create((float)emissiveColor[0], (float)emissiveColor[1], (float)emissiveColor[2], 1.0);
+		m_EmissiveTexture = texture2d;
 	}
 
 	index = material.normalTexture.index;
@@ -46,11 +60,23 @@ void FPBRMaterial::InitTexture(const tinygltf::Material& material)
 	{
 		m_NormalTexture = CreateTexture(gltfTexture[index].source);
 	}
+	else
+	{
+		std::shared_ptr<FTexture> texture2d = std::make_shared<FTexture>();
+		texture2d->Create(0.5f, 0.5f, 1.0f, 1.0f);
+		m_NormalTexture = texture2d;
+	}
 
 	index = material.occlusionTexture.index;
 	if (index > -1 && index < gltfTexture.size())
 	{
 		m_OcclusionTexture = CreateTexture(gltfTexture[index].source);
+	}
+	else
+	{
+		std::shared_ptr<FTexture> texture2d = std::make_shared<FTexture>();
+		texture2d->Create(1.0f, 1.0f, 1.0f, 1.0f);
+		m_OcclusionTexture = texture2d;
 	}
 }
 

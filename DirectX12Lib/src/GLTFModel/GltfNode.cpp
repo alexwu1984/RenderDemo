@@ -82,11 +82,10 @@ void FGltfNode::InitNode()
 		FMatrix NodeMat;
 		if (Node.matrix.size() == 16)
 		{
-			float* mat16 = &NodeMat._01;
-			for (int m = 0; m < 16; m++)
-			{
-				mat16[m] = Node.matrix[m];
-			}
+			NodeMat = FMatrix(Node.matrix[0], Node.matrix[1], Node.matrix[2], Node.matrix[3],
+				Node.matrix[4], Node.matrix[5], Node.matrix[6], Node.matrix[7],
+				Node.matrix[8], Node.matrix[9], Node.matrix[10], Node.matrix[11],
+				Node.matrix[12], Node.matrix[13], Node.matrix[14], Node.matrix[15]);
 		}
 
 		if (Node.translation.size() == 3)

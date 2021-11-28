@@ -25,6 +25,16 @@ void GltfMeshBuffer::InitMesh(std::shared_ptr< FGltfMeshInfo> MeshInfo)
 
 	VerticeBuffer[VT_Tangent] = std::make_shared<FGpuBuffer>();
 	VerticeBuffer[VT_Tangent]->Create(L"Tangents", MeshInfo->nNumVertices, sizeof(Vector4f), MeshInfo->pTangents);
+
+	IndexBuffer = std::make_shared<FGpuBuffer>();
+	if (MeshInfo->pFacesIndex)
+	{
+		IndexBuffer->Create(L"MeshIndexBuffer", MeshInfo->nNumFaces*3, sizeof(uint16_t), MeshInfo->pFacesIndex);
+	}
+	else if (MeshInfo->pFacesIndex32)
+	{
+		IndexBuffer->Create(L"MeshIndexBuffer", MeshInfo->nNumFaces*3, sizeof(uint32_t), MeshInfo->pFacesIndex32);
+	}
 }
 
 void GltfMeshBuffer::UpdateVert(Vector3f* pVert, int nVert)

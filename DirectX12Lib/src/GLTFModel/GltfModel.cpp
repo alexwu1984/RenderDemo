@@ -11,10 +11,13 @@ FGLTFMode::FGLTFMode(const std::wstring& FileName)
 	std::string err;
 	std::string warn;
 	std::string utf8FileName = core::ucs2_u8(FileName);
-	m_GltfCtx.LoadBinaryFromFile(&m_GltfMode, &err, &warn, utf8FileName);
+	if (m_GltfCtx.LoadASCIIFromFile(&m_GltfMode, &err, &warn, utf8FileName))
+	{
+		LoadNode();
+		LoadMesh();
+	}
 
-	LoadNode();
-	LoadMesh();
+
 }
 
 FGLTFMode::FGLTFMode()
@@ -25,6 +28,23 @@ FGLTFMode::FGLTFMode()
 FGLTFMode::~FGLTFMode()
 {
 
+}
+
+void FGLTFMode::SetScale(float Scale)
+{
+	m_Scale = Scale;
+	UpdateModelMatrix();
+}
+
+void FGLTFMode::SetRotation(const FMatrix& Rotation)
+{
+	m_RotationMatrix = Rotation;
+	UpdateModelMatrix();
+}
+
+void FGLTFMode::Update()
+{
+	m_PreviousModelMatrix = m_ModelMatrix;
 }
 
 const std::vector<std::shared_ptr<FGltfMesh>>& FGLTFMode::GetModelMesh() const
@@ -126,5 +146,10 @@ void FGLTFMode::LoadMesh()
 		m_ModelBox.maxPoint.z = (std::max)(m_ModelBox.maxPoint.z, tmp2.z);
 
 	}
+}
+
+void FGLTFMode::UpdateModelMatrix()
+{
+	m_ModelMatrix = FMatrix::ScaleMatrix(m_Scale) * m_RotationMatrix;
 }
 

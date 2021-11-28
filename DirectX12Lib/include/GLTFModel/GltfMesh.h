@@ -83,7 +83,7 @@ private:
 	tinygltf::Model* m_Model = nullptr;
 	std::vector<std::any> m_pData;
 	std::shared_ptr<FGltfMaterial> m_Material;
-	bool m_isTransparent = true;
+	bool m_isTransparent = false;
 
 	int m_nNodeID = -1;
 	int m_nSkinID = -1;
