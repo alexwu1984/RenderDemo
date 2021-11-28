@@ -34,7 +34,7 @@ void FGlftPBRRender::InitBase(std::shared_ptr<FGLTFMode> Mode, int Width, int He
 							  const std::string& EntryVSPoint, const std::string& EntryPSPoint)
 {
 	m_GltfMode = Mode;
-	m_GltfMode->SetScale(0.01f);
+	m_GltfMode->SetScale(0.6f);
 	m_GameWndSize = { float(Width),float(Height) };
 	SetupBaseRootSignature();
 	SetupBasePipelineState(ShaderFile, EntryVSPoint, EntryPSPoint);
@@ -108,37 +108,26 @@ void FGlftPBRRender::RenderBasePass(FCommandContext& CommandContext, FCamera& Ma
 	for (size_t MeshIndex = 0; MeshIndex < MeshSize; ++MeshIndex)
 	{
 		std::shared_ptr<FGltfMesh> GltfMesh = m_GltfMode->GetModelMesh()[MeshIndex];
-		//if (!GltfMesh->IsTransparent())
+		if (!GltfMesh->IsTransparent())
 		{
 			RenderMesh(GltfMesh,MainCamera,CommandContext,IrradianceCube,PrefilteredCube,PreintegratedGF);
 		}
 	}
 
+	GetSortMeshID();
 
-	//GetSortMeshID();
+	int nMesh = m_SortMesh.size();
 
-	//int nMesh = m_SortMesh.size();
-
-	//for (int j = 0; j < nMesh; j++)
-	//{
-	//	int type = m_SortMesh[j].PosType;
-	//	int index = m_SortMesh[j].MeshID;
-	//	int nModel = m_SortMesh[j].ModelID;
-	//	std::shared_ptr<FGltfMesh> GltfMesh = m_GltfMode->GetModelMesh()[index];
-	//	if (GltfMesh->IsTransparent())
-	//	{
-
-	//		if (type == 1)
-	//		{
-	//			CommandContext.SetPipelineState(m_BlendRenderStateBack->GetPipelineState());
-	//		}
-	//		else
-	//		{
-	//			CommandContext.SetPipelineState(m_BlendRenderStateFront->GetPipelineState());
-	//		}
-	//		RenderMesh(GltfMesh, MainCamera, CommandContext, IrradianceCube, PrefilteredCube, PreintegratedGF);
-	//	}
-	//}
+	for (int j = 0; j < nMesh; j++)
+	{
+		int index = m_SortMesh[j].MeshID;
+		std::shared_ptr<FGltfMesh> GltfMesh = m_GltfMode->GetModelMesh()[index];
+		if (GltfMesh->IsTransparent())
+		{
+			CommandContext.SetPipelineState(m_BlendRenderStateFront->GetPipelineState());
+			RenderMesh(GltfMesh, MainCamera, CommandContext, IrradianceCube, PrefilteredCube, PreintegratedGF);
+		}
+	}
 
 }
 
@@ -158,7 +147,6 @@ void FGlftPBRRender::SetupBasePipelineState(const std::wstring& ShaderFile, cons
 {
 	std::shared_ptr<FShader> shader = FShaderMgr::Get().CreateShaderDirect(ShaderFile, EntryVSPoint, EntryPSPoint);
 
-	m_BlendRenderStateBack = std::make_shared<FRenderPipelineInfo>(shader);
 	m_BlendRenderStateFront = std::make_shared<FRenderPipelineInfo>(shader);
 
 	m_RenderState = std::make_shared<FRenderPipelineInfo>(shader);
@@ -168,7 +156,7 @@ void FGlftPBRRender::SetupBasePipelineState(const std::wstring& ShaderFile, cons
 	m_RenderState->SetupRenderTargetFormat(5, RTFormats, g_SceneDepthZ.GetFormat());
 
 	m_RenderState->SetRasterizerState(FPipelineState::RasterizerTwoSided);
-	m_RenderState->SetBlendState(FPipelineState::BlendTraditional);
+	m_RenderState->SetBlendState(FPipelineState::BlendDisable);
 	m_RenderState->SetDepthStencilState(FPipelineState::DepthStateReadWrite);
 
 	bool InitLayout = false;
@@ -181,7 +169,6 @@ void FGlftPBRRender::SetupBasePipelineState(const std::wstring& ShaderFile, cons
 			std::vector<D3D12_INPUT_ELEMENT_DESC> MeshLayout;
 			Item->GetGPUBuffer()->GetMeshLayout(MeshLayout);
 			m_RenderState->SetupPipeline(m_MeshSignature, MeshLayout);
-			m_BlendRenderStateBack->SetupPipeline(m_MeshSignature, MeshLayout);
 			m_BlendRenderStateFront->SetupPipeline(m_MeshSignature, MeshLayout);
 			InitLayout = true;
 			break;
@@ -191,12 +178,6 @@ void FGlftPBRRender::SetupBasePipelineState(const std::wstring& ShaderFile, cons
 	Assert(InitLayout);
 
 	m_RenderState->PipelineFinalize();
-
-	m_BlendRenderStateBack->SetupRenderTargetFormat(5, RTFormats, g_SceneDepthZ.GetFormat());
-	m_BlendRenderStateBack->SetRasterizerState(FPipelineState::RasterizerTwoSided);
-	m_BlendRenderStateBack->SetBlendState(FPipelineState::BlendTraditional);
-	m_BlendRenderStateBack->SetDepthStencilState(FPipelineState::DepthStateReadWrite);
-	m_BlendRenderStateBack->PipelineFinalize();
 
 	m_BlendRenderStateFront->SetupRenderTargetFormat(5, RTFormats, g_SceneDepthZ.GetFormat());
 	m_BlendRenderStateFront->SetRasterizerState(FPipelineState::RasterizerFront);
@@ -266,67 +247,50 @@ void FGlftPBRRender::GetSortMeshID()
 
 	if (nSumMesh > 0)
 	{
-		if (m_SortMesh.size() != nSumMesh * 2)
+		if (m_SortMesh.size() != nSumMesh)
 		{
-			m_SortMesh.resize(nSumMesh * 2);
+			m_SortMesh.resize(nSumMesh );
 		}
 
 	}
 	MeshDisInfo* pSortMesh = &m_SortMesh[0];
-	for (int i = 0; i < 1; i++)
+	int nMesh = m_GltfMode->GetModelMesh().size();
+
+	MeshDisInfo DisInfo;
+
+	FMatrix ModelMatrix;
+
+	Vector3f vCamPos = Vector3f(m_CameraPos.x, m_CameraPos.y, m_CameraPos.z);
+	for (int j = 0; j < nMesh; j++)
 	{
-		int nMesh = m_GltfMode->GetModelMesh().size();
+		DisInfo.MeshID = j;
+		std::shared_ptr<FGltfMesh> pMesh = m_GltfMode->GetModelMesh()[j];
 
-		MeshDisInfo DisInfo;
+		Vector3 minPoint = pMesh->GetBoundingBox().minPoint;
+		Vector3 maxPoint = pMesh->GetBoundingBox().maxPoint;
+		GetBoxPoint(minPoint, maxPoint);
 
-		FMatrix ModelMatrix ;
-	
-		Vector3f vCamPos = Vector3f(m_CameraPos.x, m_CameraPos.y, m_CameraPos.z);
-		DisInfo.ModelID = i;
-		for (int j = 0; j < nMesh; j++)
+		float distanceMax = 0.f;
+
+		for (int i = 0; i < m_BoxPoint.size(); i++)
 		{
-			DisInfo.MeshID = j;
-			std::shared_ptr<FGltfMesh> pMesh = m_GltfMode->GetModelMesh()[j];
+			Vector3f Point = m_BoxPoint[i];
 
-			Vector3 minPoint = pMesh->GetBoundingBox().minPoint;
-			Vector3 maxPoint = pMesh->GetBoundingBox().maxPoint;
-			GetBoxPoint(minPoint, maxPoint);
-			float distanceMin = 100000.f;
-			float distanceMax = 0.f;
+			Vector4f mPoint = Vector4f(Point[0], Point[1], Point[2], 1.0);
+			Vector4f mTargetPoint = mPoint * pMesh->GetMeshMat() * ModelMatrix;
+			mTargetPoint = mTargetPoint / mTargetPoint.w;
 
-			for (int i = 0; i < m_BoxPoint.size(); i++)
+			//计算两个向量Z的距离
+			Vector3 vTargetPoint = Vector3(mTargetPoint.x, mTargetPoint.y, mTargetPoint.z);
+			float Distance = abs(vTargetPoint.z - vCamPos.z);
+			DisInfo.Distance = Distance;
+			if (distanceMax < Distance)
 			{
-				Vector3f Point = m_BoxPoint[i];
-
-				Vector4f mPoint = Vector4f(Point[0], Point[1], Point[2], 1.0);
-				Vector4f mTargetPoint = mPoint * pMesh->GetMeshMat() * ModelMatrix;
-				mTargetPoint = mTargetPoint / mTargetPoint.w;
-
-				//计算两个向量Z的距离
-				Vector3 vTargetPoint = Vector3(mTargetPoint.x, mTargetPoint.y, mTargetPoint.z);
-				float Distance = abs(vTargetPoint.z - vCamPos.z);
-				//float Distance = vTargetPoint.distance(vCamPos);
-				if (Distance < distanceMin)
-				{
-					distanceMin = Distance;
-
-					DisInfo.PosType = 1;
-					DisInfo.Distance = distanceMin;
-					pSortMesh[j * 2] = DisInfo;
-				}
-				if (Distance > distanceMax)
-				{
-					distanceMax = Distance;
-
-					DisInfo.PosType = 0;
-					DisInfo.Distance = distanceMax;
-					pSortMesh[j * 2 + 1] = DisInfo;
-				}
+				distanceMax = Distance;
+				pSortMesh[j] = DisInfo;
 			}
+		
 		}
-
-		pSortMesh += nMesh * 2;
-
 	}
 	std::sort(m_SortMesh.begin(), m_SortMesh.end(), MeshDisInfo());
 }

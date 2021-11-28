@@ -40,16 +40,16 @@ struct FGltfMeshInfo
 	//面数目（三角形数目）
 	uint32_t nNumFaces;
 	//顶点位置
-	Vector3f* pVertices;
+	Vector3f* pVertices = nullptr;
 	//顶点法向量
-	Vector3f* pNormals;
+	Vector3f* pNormals = nullptr;
 	//顶点纹理采样坐标
-	Vector2f* pTextureCoords;
+	Vector2f* pTextureCoords = nullptr;
 	//切线
-	Vector4f* pTangents;
+	Vector4f* pTangents = nullptr;
 	//faces（三角形）索引
-	uint16_t* pFacesIndex;
-	uint32_t* pFacesIndex32;
+	uint16_t* pFacesIndex = nullptr;
+	uint32_t* pFacesIndex32 = nullptr;
 	int type;
 	////骨骼ID
 	//CC3DVertexBoneID* pBoneIDs;

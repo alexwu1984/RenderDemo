@@ -1,6 +1,7 @@
 #pragma once
 #include "tiny_gltf.h"
 #include <memory>
+#include <string>
 #include "MathLib.h"
 
 class FGltfMaterial;
@@ -36,7 +37,7 @@ private:
 
 	FBoundingBox m_ModelBox;
 
-	float m_Scale;
+	float m_Scale=1.0f;
 	FMatrix m_RotationMatrix;
 	FMatrix m_ModelMatrix;
 	FMatrix m_PreviousModelMatrix;

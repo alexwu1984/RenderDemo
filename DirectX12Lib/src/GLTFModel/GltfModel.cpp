@@ -11,12 +11,23 @@ FGLTFMode::FGLTFMode(const std::wstring& FileName)
 	std::string err;
 	std::string warn;
 	std::string utf8FileName = core::ucs2_u8(FileName);
-	if (m_GltfCtx.LoadASCIIFromFile(&m_GltfMode, &err, &warn, utf8FileName))
-	{
-		LoadNode();
-		LoadMesh();
-	}
 
+	if (FileName.find(L".gltf") != std::wstring::npos)
+	{
+		if (m_GltfCtx.LoadASCIIFromFile(&m_GltfMode, &err, &warn, utf8FileName))
+		{
+			LoadNode();
+			LoadMesh();
+		}
+	}
+	else
+	{
+		if (m_GltfCtx.LoadBinaryFromFile(&m_GltfMode, &err, &warn, utf8FileName))
+		{
+			LoadNode();
+			LoadMesh();
+		}
+	}
 
 }
 

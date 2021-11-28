@@ -37,7 +37,7 @@ public:
 	{
 		FDirectLightGameMode::OnUpdate();
 
-		m_Camera = FCamera(Vector3f(2.0f, 0.6f, 3.f), Vector3f(0.f, 0.3f, 0.f), Vector3f(0.f, 1.f, 0.f));
+		m_Camera = FCamera(Vector3f(2.0f, 0.6f, 0.f), Vector3f(0.f, 0.3f, 0.f), Vector3f(0.f, 1.f, 0.f));
 		m_Camera.SetMouseMoveSpeed(1e-3f);
 		m_Camera.SetMouseRotateSpeed(1e-4f);
 
@@ -50,14 +50,15 @@ public:
 
 	void SetupMesh()
 	{
-		m_gltfMode = std::make_shared<FGLTFMode>(L"../Resources/Models/harley_davidson_breakout_gltf/scene.gltf");
+		//m_gltfMode = std::make_shared<FGLTFMode>(L"../Resources/Models/harley_davidson_breakout_gltf/scene.gltf");
+		m_gltfMode = std::make_shared<FGLTFMode>(L"../Resources/Models/FlightHelmet/glTF/FlightHelmet.gltf");
 	}
 
 	void SetupIBL()
 	{
 		m_PreintergrateBRDFPass.Init();
 
-		m_TextureLongLat.LoadFromFile(L"../Resources/HDR/spruit_sunrise_2k.hdr", true);
+		m_TextureLongLat.LoadFromFile(L"../Resources/HDR/venice_sunset_1k.hdr", true);
 		m_SkyBox = std::make_shared<FSkyBox>();
 		m_SkyPass.Init(m_SkyBox, m_GameDesc.Width, m_GameDesc.Height, L"../Resources/Shaders/EnvironmentShaders.hlsl", "VS_SkyCube", "PS_SkyCube");
 
@@ -114,7 +115,7 @@ public:
 
 		m_RotateY += m_Delta * 0.0005f;
 		m_RotateY = fmodf(m_RotateY, MATH_2PI);
-		//m_PBRRender.Rotate(m_RotateY);
+		m_PBRRender.Rotate(m_RotateY);
 
 		TemporalEffects::Update();
 	}

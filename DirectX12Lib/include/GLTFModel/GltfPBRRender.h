@@ -40,9 +40,6 @@ private:
 	{
 		float Distance;
 		int MeshID;
-		int ModelID;
-		//区分mesh包围框的最近最远点
-		int PosType;
 
 		bool operator()(const MeshDisInfo& pNear, const MeshDisInfo& pFar)
 		{
@@ -53,7 +50,6 @@ private:
 private:
 	std::shared_ptr<FGLTFMode> m_GltfMode;
 	std::shared_ptr< FRenderPipelineInfo> m_RenderState;
-	std::shared_ptr< FRenderPipelineInfo> m_BlendRenderStateBack;
 	std::shared_ptr< FRenderPipelineInfo> m_BlendRenderStateFront;
 	std::shared_ptr< FRenderPipelineInfo> m_IBLRenderState;
 	FRootSignature m_MeshSignature;
